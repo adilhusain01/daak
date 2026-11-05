@@ -28,6 +28,18 @@ export async function createTopic(memo: string): Promise<string> {
   return receipt.topicId!.toString();
 }
 
+/** Submits a message and returns at once with its transaction id; the sequence number comes from its receipt later. */
+export async function submitLog(message: object) {
+  const topicId = chain().topicId;
+  if (!topicId) throw new Error("No HCS topic yet; run scripts/setup-hedera.mts");
+  const res = await new TopicMessageSubmitTransaction().setTopicId(topicId).setMessage(JSON.stringify(message)).execute(hedera());
+  return {
+    topicId,
+    txId: res.transactionId.toString(),
+    sequence: async () => (await res.getReceipt(hedera())).topicSequenceNumber!.toString(),
+  };
+}
+
 /** Appends one handoff to the public, tamper-evident HCS log. Returns the sequence number. */
 export async function logHandoff(message: object): Promise<{ topicId: string; sequence: string }> {
   const topicId = chain().topicId;

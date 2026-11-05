@@ -10,6 +10,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ code: string }
   return NextResponse.json({
     code: c.code, label: c.label, feeRupees: c.feeRupees,
     route: c.route.map((l) => ({ hop: l.hop, place: l.place, km: l.km ?? null })),
-    handoffs: handoffs.map(({ fromBadge, toBadge, ...h }) => h),
+    handoffs: handoffs.map(({ fromBadge, toBadge, photo, ...h }) => ({ ...h, hasPhoto: Boolean(photo) })),
   });
 }

@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { arkivEntity, hashscanTopic, verdictText, when, type HandoffView, type LegView } from "@/lib/ui";
 
+type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number };
 type Row = {
-  code: string; label: string; feeRupees: number; createdAt: number; schedule?: string; paidAt: number | null;
+  code: string; label: string; feeRupees: number; createdAt: number; schedule?: string; paidAt: number | null; km: number; meter: string; money: Money[];
   route: (LegView & { from: string; to: string })[]; handoffs: HandoffView[];
 };
 type Data = { chain: { topicId?: string; feeTokenId?: string; escrowId?: string }; consignments: Row[] };
@@ -39,6 +40,7 @@ export default function Dashboard() {
       <header className="mb-8 flex flex-col gap-1">
         <h1 className="text-3xl font-semibold tracking-tight">Daak</h1>
         <p className="text-muted-ink">Every parcel, every handoff, every rupee owed to the drivers who carried it.</p>
+        <Link href="/drivers" className="text-sm underline underline-offset-2">Drivers ranked by proven record</Link>
       </header>
 
       {isLoading && <p className="text-muted-ink">Loading deliveries...</p>}
@@ -59,7 +61,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex flex-col sm:items-end">
                   <span className={`text-sm font-medium ${s.tone}`}>{s.text}</span>
-                  <span className="text-sm text-muted-ink">₹{r.feeRupees} for {totalKm} km, booked {when(r.createdAt)}</span>
+                  <span className="text-sm text-muted-ink">Meter {r.meter}: ₹{r.feeRupees} for {totalKm} km, booked {when(r.createdAt)}</span>
                 </div>
               </div>
 
@@ -82,6 +84,7 @@ export default function Dashboard() {
                             {h.hcs && <a className="underline underline-offset-2" href={hashscanTopic(h.hcs)} target="_blank">Hedera log</a>}
                             <a className="underline underline-offset-2" href={arkivEntity(h.key)} target="_blank">Arkiv record</a>
                             {h.zgRequestId && <span>0G receipt {h.zgRequestId.slice(0, 10)}</span>}
+                            {(h as HandoffView & { hasPhoto?: boolean }).hasPhoto && <a className="underline underline-offset-2" href={`/api/photo/${r.code}/${h.hop}`} target="_blank">Lid photo (Swarm, encrypted)</a>}
                             {h.geo && <a className="underline underline-offset-2" href={`https://maps.google.com/?q=${h.geo.split(",").slice(0, 2).join(",")}`} target="_blank">Where</a>}
                           </span>
                         </div>
@@ -92,6 +95,23 @@ export default function Dashboard() {
                   );
                 })}
               </ol>
+
+              {r.paidAt && (
+                <div className="mt-4 rounded-lg border border-rule p-3 text-sm">
+                  <p className="font-medium">Where the money went</p>
+                  {r.money.map((m) => {
+                    const leg = r.route.find((l) => l.hop === m.hop);
+                    return (
+                      <p key={m.hop} className="mt-1">
+                        Stop {m.hop} driver ({leg?.km ?? "?"} km): ₹{m.upiRupees.toFixed(2)} to UPI
+                        <span className="text-muted-ink"> ({m.upiStatus === "not_connected" ? "redeemed on chain, UPI partner not connected" : m.upiStatus ?? "pending"}{m.utr ? `, UTR ${m.utr}` : ""})</span>
+                        {m.bachatRupees > 0 && <span className="text-ok">, ₹{m.bachatRupees.toFixed(2)} to Bachat</span>}
+                      </p>
+                    );
+                  })}
+                  <p className="mt-1 text-muted-ink">Daak&apos;s 2% was taken by the dINR token&apos;s own fee rule on the way.</p>
+                </div>
+              )}
 
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-ink">

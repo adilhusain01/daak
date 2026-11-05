@@ -9,11 +9,12 @@ import { consignmentByCode } from "./arkiv";
  */
 export const badgeHash = (uid: string) => createHash("sha256").update(uid).digest("hex").slice(0, 12);
 
-type Msg = { t: string; code?: string; hop?: number; from?: string; to?: string; verdict?: string; at?: number; driver?: string; rupees?: number; saved?: number; km?: number };
+export type Msg = { t: string; code?: string; hop?: number; from?: string; to?: string; verdict?: string; at?: number; driver?: string; rupees?: number; saved?: number; km?: number };
 
-async function readLog(): Promise<(Msg & { ts: number })[]> {
+export type LogMsg = Msg & { ts: number; pot?: string; status?: string; upi?: string | null; utr?: string | null; potRupees?: number };
+export async function readLog(): Promise<LogMsg[]> {
   const topic = chain().topicId;
-  const out: (Msg & { ts: number })[] = [];
+  const out: LogMsg[] = [];
   let next: string | null = `/api/v1/topics/${topic}/messages?limit=100&order=asc`;
   while (next) {
     const r: Response = await fetch(`https://testnet.mirrornode.hedera.com${next}`, { cache: "no-store" });
@@ -34,10 +35,10 @@ export type WorkHistory = {
 };
 
 /** Proven = checked green by 0G, or on a delivery a person reviewed and paid. Held never counts. */
-export async function workHistory(uid: string): Promise<WorkHistory> {
+export async function workHistory(uid: string, preloaded?: LogMsg[]): Promise<WorkHistory> {
   const me = badgeHash(uid);
   const acct = await accountFor(uid);
-  const log = await readLog();
+  const log = preloaded ?? (await readLog());
   const reviewed = new Set(log.filter((m) => m.t === "daak.reviewed").map((m) => m.code));
   const mine = log.filter((m) => m.t === "daak.handoff" && m.from === me);
   const kmCache = new Map<string, number[]>();

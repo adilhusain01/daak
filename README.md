@@ -13,7 +13,7 @@ Daak makes every handoff provable with a tap and a photo, has a sealed AI check 
 3. **Escrow and the scheduled payout (Hedera, no Solidity).** The fee is locked in escrow as dINR, an HTS token for rupee credits with a 2% fractional custom fee that pays Daak at the network level. The payout to each driver, split by kilometre, is created at booking as a scheduled transaction and executes only when escrow signs it at delivery.
 4. **The handoff (Android app).** At the bus stand, the driver taps the parcel's NFC sticker, taps the next driver's badge and photographs the lid. The phone adds its GPS fix. No signal? The handoff is signed and queued on the phone, and the payment waits.
 5. **The check (0G).** The photo goes to a sealed (TeeML) vision model on 0G, `qwen3.7-plus`, which answers: right parcel, right stop, still sealed? If 0G cannot answer, the handoff is recorded as "tapped, not checked by AI" and the payment is held for a person to review. Nothing is faked.
-6. **The record (Hedera HCS and Arkiv).** Every booking, handoff, payout, cash-out and Bachat deposit is a message on a public HCS topic. Consignments, handoffs and driver preferences are typed Arkiv entities; handoffs expire after a day. The retailer's tracking page and the operator dashboard read Arkiv.
+6. **The record (Hedera HCS, Arkiv, Swarm).** The lid photo is stored on Swarm encrypted, its reference sealed inside the Arkiv record. Every booking, handoff, payout, cash-out and Bachat deposit is a message on a public HCS topic. Consignments, handoffs and driver preferences are typed Arkiv entities; handoffs expire after a day. The retailer's tracking page and the operator dashboard read Arkiv.
 7. **Delivery and pay.** When the last hop passes the check, escrow signs, the scheduled payout runs, and each driver's dINR is redeemed and sent to their UPI ID. Both references go on the HCS log.
 8. **What drivers gain.** Bachat, an opt-in pot that keeps a share (5%) of every payout, recorded on chain. A work record computed only from the public HCS log (proven deliveries, km, clean rate) that unlocks a fuel advance (25% of the last 30 days' proven earnings, up to Rs 5,000). In production the pot and the advances sit with licensed partners.
 
@@ -36,7 +36,7 @@ Deployed web app: https://web-ivory-delta-46.vercel.app (dashboard at `/`, track
 
 - `android/`: the Android app for shops, drivers and receivers. Kotlin, Jetpack Compose, NFC in reader mode, the system camera, GPS, Hindi text-to-speech, an offline outbox.
 - `web/`: Next.js. The API (`/api/book`, `/api/pack`, `/api/handoff`, `/api/review`, `/api/track/[code]`, `/api/driver/[uid]`, `/api/consignments`), the operator dashboard and the tracking page. All sponsor keys stay here.
-- `arkiv/`: how Daak uses Arkiv, its schema and the friction we hit.
+- `arkiv/`: how Daak uses Arkiv and Swarm, its schema and the friction we hit.
 - `video/`: the explainer film (HyperFrames).
 
 ## Getting started

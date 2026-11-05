@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { checkParcel, type Check } from "@/lib/zg";
-import { logHandoff } from "@/lib/hedera";
+import { submitLog } from "@/lib/hedera";
+import { consignmentByParcel, handoffsFor, writeHandoff } from "@/lib/arkiv";
 import { releaseFee, hashscan } from "@/lib/payout";
 import { cashOutAll } from "@/lib/settle";
-import { consignmentByParcel, handoffsFor, writeHandoff } from "@/lib/arkiv";
+import { sealRef, uploadPhoto } from "@/lib/swarm";
 
 /** Metres between two points on the earth. */
 function metres(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
@@ -17,8 +18,9 @@ function metres(a: { lat: number; lng: number }, b: { lat: number; lng: number }
 const short = (uid: string) => createHash("sha256").update(uid).digest("hex").slice(0, 12);
 
 /**
- * One handoff from the phone: parcel tag, giver's badge, receiver's badge and a lid photo.
- * 0G decides; Hedera and Arkiv record. If 0G cannot decide, the handoff is kept as unchecked and pay is held.
+ * One handoff from the phone: parcel tag, giver's badge, receiver's badge, a lid photo and GPS.
+ * The driver gets the verdict as soon as 0G decides and Hedera accepts the log message; the Arkiv
+ * record, the encrypted photo on Swarm and any payout finish after the response.
  */
 export async function POST(req: Request) {
   const form = await req.formData();
@@ -44,10 +46,11 @@ export async function POST(req: Request) {
   if (!c) {
     return NextResponse.json({ verdict: "held", message: "Yeh parcel register nahi hai. This parcel is not registered." }, { status: 404 });
   }
-  const past = await handoffsFor(c.code);
+  const consignment = c;
+  const past = await handoffsFor(consignment.code);
   const done = new Set(past.filter((h) => h.verdict !== "held").map((h) => h.hop));
-  const leg = c.route.find((l) => !done.has(l.hop));
-  if (!leg) return NextResponse.json({ verdict: "held", message: "Is parcel ki delivery poori ho chuki hai. Already delivered.", code: c.code });
+  const leg = consignment.route.find((l) => !done.has(l.hop));
+  if (!leg) return NextResponse.json({ verdict: "held", message: "Is parcel ki delivery poori ho chuki hai. Already delivered.", code: consignment.code });
 
   const errors: string[] = [];
   const rightPeople = leg.from === from && leg.to === to;
@@ -59,62 +62,62 @@ export async function POST(req: Request) {
   let check: Check | null = null;
 
   try {
-    check = await checkParcel(photo, c.code, `hop ${leg.hop} at ${leg.place}`);
+    check = await checkParcel(photo, consignment.code, `hop ${leg.hop} at ${leg.place}`);
     verdict = check.match && check.condition === "intact" && rightPeople && rightPlace ? "green" : "held";
     reason = !rightPeople
       ? "These badges are not the drivers booked for this hop."
       : !rightPlace
         ? `Handoff happened ${Math.round(away)} m from ${leg.place}.`
-      : check.match
-        ? check.condition === "intact" ? "Code matches and the parcel looks intact." : `Parcel looks ${check.condition}: ${check.reason}`
-        : `Code on the parcel reads "${check.codeRead}", expected ${c.code}.`;
+        : check.match
+          ? check.condition === "intact" ? "Code matches and the parcel looks intact." : `Parcel looks ${check.condition}: ${check.reason}`
+          : `Code on the parcel reads "${check.codeRead}", expected ${consignment.code}.`;
   } catch (e) {
     errors.push(`0G: ${(e as Error).message.slice(0, 160)}`);
   }
 
-  let hcs: { topicId: string; sequence: string } | undefined;
+  const geo = spot ? `${spot.lat.toFixed(5)},${spot.lng.toFixed(5)},${Math.round(spot.acc)}` : undefined;
+  let log: Awaited<ReturnType<typeof submitLog>> | null = null;
   try {
-    hcs = await logHandoff({
-      t: "daak.handoff", code: c.code, hop: leg.hop, km: leg.km ?? null, from: short(from), to: short(to),
-      verdict, zg: check?.requestId ?? null, photo: photoSha256, at, geo: spot ? [Number(spot.lat.toFixed(4)), Number(spot.lng.toFixed(4))] : null,
+    log = await submitLog({
+      t: "daak.handoff", code: consignment.code, hop: leg.hop, km: leg.km ?? null, from: short(from), to: short(to),
+      verdict, zg: check?.requestId ?? null, photo: photoSha256, at,
+      geo: spot ? [Number(spot.lat.toFixed(4)), Number(spot.lng.toFixed(4))] : null,
     });
   } catch (e) {
     errors.push(`Hedera: ${(e as Error).message.slice(0, 160)}`);
   }
 
-  let arkiv: { entityKey: string; txHash: string } | undefined;
-  try {
-    arkiv = await writeHandoff({
-      code: c.code, hop: leg.hop, verdict, place: leg.place, fromBadge: short(from), toBadge: short(to), at,
-      zgRequestId: check?.requestId ?? "", hcs: hcs ? `${hcs.topicId}#${hcs.sequence}` : "", photoSha256, reason,
-      geo: spot ? `${spot.lat.toFixed(5)},${spot.lng.toFixed(5)},${Math.round(spot.acc)}` : undefined,
-    });
-  } catch (e) {
-    errors.push(`Arkiv: ${(e as Error).message.slice(0, 160)}`);
-  }
+  const lastLeg = leg.hop === Math.max(...consignment.route.map((l) => l.hop));
+  const willPay = lastLeg && verdict === "green" && past.every((h) => h.verdict === "green") && Boolean(consignment.schedule);
 
-  // The last hop passing the check is the delivery: escrow signs and the scheduled payout runs.
-  let payout: { releaseTx: string; url: string } | undefined;
-  const lastLeg = leg.hop === Math.max(...c.route.map((l) => l.hop));
-  const clean = past.every((h) => h.verdict === "green");
-  if (lastLeg && verdict === "green" && clean && c.schedule) {
+  // Everything below runs after the driver already has the answer.
+  after(async () => {
+    const sequence = log ? await log.sequence().catch(() => "") : "";
+    let photoRef = "";
+    try { photoRef = sealRef(await uploadPhoto(photo)); } catch (e) { console.error("swarm", e); }
     try {
-      const r = await releaseFee(c.schedule);
-      payout = { ...r, url: hashscan("transaction", r.releaseTx) };
-      await cashOutAll(c).catch((e) => errors.push(`UPI: ${(e as Error).message.slice(0, 160)}`));
-    } catch (e) {
-      errors.push(`Payout: ${(e as Error).message.slice(0, 160)}`);
+      await writeHandoff({
+        code: consignment.code, hop: leg.hop, verdict, place: leg.place, fromBadge: short(from), toBadge: short(to), at,
+        zgRequestId: check?.requestId ?? "", hcs: log && sequence ? `${log.topicId}#${sequence}` : "", photoSha256, reason, geo, photo: photoRef,
+      });
+    } catch (e) { console.error("arkiv", e); }
+    if (willPay) {
+      try { await releaseFee(consignment.schedule!); await cashOutAll(consignment); } catch (e) { console.error("payout", e); }
     }
-  }
+  });
 
   const message =
-    payout ? `Delivery poori. Sab drivers ko payment ho gaya.`
+    willPay ? "Delivery poori. Sab drivers ko payment ho raha hai."
     : verdict === "green" ? `Saunp diya. ${leg.place} tak. Payment jaari.`
     : verdict === "held" ? `Payment roka gaya. ${reason}`
     : "AI jaanch nahi ho payi. Handoff save hai, payment jaanch tak ruka hai.";
   return NextResponse.json({
-    verdict, message, code: c.code, hop: leg.hop, reason,
-    proofs: { zg: check && { requestId: check.requestId, verified: check.verified, model: check.model }, hcs, arkiv, payout },
+    verdict, message, code: consignment.code, hop: leg.hop, reason,
+    proofs: {
+      zg: check && { requestId: check.requestId, verified: check.verified, model: check.model },
+      hcs: log && { topicId: log.topicId, tx: hashscan("transaction", log.txId) },
+      payout: willPay ? "releasing" : undefined,
+    },
     errors,
   });
 }

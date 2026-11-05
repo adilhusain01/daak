@@ -40,6 +40,7 @@ export const Handoffs = defineSchema("daak.handoff", {
   photoSha256: str(),
   reason: bytes(),
   geo: str().optional(), // "lat,lng,accuracyM" where the handoff happened
+  photo: bytes().optional(), // the Swarm reference of the lid photo, sealed with AES-GCM
 });
 
 /** A driver's own choices, newest wins. */
@@ -74,6 +75,12 @@ const keyOf = (r: { entityKey: unknown; txHash: unknown }) => ({ entityKey: Stri
 
 export async function putBadge(b: { uid: string; name: string; role: string; vehicle?: string }) {
   return keyOf(await arkivWrite().createEntity(Badges, { ...b, vehicle: b.vehicle ?? "" }, { expiration: ExpirationTime.fromDays(30) }));
+}
+
+export async function badgesByRole(role: string) {
+  const r = await arkivRead().select({ uid: true, name: true, role: true, vehicle: true }).from(Badges)
+    .where(eq("role", role)).ownedBy(owner()).limit(100).fetch();
+  return r.entities.map((b) => ({ uid: b.uid.value, name: b.name.value, role: b.role.value, vehicle: b.vehicle.value }));
 }
 
 export async function getBadge(uid: string) {
@@ -118,24 +125,24 @@ export async function recentConsignments() {
 
 export type HandoffRow = {
   key: string; code: string; hop: number; verdict: string; place: string; fromBadge: string; toBadge: string;
-  at: number; zgRequestId: string; hcs: string; photoSha256: string; reason: string; geo?: string;
+  at: number; zgRequestId: string; hcs: string; photoSha256: string; reason: string; geo?: string; photo?: string;
 };
 
 export async function writeHandoff(h: Omit<HandoffRow, "key">) {
   return keyOf(await arkivWrite().createEntity(
     Handoffs,
-    { ...h, reason: enc(h.reason), hop: i32(h.hop), at: u64(BigInt(h.at)), geo: h.geo ?? "" },
+    { ...h, reason: enc(h.reason), hop: i32(h.hop), at: u64(BigInt(h.at)), geo: h.geo ?? "", photo: enc(h.photo ?? "") },
     { expiration: ExpirationTime.fromDays(1) },
   ));
 }
 
 export async function handoffsFor(code: string): Promise<HandoffRow[]> {
   const r = await arkivRead()
-    .select({ $key: true, code: true, hop: true, verdict: true, place: true, fromBadge: true, toBadge: true, at: true, zgRequestId: true, hcs: true, photoSha256: true, reason: true, geo: true })
+    .select({ $key: true, code: true, hop: true, verdict: true, place: true, fromBadge: true, toBadge: true, at: true, zgRequestId: true, hcs: true, photoSha256: true, reason: true, geo: true, photo: true })
     .from(Handoffs).where(and(eq("code", code))).ownedBy(owner()).orderBy(desc("at")).limit(50).fetch();
   return r.entities.map((e) => ({
     key: String(e.$key), code: e.code.value, hop: Number(e.hop.value), verdict: e.verdict.value, place: e.place.value,
     fromBadge: e.fromBadge.value, toBadge: e.toBadge.value, at: Number(e.at.value), zgRequestId: e.zgRequestId.value,
-    hcs: e.hcs.value, photoSha256: e.photoSha256.value, reason: dec(e.reason.value), geo: e.geo?.value || undefined,
+    hcs: e.hcs.value, photoSha256: e.photoSha256.value, reason: dec(e.reason.value), geo: e.geo?.value || undefined, photo: e.photo ? dec(e.photo.value) || undefined : undefined,
   }));
 }
