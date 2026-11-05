@@ -5,7 +5,6 @@ import { checkParcel } from "@/lib/zg";
 import { logHandoff } from "@/lib/hedera";
 import { writeHandoff } from "@/lib/arkiv";
 
-export const runtime = "nodejs";
 
 const short = (uid: string) => createHash("sha256").update(uid).digest("hex").slice(0, 12);
 
