@@ -481,7 +481,7 @@ class MainActivity : ComponentActivity() {
             Bi("Daak से जुड़िए", "Join Daak with this badge", size = 24)
             Body("Badge ${s.uid.takeLast(8)}. Your phone and UPI ID are kept sealed; only your name, role and route are visible to others.", Tokens.muted, 15)
         }
-        Body("आप कौन हैं? · Who are you?", Tokens.muted, 15)
+        Heading("आप कौन हैं?", "Who are you?")
         Choice("ड्राइवर · Driver", "I carry parcels on a bus route", f.role == "driver") { set(f.copy(role = "driver")) }
         Choice("दुकान · Shop sending parcels", "I book parcels to other shops", f.role == "sender") { set(f.copy(role = "sender")) }
         Choice("दुकान · Shop receiving parcels", "Parcels are delivered to me", f.role == "receiver") { set(f.copy(role = "receiver")) }
@@ -491,11 +491,12 @@ class MainActivity : ComponentActivity() {
             if (f.role == "driver") {
                 Field("UPI ID · where your pay goes", f.upi, { set(f.copy(upi = it.trim())) }, "ramesh@okaxis")
                 Field("बस नंबर · Bus number (number plate)", f.vehicle, { set(f.copy(vehicle = it.uppercase())) }, "UP-78-AT-1123")
-                Body("बस किसकी है? · Who runs the bus?", Tokens.muted, 15)
+                Heading("बस किसकी है?", "Who runs the bus?")
                 listOf("UPSRTC" to "UP state bus", "BSRTC" to "Bihar state bus", "Private" to "Private operator").forEach { (id, sub) ->
                     Choice(id, sub, f.busOperator == id) { set(f.copy(busOperator = id)) }
                 }
-                Body("पहचान पत्र · Government ID (checked once by Daak, kept sealed)", Tokens.muted, 15)
+                Heading("पहचान पत्र", "Government ID")
+                Body("Checked once by Daak and kept sealed. Only the last 4 characters are stored.", Tokens.muted, 14)
                 listOf(
                     Triple("dl", "ड्राइविंग लाइसेंस · Driving licence", "Best: it also shows you can drive the bus"),
                     Triple("voter", "वोटर आईडी · Voter ID", null),
@@ -507,48 +508,43 @@ class MainActivity : ComponentActivity() {
                     else Body("ID की फोटो ली गई · ID photo taken.", Tokens.green, 16, FontWeight.SemiBold)
                     if (f.idPhoto != null) Secondary("दोबारा लें · Retake the photo") { openCamera() }
                 }
-                Body("आप कौन सा रास्ता चलाते हैं? · Which stretches do you drive?", Tokens.muted, 15)
+                Heading("आपका रास्ता", "Stretches you drive")
                 s.net?.legs?.forEach { l ->
                     Choice(l.label, "${l.km} km", l.id in f.legs) { set(f.copy(legs = if (l.id in f.legs) f.legs - l.id else f.legs + l.id)) }
                 } ?: Body("Loading routes…", Tokens.muted, 15)
             } else {
-                Body("आपका बस अड्डा · Your bus stand", Tokens.muted, 15)
+                Heading("आपका बस अड्डा", "Your bus stand")
                 s.net?.stops?.forEach { st -> Choice(st.name, null, f.stop == st.id) { set(f.copy(stop = st.id)) } } ?: Body("Loading stands…", Tokens.muted, 15)
             }
             s.errors.forEach { Body(it, Tokens.red, 16) }
             Action(if (s.sending) "जुड़ रहे हैं…" else "जुड़ें", if (s.sending) "Joining…" else "Join Daak", enabled = !s.sending) { submitJoin(s) }
         }
-        if (!s.sending) Secondary("रद्द करें · Cancel") { screen = Screen.SignIn }
+        if (!s.sending) TextKey("रद्द करें · Cancel") { screen = Screen.SignIn }
     }
 
     @Composable
     private fun HomeScreen() {
         val p = me ?: return
-        if (p.role == "driver") WorkCard(work)
-        if (p.role == "sender") DailyCard()
         TodoCard()
         when (p.role) {
             "driver" -> {
-                Action("पार्सल सौंपें या लें", "Hand over or take a parcel  ·  or just tap it") { screen = Screen.Handoff() }
-                Action(
-                    if ((work?.savePercent ?: 0) > 0) "बचत चालू है (5%)" else "बचत चालू करें (5%)",
-                    if (savingBusy) "Saving…" else if ((work?.savePercent ?: 0) > 0) "Bachat is on: 5% of each payout is saved" else "Save 5% of every payout in Bachat",
-                    if ((work?.savePercent ?: 0) > 0) Tokens.green else Tokens.ink,
-                    enabled = !savingBusy,
-                ) { toggleBachat() }
+                Action("पार्सल सौंपें या लें", "Hand over or take a parcel, or just tap it") { screen = Screen.Handoff() }
+                WorkCard(work)
+                val on = (work?.savePercent ?: 0) > 0
+                Toggle("बचत · Bachat", if (on) "5% of every payout goes to your savings pot" else "Save 5% of every payout automatically", on, savingBusy) { toggleBachat() }
             }
             "sender" -> {
-                Action("नया पार्सल बुक करें", "Book a new parcel  ·  or just tap it") { screen = Screen.Pack() }
+                Action("नया पार्सल बुक करें", "Book a new parcel, or just tap it") { screen = Screen.Pack() }
                 Secondary("ड्राइवर को सौंपें · Hand a booked parcel to the driver") { screen = Screen.Handoff() }
+                DailyCard()
             }
             else -> {
-                Action("पार्सल लें", "Receive a parcel  ·  or just tap it") { screen = Screen.Handoff() }
+                Action("पार्सल लें", "Receive a parcel, or just tap it") { screen = Screen.Handoff() }
                 Secondary("पार्सल की स्थिति · Check where a parcel is") { screen = Screen.Look() }
             }
         }
         if (queued > 0) Sheet { Bi("$queued हैंडऑफ़ सिग्नल का इंतज़ार कर रहे हैं", "$queued handoff(s) waiting for signal; they send by themselves", Tokens.amber, 18) }
-        Spacer(Modifier.height(8.dp))
-        Secondary("बैज बदलें · Switch badge") { signOut() }
+        TextKey("बैज बदलें · Switch badge") { signOut() }
     }
 
     @Composable
@@ -556,34 +552,44 @@ class MainActivity : ComponentActivity() {
         val d = daily ?: return
         if (d.orders.isEmpty()) return
         Sheet {
-            Body("रोज़ के पार्सल · Daily orders", Tokens.muted, 15)
+            Heading("रोज़ के पार्सल", "Daily orders")
             d.waitingCode?.let { Body("आज का पार्सल बुक है: ${d.waitingReceiver} ($it). Tap the parcel to attach it.", Tokens.green, 17, FontWeight.SemiBold) }
-            d.orders.filter { it.active }.take(4).forEach { Body("${it.receiver} · ${it.daysText}${it.lastCode?.let { c -> " · last $c" } ?: " · books at 4 am"}", size = 17, weight = FontWeight.Medium) }
+            d.orders.filter { it.active }.take(4).forEach {
+                Line(it.receiver, it.lastCode ?: "4 am")
+                Body(it.daysText, Tokens.muted, 14)
+            }
         }
     }
 
     @Composable
     private fun TodoCard() {
         val t = todo ?: return
+        if (t.isEmpty()) return
         Sheet {
-            Body("आगे क्या करना है · What's next for you", Tokens.muted, 15)
-            if (t.isEmpty()) Body("Nothing waiting right now.", Tokens.muted, 17)
-            t.take(4).forEach { Body(it.text, size = 17, weight = FontWeight.Medium) }
+            Heading("आगे क्या करना है", "Up next")
+            t.take(4).forEachIndexed { i, item ->
+                if (i > 0) Rule()
+                Body(item.code, Tokens.ink, 17, FontWeight.SemiBold)
+                Body(item.text.replace("${item.code} ", ""), Tokens.muted, 15)
+            }
         }
     }
 
     @Composable
     private fun WorkCard(w: Work?) {
         Sheet {
-            Body("मेरा काम · My work", Tokens.muted, 15)
+            Heading("मेरा काम", "My work")
             if (w == null) { Body("Loading your record…", Tokens.muted, 16); return@Sheet }
-            Body("${w.proven} deliveries proven · ${w.km} km · ${w.cleanPercent}% clean", size = 19, weight = FontWeight.SemiBold)
-            Body("कमाई · Earned ₹${"%.2f".format(w.earned)}", Tokens.green, 19, FontWeight.SemiBold)
-            Body("सौंपते ही ${w.atHandover}% · You get ${w.atHandover}% at handover, the rest when the parcel is delivered", size = 17, weight = FontWeight.SemiBold)
-            w.nextTier?.let { Body(it, Tokens.muted, 15) }
-            Body("बचत · Bachat ₹${"%.2f".format(w.bachat)}", size = 17)
-            if (w.advance > 0) Body("ईंधन एडवांस उपलब्ध · Fuel advance ₹${w.advance}", Tokens.green, 17, FontWeight.SemiBold)
-            else Body("Fuel advance: ${w.advanceReason}", Tokens.muted, 15)
+            Stats(listOf("${w.proven}" to "proven", "${w.km} km" to "carried", "${w.cleanPercent}%" to "clean"))
+            Line("कमाई · Earned", "₹${"%.2f".format(w.earned)}", Tokens.green, big = true)
+            // How much of each stretch's pay arrives at the handover, and how close the next step is.
+            val goal = if (w.atHandover <= 50) 10 else 50
+            Line("सौंपते ही · At handover", "${w.atHandover}% of your pay")
+            if (w.atHandover < 90) Progress(w.proven / goal.toFloat())
+            w.nextTier?.let { Body(it, Tokens.muted, 14) }
+            Line("बचत · Bachat", "₹${"%.2f".format(w.bachat)}")
+            if (w.advance > 0) Line("ईंधन एडवांस · Fuel advance", "₹${w.advance} ready", Tokens.green)
+            else Body("Fuel advance: ${w.advanceReason}", Tokens.muted, 14)
         }
     }
 
@@ -591,6 +597,7 @@ class MainActivity : ComponentActivity() {
     private fun HandoffScreen(s: Screen.Handoff) {
         val n = s.info?.next
         val otherName = if (s.iGive) n?.toName else n?.fromName
+        Bi("पार्सल सौंपें या लें", "Hand over or take a parcel", size = 24)
         Step(1, "पार्सल लगाइए", "Tap the parcel",
             when { s.loading -> "Reading the parcel…"; s.info?.code != null -> "${s.info.code} · ${if (s.iGive) "you give" else "you take"} at ${n?.place?.substringBefore(",")}"; s.parcel != null -> "Parcel ${s.parcel.uid.takeLast(8)}"; else -> null },
             s.parcel == null && s.problem == null)
@@ -602,7 +609,7 @@ class MainActivity : ComponentActivity() {
         s.problem?.let { Verdict(Tokens.amber, "रुकिए", "Hold on", it) }
         if (s.other != null && !s.sending) Action("फोटो लीजिए", "Take the photo") { openCamera() }
         if (s.sending) Bi("जाँच हो रही है…", "Checking the photo. This takes a few seconds.", Tokens.muted, 18)
-        if (!s.sending) Secondary("वापस · Back") { goHome() }
+        if (!s.sending) TextKey("वापस · Back") { goHome() }
     }
 
     @Composable
@@ -616,12 +623,13 @@ class MainActivity : ComponentActivity() {
         }
         v.code?.let { Body("$it${v.hop?.let { h -> " · handoff $h" } ?: ""}", Tokens.muted, 15) }
         Action("अगला पार्सल", "Next parcel") { screen = Screen.Handoff() }
-        Secondary("होम · Home") { goHome() }
+        TextKey("होम · Home") { goHome() }
     }
 
     @Composable
     private fun PackScreen(s: Screen.Pack) {
         val plan = s.plan
+        Bi("पार्सल बुक करें", "Book a parcel", size = 24)
         Step(1, "नया पार्सल लगाइए", "Tap the new parcel", when { s.parcel != null -> "Parcel ${s.parcel.uid.takeLast(8)}"; else -> null }, s.parcel == null && s.problem == null)
         if (s.dailyCode != null && s.booking == null) {
             Sheet {
@@ -633,13 +641,13 @@ class MainActivity : ComponentActivity() {
             Body("या नया पार्सल बुक करें · Or book a different parcel below", Tokens.muted, 15)
         }
         if (s.receivers != null && s.booking == null) {
-            Body("किसे भेजना है? · Send to", Tokens.muted, 15)
+            Heading("किसे भेजना है?", "Send to")
             s.receivers.forEach { r -> Choice(r.name, r.stopName, s.receiver?.uid == r.uid) { if (!s.loading && !s.paying) chooseReceiver(s, r) } }
         }
         if (s.loading) Body("Working out the route and the best drivers…", Tokens.muted, 16)
         if (plan != null && s.booking == null) {
             Sheet {
-                Body("रास्ता और ड्राइवर · Route and drivers", Tokens.muted, 15)
+                Heading("रास्ता", "Route")
                 Body("${plan.from.substringBefore(",")} › ${plan.to}", size = 19, weight = FontWeight.SemiBold)
                 Body("Pickup at ${plan.from}", Tokens.muted, 15)
             }
@@ -650,11 +658,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
             Sheet {
-                Body("Daak meter: ${plan.meter} · ${plan.km} km", Tokens.muted, 15)
-                Body("किराया · Fee ₹${"%.0f".format(plan.fee)}", size = 26, weight = FontWeight.Bold)
+                Line("Daak meter", "${plan.km} km")
+                Body(plan.meter, Tokens.muted, 14)
+                Line("किराया · Fee", "₹${"%.2f".format(plan.fee)}", big = true)
             }
             if (s.paying) Bi("बुकिंग और भुगतान हो रहा है…", "Booking and paying from the shop's account. Usually 15 to 20 seconds.", Tokens.muted, 18)
-            else Action("₹${"%.0f".format(plan.fee)} में बुक करें", "Book and pay ₹${"%.0f".format(plan.fee)}") { pay(s) }
+            else Action("₹${"%.2f".format(plan.fee)} में बुक करें", "Book and pay ₹${"%.2f".format(plan.fee)}") { pay(s) }
         }
         s.booking?.let { b ->
             Sheet {
@@ -672,7 +681,7 @@ class MainActivity : ComponentActivity() {
         }
         s.problem?.let { Verdict(Tokens.amber, "ध्यान दें", "Please note", it) }
         if (s.written || (s.problem != null && s.booking != null)) Action("अगला पार्सल", "Book another parcel") { nfc.pendingWrite = null; screen = Screen.Pack() }
-        if (!s.paying) Secondary("होम · Home") { nfc.pendingWrite = null; goHome() }
+        if (!s.paying) TextKey("होम · Home") { nfc.pendingWrite = null; goHome() }
     }
 
     @Composable
@@ -686,6 +695,6 @@ class MainActivity : ComponentActivity() {
             info.delivered -> Verdict(Tokens.green, "पहुँच गया", "Delivered", "${info.code} · ${info.label}")
             else -> Verdict(Tokens.ink, "रास्ते में", "On the way", "${info.code} · next: ${info.next?.fromName} to ${info.next?.toName} at ${info.next?.place}")
         }
-        Secondary("होम · Home") { goHome() }
+        TextKey("होम · Home") { goHome() }
     }
 }

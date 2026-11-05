@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -177,3 +178,86 @@ fun Choice(title: String, sub: String?, chosen: Boolean, onClick: () -> Unit) {
         if (sub != null) Body(sub, Tokens.muted, 15)
     }
 }
+
+/** A section's heading inside a sheet: Hindi, with English beside it in a lighter tone. */
+@Composable
+fun Heading(hi: String, en: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+        Body(hi, Tokens.ink, 19, FontWeight.SemiBold)
+        Body(en, Tokens.muted, 15)
+    }
+}
+
+/** A row of numbers that matter at a glance; each sits in a tray, read and never pressed. */
+@Composable
+fun Stats(items: List<Pair<String, String>>) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.forEach { (value, label) ->
+            Column(
+                Modifier.weight(1f).background(Tokens.tray, RoundedCornerShape(Tokens.inner)).padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Body(value, Tokens.ink, 22, FontWeight.SemiBold)
+                Body(label, Tokens.muted, 13)
+            }
+        }
+    }
+}
+
+/** A label on the left and its value on the right, on one line. */
+@Composable
+fun Line(label: String, value: String, valueColor: Color = Tokens.ink, big: Boolean = false) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Body(label, Tokens.muted, 16)
+        Body(value, valueColor, if (big) 24 else 17, FontWeight.SemiBold)
+    }
+}
+
+/** How far along something is: a filled bar in a tray. */
+@Composable
+fun Progress(fraction: Float, color: Color = Tokens.green) {
+    Box(Modifier.fillMaxWidth().height(8.dp).background(Tokens.tray, RoundedCornerShape(4.dp))) {
+        Box(Modifier.fillMaxWidth(fraction.coerceIn(0.02f, 1f)).height(8.dp).background(color, RoundedCornerShape(4.dp)))
+    }
+}
+
+/** A setting that is on or off: pressable, with its state written in words on the right. */
+@Composable
+fun Toggle(hi: String, en: String, on: Boolean, busy: Boolean = false, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    Row(
+        Modifier.fillMaxWidth()
+            .graphicsLayer { val s = if (pressed) 0.97f else 1f; scaleX = s; scaleY = s }
+            .shadow(2.dp, RoundedCornerShape(Tokens.radius))
+            .background(Tokens.sheet, RoundedCornerShape(Tokens.radius))
+            .clickable(interactionSource = source, indication = null, enabled = !busy, onClick = onClick)
+            .padding(horizontal = Tokens.pad, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Body(hi, Tokens.ink, 18, FontWeight.SemiBold)
+            Body(en, Tokens.muted, 14)
+        }
+        Box(
+            Modifier.background(if (on) Tokens.green else Tokens.tray, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
+        ) { Body(if (busy) "…" else if (on) "चालू · On" else "बंद · Off", if (on) Tokens.paper else Tokens.muted, 14, FontWeight.SemiBold) }
+    }
+}
+
+/** The quietest key: text only, for things done rarely (switching badge, going back). */
+@Composable
+fun TextKey(text: String, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    Box(
+        Modifier.fillMaxWidth().graphicsLayer { alpha = if (pressed) 0.6f else 1f }
+            .clickable(interactionSource = source, indication = null, onClick = onClick).padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) { Body(text, Tokens.muted, 16, FontWeight.Medium) }
+}
+
+/** A hairline between items in a sheet. */
+@Composable
+fun Rule() = Box(Modifier.fillMaxWidth().height(1.dp).background(Tokens.line))
