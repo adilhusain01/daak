@@ -9,12 +9,12 @@ Notes from a conversation with a builder at ETHGlobal Mumbai (5 to 6 November 20
 1. **The river is already flowing.** Buses, routes and drivers already exist, and parcels already ride them. Daak does not onboard a fleet; it puts a meter, a receipt and a payout on a network that already runs ("you just install the dam").
 2. **Start with goods that move every day, predictably.** Demand you can forecast within about ±10% (groceries, daily perishables) builds a business; demand that swings ±50% (medicines) does not, because stock either rots or runs out.
 3. **Off-peak capacity is the supply.** Perishables move before 5 am, when traffic and passengers are low. Non-AC state buses that have met their passenger target by early afternoon just finish the route, with room to spare.
-4. **The hidden wallet.** The sender pays up front; the platform holds each driver's cut and releases it leg by leg, when the next person confirms receipt. A lost parcel traces to the last confirmed handover.
+4. **The hidden wallet, with a holdback.** The sender pays up front and the platform holds every driver's cut. Today a bus driver asks for the full amount at handover. With Daak's perks (priority, a record, advances, more parcels) he agrees to take part of it, about half, when the next person confirms receipt, and the rest only when the parcel reaches its destination and is confirmed. That keeps him liable until the end: if the parcel is lost or damaged, the held part goes to repay the customer, as far as it covers. A lost parcel traces to the last confirmed handover.
 5. **Driver incentives.** A profile and rating, as on delivery apps: good drivers get priority; pay is a share of every parcel carried, so more parcels mean more income.
 6. **Show real money moving.** Ten parcels in ten cities with real payments beats any projection. Partner with courier franchises and bus operators to get there.
 7. **The network is mapped already.** India Post's office tree (branch office, sub office, head office, sorting hubs) is a relay network, and its data is public.
 
-Daak already does 1, 4 (pay held until delivery), 5 and the proof in 4. To add: per-leg release, weight in the meter, standing orders, the map.
+Daak already does 1, 5, the proof in 4, and holds all pay until delivery. To add: the split release in 4 (part at handover, the holdback at delivery, the holdback repaying the customer on loss or damage), weight in the meter, standing orders, the map.
 
 ## The starter (beachhead)
 
@@ -33,7 +33,7 @@ The corridor: Kanpur to Lucknow to Gorakhpur for the story; the first live pilot
 
 | Stage | Who | How they come in | Why they stay |
 |---|---|---|---|
-| Supply | Bus drivers and conductors on the corridor | Met at the depot or bus stand; join by tapping a badge | Instant pay per leg, a public work record, Bachat, fuel advances, priority for good records |
+| Supply | Bus drivers and conductors on the corridor | Met at the depot or bus stand; join by tapping a badge | Part of the pay at each handover, the rest at delivery; a public work record, Bachat, fuel advances, priority for good records |
 | Seed demand | Senders with a daily standing order | Through bus booking agents and WhatsApp trade groups | One meter rate, a photo at every handoff, no phone calls to chase drivers |
 | Free side | Receiving shops | Come with each sender; tap the parcel with any phone | Live tracking and proof of condition on arrival |
 | Expansion | Courier franchises (DTDC-style) and bus operators | Use Daak for the bus-carried legs of their own network | Fewer disputes, a record per leg, payouts handled |
