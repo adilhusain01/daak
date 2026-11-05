@@ -13,8 +13,8 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
-        // Backend base URL. Debug builds talk to the laptop over `adb reverse tcp:3000 tcp:3000`.
-        buildConfigField("String", "API_BASE", "\"http://127.0.0.1:3000\"")
+        // Backend base URL: the deployed web app. Use http://127.0.0.1:3000 with `adb reverse tcp:3000 tcp:3000` for local work.
+        buildConfigField("String", "API_BASE", "\"https://web-ivory-delta-46.vercel.app\"")
     }
 
     buildFeatures {
