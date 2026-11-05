@@ -197,3 +197,54 @@ export async function handoffsFor(code: string): Promise<HandoffRow[]> {
     hcs: e.hcs.value, photoSha256: e.photoSha256.value, reason: dec(e.reason.value), geo: e.geo?.value || undefined, photo: e.photo ? dec(e.photo.value) || undefined : undefined, zgLog: e.zgLog?.value || undefined,
   }));
 }
+
+/**
+ * A shop's standing order: the same receiver and drivers on set weekdays. Daak's agent books and pays it
+ * each morning; the shop only taps that day's parcel to attach it.
+ */
+export const StandingOrders = defineSchema("daak.standing", {
+  id: str().indexed(),
+  sender: str().indexed(),
+  receiver: str(),
+  drivers: str(), // badge uids, one per stretch, comma separated
+  days: str(), // seven characters, Monday first: "1111100" is Monday to Friday
+  active: i32(),
+  lastRun: str(), // the Indian date it last booked, YYYY-MM-DD
+  lastCode: str(),
+  createdAt: u64(),
+});
+
+export type StandingRow = { key: string; id: string; sender: string; receiver: string; drivers: string[]; days: string; active: boolean; lastRun: string; lastCode: string; createdAt: number };
+const STANDING_COLS = { $key: true, id: true, sender: true, receiver: true, drivers: true, days: true, active: true, lastRun: true, lastCode: true, createdAt: true } as const;
+type StandingEntity = { $key: unknown; id: { value: string }; sender: { value: string }; receiver: { value: string }; drivers: { value: string }; days: { value: string }; active: { value: number }; lastRun: { value: string }; lastCode: { value: string }; createdAt: { value: bigint } };
+const toStanding = (e: StandingEntity): StandingRow => ({
+  key: String(e.$key), id: e.id.value, sender: e.sender.value, receiver: e.receiver.value, drivers: e.drivers.value.split(",").filter(Boolean),
+  days: e.days.value, active: Number(e.active.value) === 1, lastRun: e.lastRun.value, lastCode: e.lastCode.value, createdAt: Number(e.createdAt.value),
+});
+
+export async function putStanding(o: { id: string; sender: string; receiver: string; drivers: string[]; days: string }) {
+  return keyOf(await arkivWrite().createEntity(
+    StandingOrders,
+    { ...o, drivers: o.drivers.join(","), active: i32(1), lastRun: "", lastCode: "", createdAt: u64(BigInt(Date.now())) },
+    { expiration: ExpirationTime.fromDays(30) },
+  ));
+}
+
+export async function standingOrders(sender?: string): Promise<StandingRow[]> {
+  const q = arkivRead().select(STANDING_COLS).from(StandingOrders);
+  const r = await (sender ? q.where(eq("sender", sender)) : q).ownedBy(owner()).orderBy(desc("createdAt")).limit(100).fetch();
+  return r.entities.map((e) => toStanding(e as StandingEntity));
+}
+
+export async function patchStanding(key: string, set: { active?: boolean; lastRun?: string; lastCode?: string }) {
+  const values = { ...(set.active != null ? { active: i32(set.active ? 1 : 0) } : {}), ...(set.lastRun != null ? { lastRun: set.lastRun } : {}), ...(set.lastCode != null ? { lastCode: set.lastCode } : {}) };
+  return keyOf(await arkivWrite().patchEntity(StandingOrders, key as `0x${string}`, { set: values }));
+}
+
+/** Puts the parcel tag on a booking made before the parcel existed (a standing order's morning booking). */
+export async function attachParcel(code: string, parcel: string) {
+  const r = await arkivRead().select({ $key: true, parcel: true }).from(Consignments).where(eq("code", code)).ownedBy(owner()).orderBy(desc("createdAt")).limit(1).fetch();
+  const e = r.entities[0];
+  if (!e) throw new Error("Unknown consignment");
+  return keyOf(await arkivWrite().patchEntity(Consignments, String(e.$key) as `0x${string}`, { set: { parcel } }));
+}

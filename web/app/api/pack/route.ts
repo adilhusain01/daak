@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { agentBook } from "@/lib/agent";
-import { getBadge, recentConsignments, type Leg } from "@/lib/arkiv";
-import { pathBetween, stopName } from "@/lib/network";
+import { recentConsignments, type Leg } from "@/lib/arkiv";
+import { buildRoute } from "@/lib/booking";
 
 /**
  * The shop books a parcel: from its own bus stand to the receiver's, with one chosen driver per stretch.
@@ -24,13 +24,9 @@ export async function POST(req: Request) {
   let route: Leg[];
   let label: string;
   if (body.sender && body.receiver && body.drivers?.length) {
-    const [s, r] = await Promise.all([getBadge(body.sender), getBadge(body.receiver)]);
-    if (!s?.stop || !r?.stop) return NextResponse.json({ error: "Shop or receiver has no bus stand" }, { status: 400 });
-    const legs = pathBetween(s.stop, r.stop);
-    if (legs.length !== body.drivers.length) return NextResponse.json({ error: "Choose one driver for each stretch" }, { status: 400 });
-    route = [{ hop: 1, from: body.sender, to: body.drivers[0], place: stopName(s.stop), km: 0 }];
-    legs.forEach((l, i) => route.push({ hop: i + 2, from: body.drivers![i], to: i + 1 < legs.length ? body.drivers![i + 1] : body.receiver!, place: i + 1 < legs.length ? stopName(l.to) : `${r.name}, ${stopName(l.to)}`, km: l.km }));
-    label = `Parcel from ${s.name.split(",")[0]} to ${r.name.split(",")[0]}`;
+    const built = await buildRoute(body.sender, body.receiver, body.drivers);
+    if ("error" in built) return NextResponse.json({ error: built.error }, { status: 400 });
+    ({ route, label } = built);
   } else {
     // The fixed demo route, kept for the scripts and for shops booking before receivers have joined.
     const demo = JSON.parse(readFileSync(path.join(process.cwd(), "data", "demo-route.json"), "utf8"));

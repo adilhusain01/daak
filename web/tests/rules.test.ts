@@ -87,3 +87,14 @@ test("the meter charges each stretch's road distance, the same one the map draws
   const roads = JSON.parse(readFileSync("public/map/india.json", "utf8")).roads as Record<string, { km: number }>;
   for (const l of network().legs) assert.equal(l.km, roads[l.id].km, `${l.id} charges ${l.km} km, road is ${roads[l.id].km} km`);
 });
+
+test("a standing order is due on its weekdays in India time, once a day", async () => {
+  const { standingDue, istDate } = await import("../lib/rules.ts");
+  // Friday 6 Nov 2026, 04:00 IST is Thursday 22:30 UTC: the day that counts is India's.
+  const fri4am = new Date("2026-11-05T22:30:00Z");
+  assert.equal(istDate(fri4am), "2026-11-06");
+  assert.equal(standingDue({ days: "1111100", lastRun: "" }, fri4am), true); // Mon to Fri
+  assert.equal(standingDue({ days: "1111000", lastRun: "" }, fri4am), false); // Mon to Thu
+  assert.equal(standingDue({ days: "1111100", lastRun: "2026-11-06" }, fri4am), false); // already booked today
+  assert.equal(standingDue({ days: "0000011", lastRun: "" }, new Date("2026-11-07T03:00:00Z")), true); // Saturday
+});

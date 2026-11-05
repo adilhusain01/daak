@@ -50,3 +50,16 @@ export const poolUnits = (meterUnits: number) => Math.floor((meterUnits * POOL_P
 export function poolPayout(declaredRupees: number, liableHoldbackRupees: number, capRupees = Number(process.env.POOL_CAP_RUPEES ?? 2000)) {
   return Math.max(0, Math.min(capRupees, declaredRupees) - liableHoldbackRupees);
 }
+
+/** The calendar date in India (IST, UTC+5:30) as YYYY-MM-DD: standing orders run on India's days. */
+export const istDate = (now = new Date()) => new Date(now.getTime() + 330 * 60_000).toISOString().slice(0, 10);
+
+/**
+ * Is a standing order due? `days` is seven characters, Monday first ("1111100" is Monday to Friday).
+ * It books once per Indian day.
+ */
+export function standingDue(o: { days: string; lastRun: string }, now = new Date()) {
+  const today = istDate(now);
+  const weekday = (new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7; // Monday = 0
+  return o.days[weekday] === "1" && o.lastRun !== today;
+}
