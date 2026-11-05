@@ -36,3 +36,4 @@ ETHGlobal asks every team to document how AI tools were used, file by file. This
 | Sponsor paperwork: `LICENSE`, `arkiv/*.md`, `web/scripts/arkiv-query.mts`, `docs/planning/`, `web/README.md` | Written with an AI coding assistant | Team decided the licence and to commit the planning and prompts |
 | Public read-only deliveries: `web/app/live`, `web/app/api/live`, nav | Written with an AI coding assistant | Team agreed partner judges must see the deliveries without the operator passcode, with private data left out |
 | Job offers: `web/app/api/job`, offers in `web/app/api/driver/[uid]/parcels`, answers on `/live` and the dashboard, app offer card | Written with an AI coding assistant | Team agreed no driver is put on a route without saying yes |
+| `docs/submission.md`, `docs/demo.md` (drafts) | Drafted with an AI coding assistant | The team records the video and gives the pitch in its own words |

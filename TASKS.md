@@ -17,7 +17,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [x] `arkiv/schema.md` up to date (standing orders, KYC columns, weight, fee in paise).
 - [x] `arkiv/swarm.md`: an example entity key with its sealed reference, the postage batch, upload and read code, reproduction steps. Demo timestamp and a fresh example after recording.
 - [x] `web/README.md`: replace the create-next-app text.
-- [ ] Submission form: per-partner "how we used it" and feedback for 0G, Hedera, Arkiv; select the Swarm bonus.
+- [ ] Submission form: paste from `docs/submission.md` (drafted: description, how it's made, per-partner use and feedback); select the Swarm bonus; fill the 0G lines once it runs.
 
 ## Hedera
 
@@ -48,7 +48,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Story and submission
 
-- [ ] The 4-minute live demo script and 3 to 4 slides (problem, demo, market and numbers, ask); rehearse with stickers and two phones; prepared answers for VC questions (licences, bus operators' consent, margin, moat).
+- [ ] Slides (4, at most four bullets each) and rehearsal with stickers and two phones. Script, video shot list and answers to judges' and VCs' questions are drafted in `docs/demo.md`.
 - [ ] The cinematic film as a 15-second opener at most (it cannot be the submission video: no voice).
 - [ ] Final README pass: 0G proof or the outage write-up, the business numbers.
 
