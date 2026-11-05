@@ -7,7 +7,7 @@ const [parcel = "test-parcel", driverB = "test-badge-b", base = "http://localhos
 const r = await agentBook(base, {
   parcel,
   label: "Cotton shirts, 2 dozen, Kanpur to Gorakhpur",
-  feeRupees: 180,
+
   route: [
     { hop: 1, from: "04:23:9b:52:1d:1c:91", to: driverB, place: "Lucknow Charbagh bus stand", km: 80 },
     { hop: 2, from: driverB, to: "retailer-gkp", place: "Gorakhpur, Ghosh Cloth House", km: 270 },

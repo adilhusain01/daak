@@ -1,5 +1,8 @@
-import { accountFor } from "./payout";
-import { chain } from "./hedera";
+import { accountFor, keyFor } from "./payout";
+import { TransferTransaction } from "@hiero-ledger/sdk";
+import { chain, hedera, logHandoff } from "./hedera";
+import { getPrefs } from "./arkiv";
+import { env } from "./env";
 import { cashOut } from "./upi";
 import type { Leg } from "./arkiv";
 
@@ -20,8 +23,32 @@ export async function cashOutAll(c: { code: string; route: Leg[] }) {
   const drivers = [...new Set(c.route.map((l) => l.from))];
   const out = [];
   for (const badge of drivers) {
-    const units = await balanceUnits(await accountFor(badge), feeTokenId!);
-    if (units > 0) out.push(await cashOut(c.code, badge, `Daak driver ${badge.slice(-5)}`, units));
+    const driverId = await accountFor(badge);
+    const units = await balanceUnits(driverId, feeTokenId!);
+    if (units <= 0) continue;
+    // Bachat: the share the driver chose goes to their locked pot first; the rest goes to UPI.
+    const { savePercent } = await getPrefs(badge).catch(() => ({ savePercent: 0 }));
+    const save = Math.floor((units * savePercent) / 100);
+    let bachat = null;
+    if (save > 0) {
+      const potId = await accountFor(`bachat:${badge}`);
+      // Savings must not pay Daak's 2%: the driver's share goes to the treasury (the fee lands back in the
+      // treasury, so it nets to zero) and the treasury, which the fee exempts, moves the full amount to the pot.
+      const toTreasury = await new TransferTransaction()
+        .addTokenTransfer(feeTokenId!, driverId, -save).addTokenTransfer(feeTokenId!, env.hederaOperatorId(), save)
+        .setTransactionMemo(`Daak ${c.code} Bachat ${savePercent}% in`)
+        .freezeWith(hedera()).sign(keyFor(badge));
+      await (await toTreasury.execute(hedera())).getReceipt(hedera());
+      const res = await new TransferTransaction()
+        .addTokenTransfer(feeTokenId!, env.hederaOperatorId(), -save).addTokenTransfer(feeTokenId!, potId, save)
+        .setTransactionMemo(`Daak ${c.code} Bachat ${savePercent}% to pot`)
+        .execute(hedera());
+      await res.getReceipt(hedera());
+      const potUnits = await balanceUnits(potId, feeTokenId!);
+      const hcs = await logHandoff({ t: "daak.bachat", code: c.code, driver: driverId, pot: potId, saved: save / 100, potRupees: potUnits / 100, tx: res.transactionId.toString() });
+      bachat = { potId, savedRupees: save / 100, potRupees: potUnits / 100, hcs };
+    }
+    out.push({ ...(await cashOut(c.code, badge, `Daak driver ${badge.slice(-5)}`, units - save)), bachat });
   }
   return out;
 }

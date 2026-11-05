@@ -42,6 +42,22 @@ export const Handoffs = defineSchema("daak.handoff", {
   geo: str().optional(), // "lat,lng,accuracyM" where the handoff happened
 });
 
+/** A driver's own choices, newest wins. */
+export const Prefs = defineSchema("daak.pref", {
+  uid: str().indexed(),
+  savePercent: i32(),
+  at: u64().indexed(),
+});
+
+export async function putPrefs(uid: string, savePercent: number) {
+  return keyOf(await arkivWrite().createEntity(Prefs, { uid, savePercent: i32(savePercent), at: u64(BigInt(Date.now())) }, { expiration: ExpirationTime.fromDays(30) }));
+}
+
+export async function getPrefs(uid: string) {
+  const r = await arkivRead().select({ savePercent: true, at: true }).from(Prefs).where(eq("uid", uid)).ownedBy(owner()).orderBy(desc("at")).limit(1).fetch();
+  return { savePercent: r.entities[0] ? Number(r.entities[0].savePercent.value) : 0 };
+}
+
 export type Leg = { hop: number; from: string; to: string; place: string; km?: number; lat?: number; lng?: number };
 
 const chainCfg = () => rabdi({ accessKey: env.arkivAccessKey() });

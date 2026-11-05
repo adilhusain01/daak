@@ -35,7 +35,12 @@ export async function POST(req: Request) {
   const photo = Buffer.from(await photoFile.arrayBuffer());
   const photoSha256 = createHash("sha256").update(photo).digest("hex");
 
-  const c = await consignmentByParcel(parcel);
+  // A booking written seconds ago can take a few seconds to show in Arkiv queries.
+  let c = await consignmentByParcel(parcel);
+  for (let i = 0; !c && i < 5; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    c = await consignmentByParcel(parcel);
+  }
   if (!c) {
     return NextResponse.json({ verdict: "held", message: "Yeh parcel register nahi hai. This parcel is not registered." }, { status: 404 });
   }
@@ -70,7 +75,7 @@ export async function POST(req: Request) {
   let hcs: { topicId: string; sequence: string } | undefined;
   try {
     hcs = await logHandoff({
-      t: "daak.handoff", code: c.code, hop: leg.hop, from: short(from), to: short(to),
+      t: "daak.handoff", code: c.code, hop: leg.hop, km: leg.km ?? null, from: short(from), to: short(to),
       verdict, zg: check?.requestId ?? null, photo: photoSha256, at, geo: spot ? [Number(spot.lat.toFixed(4)), Number(spot.lng.toFixed(4))] : null,
     });
   } catch (e) {
