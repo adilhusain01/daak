@@ -6,9 +6,9 @@ export type HandoffView = {
 export type LegView = { hop: number; place: string; km?: number | null };
 
 export const verdictText: Record<string, { en: string; hi: string; tone: string }> = {
-  green: { en: "Checked and handed over", hi: "Jaanch hui, saunpa gaya", tone: "text-ok" },
-  held: { en: "Payment held", hi: "Payment roka gaya", tone: "text-held" },
-  unchecked: { en: "Handed over, waiting for review", hi: "Saunpa gaya, jaanch baaki", tone: "text-wait" },
+  green: { en: "Checked and handed over", hi: "जाँच हुई, सौंपा गया", tone: "text-ok" },
+  held: { en: "Payment held", hi: "भुगतान रोका गया", tone: "text-held" },
+  unchecked: { en: "Handed over, waiting for the AI check or a review", hi: "सौंपा गया, जाँच बाकी", tone: "text-wait" },
 };
 
 export const when = (ms: number) =>

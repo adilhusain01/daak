@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SiteNav } from "@/components/site-nav";
 
 type Driver = {
   id: string; name: string; vehicle: string; proven: number; held: number; km: number; earnedRupees: number;
@@ -16,8 +16,8 @@ export default function Drivers() {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+      <SiteNav />
       <header className="mb-8 flex flex-col gap-1">
-        <Link href="/" className="text-sm text-muted-ink underline underline-offset-2">Deliveries</Link>
         <h1 className="text-3xl font-semibold tracking-tight">Drivers</h1>
         <p className="text-muted-ink">Ranked by proven deliveries. Every number is computed from the public handoff log, so anyone can check it.</p>
       </header>

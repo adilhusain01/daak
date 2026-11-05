@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SiteNav, ProofButton } from "@/components/site-nav";
+import { useState } from "react";
 import { arkivEntity, hashscanTopic, verdictText, when, type HandoffView, type LegView } from "@/lib/ui";
 
 type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number };
@@ -21,7 +23,18 @@ function status(r: Row) {
   return { text: `In transit, ${done} of ${r.route.length} stops`, tone: "text-ink" };
 }
 
+type Filter = "all" | "attention" | "transit" | "paid";
+
+/** A delivery needs the operator when a hop is held, or every hop is in but some were not checked by AI. */
+function needsAttention(r: Row) {
+  if (r.paidAt) return false;
+  const latest = new Map([...r.handoffs].sort((a, b) => a.at - b.at).map((h) => [h.hop, h.verdict]));
+  if ([...latest.values()].some((v) => v === "held")) return true;
+  return latest.size === r.route.length && [...latest.values()].some((v) => v === "unchecked");
+}
+
 export default function Dashboard() {
+  const [filter, setFilter] = useState<Filter>("all");
   const qc = useQueryClient();
   const { data, isLoading } = useQuery<Data>({ queryKey: ["consignments"], queryFn: () => fetch("/api/consignments").then((r) => r.json()) });
   const recheck = useMutation({
@@ -54,17 +67,36 @@ export default function Dashboard() {
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-      <header className="mb-8 flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Daak</h1>
+      <SiteNav />
+      <header className="mb-6 flex flex-col gap-1">
+        <h1 className="text-3xl font-semibold tracking-tight">Deliveries</h1>
         <p className="text-muted-ink">Every parcel, every handoff, every rupee owed to the drivers who carried it.</p>
-        <Link href="/drivers" className="text-sm underline underline-offset-2">Drivers ranked by proven record</Link>
       </header>
+
+      {data && (() => {
+        const counts = { all: data.consignments.length, attention: data.consignments.filter(needsAttention).length, transit: data.consignments.filter((r) => !r.paidAt && !needsAttention(r)).length, paid: data.consignments.filter((r) => r.paidAt).length };
+        const tab = (id: Filter, label: string, n: number) => (
+          <button key={id} onClick={() => setFilter(id)}
+            className={`flex flex-col items-start rounded-xl px-4 py-3 text-left transition-transform active:scale-[0.97] ${filter === id ? "bg-rule/70" : "bg-card-paper shadow-sm"}`}>
+            <span className="text-2xl font-semibold">{n}</span>
+            <span className="text-sm text-muted-ink">{label}</span>
+          </button>
+        );
+        return (
+          <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {tab("all", "All deliveries", counts.all)}
+            {tab("attention", "Need you", counts.attention)}
+            {tab("transit", "On the way", counts.transit)}
+            {tab("paid", "Paid out", counts.paid)}
+          </div>
+        );
+      })()}
 
       {isLoading && <p className="text-muted-ink">Loading deliveries...</p>}
       {data && data.consignments.length === 0 && <p className="text-muted-ink">No deliveries booked yet.</p>}
 
       <div className="flex flex-col gap-4">
-        {data?.consignments.map((r) => {
+        {data?.consignments.filter((r) => filter === "all" || (filter === "attention" ? needsAttention(r) : filter === "paid" ? Boolean(r.paidAt) : !r.paidAt && !needsAttention(r))).map((r) => {
           const s = status(r);
           const byHop = new Map([...r.handoffs].sort((a, b) => a.at - b.at).map((h) => [h.hop, h]));
           const reviewable = !r.paidAt && byHop.size === r.route.length && !r.handoffs.some((h) => h.verdict === "held");
@@ -97,12 +129,12 @@ export default function Dashboard() {
                         <div className="mt-1 flex flex-col gap-1 text-sm">
                           <span className={r.paidAt && h.verdict !== "held" ? "text-ok" : v?.tone}>{r.paidAt && h.verdict === "unchecked" ? "Approved by a reviewer and paid" : v?.en}, {when(h.at)}</span>
                           {h.reason && <span className="text-muted-ink">{h.reason}</span>}
-                          <span className="flex flex-wrap gap-x-4 gap-y-1 text-muted-ink">
-                            {h.hcs && <a className="underline underline-offset-2" href={hashscanTopic(h.hcs)} target="_blank">Hedera log</a>}
-                            <a className="underline underline-offset-2" href={arkivEntity(h.key)} target="_blank">Arkiv record</a>
-                            {h.zgRequestId && <span>0G receipt {h.zgRequestId.slice(0, 10)}</span>}
-                            {(h as HandoffView & { hasPhoto?: boolean }).hasPhoto && <a className="underline underline-offset-2" href={`/api/photo/${r.code}/${h.hop}`} target="_blank">Lid photo (Swarm, encrypted)</a>}
-                            {h.geo && <a className="underline underline-offset-2" href={`https://maps.google.com/?q=${h.geo.split(",").slice(0, 2).join(",")}`} target="_blank">Where</a>}
+                          <span className="mt-1 flex flex-wrap gap-2 text-muted-ink">
+                            {(h as HandoffView & { hasPhoto?: boolean }).hasPhoto && <ProofButton href={`/api/photo/${r.code}/${h.hop}`}>View lid photo</ProofButton>}
+                            {h.geo && <ProofButton href={`https://maps.google.com/?q=${h.geo.split(",").slice(0, 2).join(",")}`}>Open on map</ProofButton>}
+                            {h.hcs && <ProofButton href={hashscanTopic(h.hcs)}>Open Hedera log</ProofButton>}
+                            <ProofButton href={arkivEntity(h.key)}>Open Arkiv record</ProofButton>
+                            {h.zgRequestId && <span className="self-center text-xs">0G receipt {h.zgRequestId.slice(0, 10)}</span>}
                           </span>
                         </div>
                       ) : (
@@ -131,9 +163,9 @@ export default function Dashboard() {
               )}
 
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-ink">
-                  <Link className="underline underline-offset-2" href={`/track/${r.code}`}>Customer tracking page</Link>
-                  {r.schedule && <a className="underline underline-offset-2" href={`https://hashscan.io/testnet/schedule/${r.schedule}`} target="_blank">Scheduled payout</a>}
+                <div className="flex flex-wrap gap-2">
+                  <ProofButton href={`/track/${r.code}`}>Open customer tracking</ProofButton>
+                  {r.schedule && <ProofButton href={`https://hashscan.io/testnet/schedule/${r.schedule}`}>Open scheduled payout</ProofButton>}
                 </div>
                 {!r.paidAt && [...byHop.values()].some((h) => h.verdict === "unchecked") && (
                   <Button variant="outline" className="rounded-lg border-ink shadow-sm active:translate-y-px" disabled={recheck.isPending} onClick={() => recheck.mutate(r.code)}>
@@ -152,10 +184,10 @@ export default function Dashboard() {
       </div>
 
       {data?.chain.topicId && (
-        <footer className="mt-10 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-ink">
-          <a className="underline underline-offset-2" href={`https://hashscan.io/testnet/topic/${data.chain.topicId}`} target="_blank">Public handoff log</a>
-          {data.chain.feeTokenId && <a className="underline underline-offset-2" href={`https://hashscan.io/testnet/token/${data.chain.feeTokenId}`} target="_blank">Rupee credit token</a>}
-          {data.chain.escrowId && <a className="underline underline-offset-2" href={`https://hashscan.io/testnet/account/${data.chain.escrowId}`} target="_blank">Escrow</a>}
+        <footer className="mt-10 flex flex-wrap gap-2">
+          <ProofButton href={`https://hashscan.io/testnet/topic/${data.chain.topicId}`}>Open the public handoff log</ProofButton>
+          {data.chain.feeTokenId && <ProofButton href={`https://hashscan.io/testnet/token/${data.chain.feeTokenId}`}>Open the rupee credit token</ProofButton>}
+          {data.chain.escrowId && <ProofButton href={`https://hashscan.io/testnet/account/${data.chain.escrowId}`}>Open escrow</ProofButton>}
         </footer>
       )}
     </main>
