@@ -5,6 +5,13 @@ import path from "node:path";
 export type Stop = { id: string; name: string; lat?: number; lng?: number };
 export type NetLeg = { id: string; from: string; to: string; km: number };
 export const METER = { baseRupees: 5, perKmRupees: 0.5 };
+/**
+ * Daak's own fee per booking: a percentage of the meter, with a floor, on top of the meter.
+ * The meter goes to the drivers in full (less the 2% token fee).
+ */
+export const BOOKING_FEE = { percent: Number(process.env.BOOKING_FEE_PERCENT ?? 12), minRupees: Number(process.env.BOOKING_FEE_MIN_RUPEES ?? 5) };
+export const bookingFee = (meterRupees: number) =>
+  Math.max(BOOKING_FEE.minRupees, Math.round(meterRupees * BOOKING_FEE.percent) / 100);
 
 export function network(): { stops: Stop[]; legs: NetLeg[] } {
   return JSON.parse(readFileSync(path.join(process.cwd(), "data", "network.json"), "utf8"));

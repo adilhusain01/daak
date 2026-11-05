@@ -1,7 +1,7 @@
 import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { getBadge, badgesByRole } from "@/lib/arkiv";
-import { pathBetween, stopName, meterFee, METER } from "@/lib/network";
+import { pathBetween, stopName, meterFee, METER, BOOKING_FEE, bookingFee } from "@/lib/network";
 import { readLog, workHistory } from "@/lib/history";
 
 /**
@@ -28,6 +28,7 @@ export async function POST(req: Request) {
   const km = legs.reduce((sum, l) => sum + l.km, 0);
   return NextResponse.json({
     from: stopName(s.stop), to: `${r.name}, ${stopName(r.stop)}`, receiverName: r.name, km,
-    feeRupees: meterFee(km), meter: `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km`, stretches,
+    feeRupees: meterFee(km) + bookingFee(meterFee(km)), meterRupees: meterFee(km), bookingFeeRupees: bookingFee(meterFee(km)),
+    meter: `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km, plus ${BOOKING_FEE.percent}% booking`, stretches,
   });
 }

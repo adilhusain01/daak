@@ -45,24 +45,24 @@ The corridor: Kanpur to Lucknow to Gorakhpur for the story; the first live pilot
 |---|---|---|
 | Average distance | 150 km | assumption: one or two legs |
 | Meter (to drivers) | ₹5 + ₹0.50 × 150 = **₹80** | Daak's published meter |
-| Daak booking fee | **₹10** | assumption, from the meeting's "₹10 processing" |
+| Daak booking fee | 12% of ₹80 = **₹9.60** | 12% of the meter, at least ₹5 (configurable) |
 | Daak cut on payout | 2% of ₹80 = **₹1.60** | built into the dINR token |
-| **Sender pays** | **₹90** | |
-| **Daak revenue** | **₹11.60** (about 13% of GMV) | |
+| **Sender pays** | **₹89.60** | |
+| **Daak revenue** | **₹11.20** (about 12.5% of GMV) | |
 | Chain cost (Hedera, Arkiv, Swarm) | under ₹1 | assumption; Hedera fees are fractions of a cent per transaction |
 | 0G check | under ₹1 | assumption, to measure once 0G works |
 | UPI payout and SMS | about ₹3 | assumption; depends on the payout partner |
-| **Contribution per parcel** | **about ₹7** | |
+| **Contribution per parcel** | **about ₹6.50** | |
 
 ## Projection (illustrative, to be replaced by pilot data)
 
 | Stage | Corridors | Parcels a day | GMV a month | Daak revenue a month |
 |---|---|---|---|---|
-| Pilot (month 1) | 1 | 30 (3 senders × 10) | ₹81,000 | ₹10,400 |
-| Month 6 | 10 | 1,000 | ₹27 lakh | ₹3.5 lakh |
-| Month 12 | 40 | 6,000 | ₹1.62 crore | ₹20.9 lakh (₹2.5 crore a year) |
+| Pilot (month 1) | 1 | 30 (3 senders × 10) | ₹80,600 | ₹10,100 |
+| Month 6 | 10 | 1,000 | ₹26.9 lakh | ₹3.4 lakh |
+| Month 12 | 40 | 6,000 | ₹1.61 crore | ₹20.2 lakh (₹2.4 crore a year) |
 
-Revenue = parcels a day × 30 × ₹11.60; GMV = parcels a day × 30 × ₹90. Fintech (advances, Bachat partner fees) is upside and not counted.
+Revenue = parcels a day × 30 × ₹11.20; GMV = parcels a day × 30 × ₹89.60. The booking fee scales with distance, so longer corridors earn more per parcel. Fintech (advances, Bachat partner fees) is upside and not counted.
 
 The consistency argument: standing orders make the daily count predictable, so each new corridor adds a known block of volume rather than a hope.
 

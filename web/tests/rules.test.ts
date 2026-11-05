@@ -47,3 +47,10 @@ test("the route from Kanpur to Gorakhpur runs through Lucknow, and there is no r
   assert.deepEqual(pathBetween("LKO", "GKP").map((l) => l.id), ["LKO-GKP"]);
   assert.deepEqual(pathBetween("GKP", "KNP"), []);
 });
+
+test("Daak's booking fee is 12% of the meter, at least Rs 5", async () => {
+  const { bookingFee } = await import("../lib/network.ts");
+  assert.equal(bookingFee(180), 21.6);
+  assert.equal(bookingFee(80), 9.6);
+  assert.equal(bookingFee(20), 5);
+});

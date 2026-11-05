@@ -16,13 +16,13 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30.
 - [ ] Real paid deliveries during the hackathon (see `docs/business.md`, "Traction before Saturday").
 - [ ] Set `DATA_SINCE` in Vercel when the clean demo run starts.
 
-## Build
+## Build (order agreed: split payout, map, standing orders, weight)
 
 - [ ] When 0G works: the decision log on 0G Storage lands for real; the scanner pays for its own AI from a capped slice of each fee (0G "Agents That Pay for Themselves").
 - [ ] Split payout with a holdback: about half of each driver's share releases when the next person confirms receipt; the rest releases only when the parcel is delivered and confirmed; on loss or damage, the liable leg's holdback repays the customer.
 - [ ] Weight in the meter: km and weight band.
 - [ ] Standing orders: a sender's daily repeat booking on a fixed route.
-- [ ] Booking fee of ₹10 per parcel on top of the meter (see `docs/business.md`).
+- [x] Booking fee: 12% of the meter, at least ₹5, on top of the meter (configurable).
 - [ ] The network map page: India Post offices (pincode directory) and UP bus depots and corridors, with Daak's live routes on top.
 - [ ] Run and film a real three-hop delivery with the stickers.
 

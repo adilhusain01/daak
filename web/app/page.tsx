@@ -58,7 +58,7 @@ export default function Landing() {
             </li>
           ))}
         </ol>
-        <p className="mt-6 text-sm text-muted-ink">Daak meter: ₹5 + ₹0.50 a km. Kanpur to Gorakhpur, 350 km, ₹180, split by the kilometres each driver carried.</p>
+        <p className="mt-6 text-sm text-muted-ink">Daak meter: ₹5 + ₹0.50 a km, all of it to the drivers, split by the kilometres each one carried. Kanpur to Gorakhpur, 350 km: ₹180 to the drivers plus Daak's 12% booking fee, ₹21.60.</p>
       </section>
 
       <section aria-label="Live from the public log" className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
