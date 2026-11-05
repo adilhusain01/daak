@@ -137,7 +137,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex flex-col sm:items-end">
                   <span className={`text-sm font-medium ${s.tone}`}>{s.text}</span>
-                  <span className="text-sm text-muted-ink">Meter {r.meter}: ₹{r.feeRupees} for {totalKm} km, booked {when(r.createdAt)}</span>
+                  <span className="text-sm text-muted-ink">Meter {r.meter}: ₹{r.feeRupees.toFixed(2)} for {totalKm} km, booked {when(r.createdAt)}</span>
                 </div>
               </div>
 

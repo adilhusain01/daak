@@ -30,7 +30,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Product, from the people using it
 
-- [ ] Public read-only demo view of deliveries (no photos, no KYC), so partner judges see the dashboard without a passcode.
+- [x] Public read-only view of deliveries at `/live` (no photos, KYC, UPI or bank details), so partner judges see it without a passcode.
 - [ ] Drivers accept or decline a job before it is theirs.
 - [ ] Verify Ramesh's and Suresh's IDs before the demo (they show "ID not checked").
 - [ ] Optional: SMS or WhatsApp to the receiving shop when the parcel nears and arrives.

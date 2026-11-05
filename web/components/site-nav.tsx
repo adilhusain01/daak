@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-/** The operator's places: deliveries, drivers and the network map. The current one sits in, the other can be pressed. */
+/** Everywhere on the site: live deliveries, the network map, drivers, and the operator's dashboard. The current one sits in, the other can be pressed. */
 export function SiteNav({ className = "mb-8" }: { className?: string }) {
   const path = usePathname();
   const item = (href: string, label: string) => {
@@ -11,16 +11,16 @@ export function SiteNav({ className = "mb-8" }: { className?: string }) {
     return (
       <Link
         href={href}
-        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-transform active:scale-[0.97] ${on ? "bg-rule/70 text-ink" : "bg-card-paper text-ink shadow-sm"}`}
+        className={`rounded-lg px-2.5 py-1.5 text-sm sm:px-3 font-medium transition-transform active:scale-[0.97] ${on ? "bg-rule/70 text-ink" : "bg-card-paper text-ink shadow-sm"}`}
       >
         {label}
       </Link>
     );
   };
   return (
-    <nav className={`${className} flex items-center justify-between gap-3`}>
+    <nav className={`${className} flex flex-wrap items-center justify-between gap-3`}>
       <Link href="/" className="text-2xl font-semibold tracking-tight">Daak</Link>
-      <div className="flex gap-2">{item("/network", "Network")}{item("/drivers", "Drivers")}{item("/ops", "Deliveries")}</div>
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">{item("/live", "Live")}{item("/network", "Network")}{item("/drivers", "Drivers")}{item("/ops", "Operator")}</div>
     </nav>
   );
 }
