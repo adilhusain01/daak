@@ -25,7 +25,7 @@ export default function Landing() {
   const { data: s } = useQuery<Stats>({ queryKey: ["stats"], queryFn: () => fetch("/api/stats").then((r) => r.json()), refetchInterval: 30000 });
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6">
+    <main className="w-full px-4 pb-16 pt-8 sm:px-6 lg:px-10">
       <nav className="mb-14 flex items-center justify-between gap-3">
         <span className="text-2xl font-semibold tracking-tight">Daak</span>
         <div className="flex gap-2">
@@ -36,7 +36,7 @@ export default function Landing() {
       </nav>
 
       <section className="flex flex-col gap-5">
-        <h1 className="max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">Every parcel handoff proven. Every driver paid by the kilometre.</h1>
+        <h1 className="max-w-5xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">Every parcel handoff proven. Every driver paid by the kilometre.</h1>
         <p className="max-w-2xl text-lg text-muted-ink">For goods that ride two buses and three pairs of hands, from a Kanpur shop to a Gorakhpur store. Named after the dak relay of the Grand Trunk Road.</p>
         <form onSubmit={(e) => { e.preventDefault(); if (code.trim()) router.push(`/track/${code.trim().toUpperCase()}`); }} className="flex w-full max-w-md gap-2">
           <label htmlFor="code" className="sr-only">Parcel code</label>

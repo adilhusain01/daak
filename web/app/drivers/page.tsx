@@ -16,14 +16,14 @@ export default function Drivers() {
   const { data, isLoading } = useQuery<{ drivers: Driver[] }>({ queryKey: ["drivers"], queryFn: () => fetch("/api/drivers").then((r) => r.json()) });
   const [open, setOpen] = useState<string | null>(null);
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+    <main className="w-full px-4 py-8 sm:px-6 lg:px-10">
       <SiteNav />
       <header className="mb-8 flex flex-col gap-1">
         <h1 className="text-3xl font-semibold tracking-tight">Drivers</h1>
         <p className="text-muted-ink">Ranked by proven deliveries. Every number is computed from the public handoff log, so anyone can check it.</p>
       </header>
       {isLoading && <p className="text-muted-ink">Reading the log...</p>}
-      <ol className="flex flex-col gap-3">
+      <ol className="grid gap-3 lg:grid-cols-2">
         {data?.drivers.map((d, i) => (
           <li key={d.id} className="rounded-xl border border-rule bg-card-paper p-4 sm:p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

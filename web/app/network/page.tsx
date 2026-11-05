@@ -107,11 +107,11 @@ export default function NetworkMap() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+    <main className="w-full px-4 py-8 sm:px-6 lg:px-10">
       <SiteNav />
       <header className="mb-6 flex flex-col gap-1">
         <h1 className="text-3xl font-semibold tracking-tight">The network is already built</h1>
-        <p className="text-muted-ink">
+        <p className="max-w-3xl text-muted-ink">
           India Post already runs a relay across the country, from head offices to sub offices to branch offices, and state buses link the towns between them.
           Daak puts a meter, a receipt and a payout on that network. It starts with one corridor in Uttar Pradesh and grows across North India.
         </p>
@@ -137,7 +137,7 @@ export default function NetworkMap() {
         {key("daak", "Daak corridor", T.ok)}
       </div>
 
-      <div ref={box} className="h-[60vh] min-h-[360px] w-full overflow-hidden rounded-xl border border-rule bg-card-paper" />
+      <div ref={box} className="h-[70vh] min-h-[360px] w-full overflow-hidden rounded-xl border border-rule bg-card-paper" />
 
       <section className="mt-6 grid gap-4 text-sm sm:grid-cols-2">
         <div className="rounded-xl border border-rule bg-card-paper p-4">

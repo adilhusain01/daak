@@ -27,10 +27,10 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
     },
   });
 
-  if (isLoading) return <main className="mx-auto max-w-xl px-4 py-10 text-muted-ink">Loading parcel {code}...</main>;
+  if (isLoading) return <main className="w-full px-4 py-10 sm:px-6 lg:px-10 text-muted-ink">Loading parcel {code}...</main>;
   if (isError || !data) {
     return (
-      <main className="mx-auto max-w-xl px-4 py-10">
+      <main className="w-full px-4 py-10 sm:px-6 lg:px-10">
         <p className="text-xl font-semibold">पार्सल {code} नहीं मिला</p>
         <p className="mt-1 text-muted-ink">We could not find parcel {code}. Check the code written on the lid.</p>
       </main>
@@ -54,7 +54,7 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
         : { tone: "bg-ink", hi: "बुक हो गया, पिकअप का इंतज़ार", en: "Booked, waiting for pickup", sub: next ? `First stop: ${next.place}.` : "" };
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <main className="w-full px-4 py-8 sm:px-6 lg:px-10">
       <p className="text-sm text-muted-ink">Daak · पार्सल {data.code}</p>
       <section className={`mt-3 rounded-2xl p-6 text-paper ${hero.tone}`}>
         <p className="text-2xl font-semibold">{hero.hi}</p>

@@ -84,7 +84,7 @@ export default function Dashboard() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+    <main className="w-full px-4 py-8 sm:px-6 lg:px-10">
       <SiteNav />
       <header className="mb-6 flex flex-col gap-1">
         <h1 className="text-3xl font-semibold tracking-tight">Deliveries</h1>
@@ -114,7 +114,7 @@ export default function Dashboard() {
       {isLoading && <p className="text-muted-ink">Loading deliveries...</p>}
       {data && data.consignments.length === 0 && <p className="text-muted-ink">No deliveries booked yet.</p>}
 
-      <div className="flex flex-col gap-4">
+      <div className="grid items-start gap-4 xl:grid-cols-2">
         {data?.consignments.filter((r) => filter === "all" || (filter === "attention" ? needsAttention(r) : filter === "paid" ? Boolean(r.paidAt) : !r.paidAt && !needsAttention(r))).map((r) => {
           const s = status(r);
           const byHop = new Map([...r.handoffs].sort((a, b) => a.at - b.at).map((h) => [h.hop, h]));
