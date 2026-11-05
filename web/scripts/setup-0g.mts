@@ -7,12 +7,19 @@ import { checkParcel } from "../lib/zg.ts";
 
 const wallet = new ethers.Wallet(process.env.ZG_PRIVATE_KEY!, new ethers.JsonRpcProvider(process.env.ZG_RPC ?? "https://evmrpc.0g.ai"));
 const broker = await createZGComputeNetworkBroker(wallet);
-console.log("wallet", wallet.address, ethers.formatEther(await wallet.provider!.getBalance(wallet.address)), "0G");
+const bal = await wallet.provider!.getBalance(wallet.address);
+console.log("wallet", wallet.address, ethers.formatEther(bal), "0G");
+let funded = bal > 0n;
 try {
   const l = await broker.ledger.getLedger();
   console.log("ledger", JSON.stringify(l, (_k, v) => (typeof v === "bigint" ? ethers.formatEther(v) : v)));
+  funded = true;
 } catch (e) {
   console.log("no ledger yet:", (e as Error).message.slice(0, 120));
+}
+if (!funded) {
+  console.log("No 0G and no compute account yet: nothing to set up. Waiting for credits.");
+  process.exit(0);
 }
 const provider = process.env.ZG_VISION_PROVIDER ?? "0x1B3AAef3ae5050EEE04ea38cD4B087472BD85EB0";
 await broker.inference.acknowledgeProviderSigner(provider).catch((e: Error) => console.log("acknowledge:", e.message.slice(0, 120)));
