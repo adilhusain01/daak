@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -42,6 +44,8 @@ class MainActivity : ComponentActivity() {
     private var me by mutableStateOf<Tap?>(null)
     private var note by mutableStateOf<String?>(null)
     private var queued by mutableStateOf(0)
+    private var work by mutableStateOf<Work?>(null)
+    private var savingBusy by mutableStateOf(false)
 
     private lateinit var nfc: Nfc
     private lateinit var voice: Voice
@@ -93,6 +97,7 @@ class MainActivity : ComponentActivity() {
             Screen.SignIn -> {
                 me = tap
                 screen = Screen.Home
+                loadWork()
                 voice.buzz(); voice.say("Namaste. Badge pehchana gaya.")
             }
             is Screen.Pack -> when {
@@ -133,6 +138,40 @@ class MainActivity : ComponentActivity() {
                 else -> Unit
             }
             else -> Unit
+        }
+    }
+
+    private fun loadWork() {
+        val uid = me?.uid ?: return
+        thread { val w = runCatching { Api.work(uid) }.getOrNull(); runOnUiThread { work = w } }
+    }
+
+    private fun toggleBachat() {
+        val uid = me?.uid ?: return
+        val next = if ((work?.savePercent ?: 0) > 0) 0 else 5
+        savingBusy = true
+        thread {
+            val ok = runCatching { Api.setSave(uid, next) }.isSuccess
+            runOnUiThread {
+                savingBusy = false
+                if (ok) { work = work?.copy(savePercent = next); voice.buzz(); voice.say(if (next > 0) "Bachat chalu. Har payment ka paanch pratishat bachega." else "Bachat band.") }
+                else note = "Could not save. Try again."
+            }
+        }
+    }
+
+    @Composable
+    private fun WorkCard(w: Work?) {
+        Column(
+            Modifier.fillMaxWidth().border(1.dp, Tokens.line, androidx.compose.foundation.shape.RoundedCornerShape(Tokens.radius)).padding(Tokens.pad),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (w == null) { Body("Loading your work record...", Tokens.muted, 16); return@Column }
+            Body("My work · Mera kaam", Tokens.muted, 15)
+            Body("${w.proven} deliveries proven · ${w.km} km · ${w.cleanPercent}% clean")
+            Body("Earned ₹${"%.2f".format(w.earned)}", Tokens.green)
+            Body("Bachat ₹${"%.2f".format(w.bachat)}" + if (w.savePercent > 0) " · saving ${w.savePercent}% of each payout" else " · off", Tokens.ink, 16)
+            if (w.advance > 0) Body("Fuel advance available: ₹${w.advance}", Tokens.green) else Body("Fuel advance: ${w.advanceReason}", Tokens.muted, 15)
         }
     }
 
@@ -185,7 +224,13 @@ class MainActivity : ComponentActivity() {
                     if (!nfc.enabled) Body("NFC is off. Turn it on in Settings.", Tokens.red)
                 }
                 Screen.Home -> {
-                    Body("Badge ${me?.uid?.takeLast(8)}", Tokens.muted, 15)
+                    Body(work?.name ?: "Badge ${me?.uid?.takeLast(8)}", Tokens.muted, 15)
+                    WorkCard(work)
+                    Action(
+                        if ((work?.savePercent ?: 0) > 0) "Bachat is on (5%)" else "Turn on Bachat (save 5%)",
+                        if (savingBusy) "Saving..." else "Har payment se bachat",
+                        if ((work?.savePercent ?: 0) > 0) Tokens.green else Tokens.ink,
+                    ) { if (!savingBusy) toggleBachat() }
                     Action("Hand over a parcel", "Parcel saunpiye") { screen = Screen.Handoff() }
                     Action("Pack a new parcel (shop)", "Naya parcel book kijiye") { screen = Screen.Pack() }
                     if (queued > 0) Body("$queued handoff(s) waiting for signal", Tokens.amber)
@@ -220,7 +265,7 @@ class MainActivity : ComponentActivity() {
                     Action(head, s.verdict.message, color) {}
                     s.verdict.code?.let { Body("Consignment $it" + (s.verdict.hop?.let { h -> ", hop $h" } ?: ""), Tokens.muted, 15) }
                     Action("Next parcel", "Agla parcel") { screen = Screen.Handoff() }
-                    Action("Home", color = Tokens.muted) { screen = Screen.Home }
+                    Action("Home", color = Tokens.muted) { screen = Screen.Home; loadWork() }
                 }
             }
             note?.let { Body(it, Tokens.red) }

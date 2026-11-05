@@ -13,10 +13,42 @@ data class Verdict(val verdict: String, val message: String, val code: String?, 
 
 data class Handoff(val parcel: String, val from: String, val to: String, val photo: File, val at: Long = System.currentTimeMillis(), val spot: Spot? = null)
 
+/** What a driver sees about their own work, read from the server (which reads the public Hedera log). */
+data class Work(
+    val name: String?, val proven: Int, val km: Int, val earned: Double, val bachat: Double,
+    val cleanPercent: Int, val advance: Int, val advanceReason: String, val savePercent: Int,
+)
+
 data class Booking(val code: String, val trackUrl: String, val shares: List<Double>)
 
 object Api {
     private val base = BuildConfig.API_BASE
+
+    private fun enc(s: String) = java.net.URLEncoder.encode(s, "UTF-8")
+
+    fun work(uid: String): Work {
+        val conn = URL("$base/api/driver/${enc(uid)}").openConnection() as HttpURLConnection
+        conn.connectTimeout = 8000
+        conn.readTimeout = 30000
+        val j = JSONObject(conn.inputStream.bufferedReader().readText())
+        val adv = j.getJSONObject("advance")
+        return Work(
+            j.optString("name").ifEmpty { null }, j.getInt("proven"), j.getInt("km"), j.getDouble("earnedRupees"),
+            j.getDouble("bachatRupees"), (j.getDouble("cleanRate") * 100).toInt(), adv.getInt("eligibleRupees"),
+            adv.getString("reason"), j.getInt("savePercent"),
+        )
+    }
+
+    fun setSave(uid: String, percent: Int) {
+        val conn = URL("$base/api/driver/${enc(uid)}").openConnection() as HttpURLConnection
+        conn.requestMethod = "POST"
+        conn.connectTimeout = 8000
+        conn.readTimeout = 30000
+        conn.doOutput = true
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.outputStream.use { it.write(JSONObject().put("savePercent", percent).toString().toByteArray()) }
+        if (conn.responseCode !in 200..299) error("server ${conn.responseCode}")
+    }
 
     /** The shop's agent books and pays for this parcel's delivery; returns the link to write on its tag. */
     fun pack(parcel: String): Booking {
