@@ -5,7 +5,7 @@ import { env } from "./env";
 
 /** Public chain settings created by scripts (topic and token ids). Safe to commit. */
 const chainFile = path.join(process.cwd(), "data", "chain.json");
-export type Chain = { topicId?: string; feeTokenId?: string };
+export type Chain = { topicId?: string; feeTokenId?: string; escrowId?: string };
 export function chain(): Chain {
   return existsSync(chainFile) ? JSON.parse(readFileSync(chainFile, "utf8")) : {};
 }
