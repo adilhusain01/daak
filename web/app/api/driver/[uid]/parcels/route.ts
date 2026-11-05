@@ -24,7 +24,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
       const start = c.route.find((l) => l.to === uid)?.place ?? "";
       offers.push({
         code: c.code, label: c.label, place: mine.place, action: "offer", hop: mine.hop,
-        text: `${start.split(",")[0]} to ${mine.place.split(",")[0]}, ${mine.km} km, Rs ${((pay?.units ?? 0) / 100).toFixed(2)} (${pay?.pct ?? 50}% at handover)`,
+        text: `${start.split(",")[0]} to ${mine.place.split(",")[0]}, ${mine.km} km, ₹${((pay?.units ?? 0) / 100).toFixed(2)} (${pay?.pct ?? 50}% at handover)`,
       });
     }
     const leg = c.route.find((l) => !done.has(l.hop));

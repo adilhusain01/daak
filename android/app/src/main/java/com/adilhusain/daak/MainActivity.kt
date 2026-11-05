@@ -606,7 +606,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun OfferCard(offers: List<Todo>) {
-        offers.take(3).forEach { o ->
+        offers.take(2).forEach { o ->
             Sheet {
                 Heading("नया काम", "New job · ${o.code}")
                 Body(o.text, Tokens.ink, 17, FontWeight.Medium)
