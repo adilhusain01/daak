@@ -21,7 +21,7 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
   if (isLoading) return <main className="mx-auto max-w-xl px-4 py-10 text-muted-ink">Loading...</main>;
   if (isError || !data) return <main className="mx-auto max-w-xl px-4 py-10">We could not find parcel {code}.</main>;
 
-  const byHop = new Map(data.handoffs.map((h) => [h.hop, h]));
+  const byHop = new Map([...data.handoffs].sort((a, b) => a.at - b.at).map((h) => [h.hop, h]));
   const reached = data.route.filter((l) => byHop.has(l.hop));
   const last = reached.at(-1);
   const delivered = reached.length === data.route.length;

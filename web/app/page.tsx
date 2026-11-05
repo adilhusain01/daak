@@ -24,6 +24,23 @@ function status(r: Row) {
 export default function Dashboard() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery<Data>({ queryKey: ["consignments"], queryFn: () => fetch("/api/consignments").then((r) => r.json()) });
+  const recheck = useMutation({
+    mutationFn: async (code: string) => {
+      const r = await fetch("/api/recheck", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Recheck failed");
+      return j as { results: { hop: number; verdict: string; error?: string }[]; payout?: string };
+    },
+    onSuccess: (j, code) => {
+      const green = j.results.filter((x) => x.verdict === "green").length;
+      const still = j.results.filter((x) => x.verdict === "unchecked").length;
+      if (j.payout) toast.success(`${code}: 0G checked it, drivers paid`);
+      else if (still) toast.error(`${code}: 0G still not answering (${still} hop${still > 1 ? "s" : ""} waiting)`);
+      else toast.success(`${code}: ${green} hop(s) checked by 0G`);
+      qc.invalidateQueries({ queryKey: ["consignments"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
   const approve = useMutation({
     mutationFn: async (code: string) => {
       const r = await fetch("/api/review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, reviewer: "operator" }) });
@@ -49,7 +66,7 @@ export default function Dashboard() {
       <div className="flex flex-col gap-4">
         {data?.consignments.map((r) => {
           const s = status(r);
-          const byHop = new Map(r.handoffs.map((h) => [h.hop, h]));
+          const byHop = new Map([...r.handoffs].sort((a, b) => a.at - b.at).map((h) => [h.hop, h]));
           const reviewable = !r.paidAt && byHop.size === r.route.length && !r.handoffs.some((h) => h.verdict === "held");
           const totalKm = r.route.reduce((a, l) => a + (l.km ?? 0), 0);
           return (
@@ -118,6 +135,11 @@ export default function Dashboard() {
                   <Link className="underline underline-offset-2" href={`/track/${r.code}`}>Customer tracking page</Link>
                   {r.schedule && <a className="underline underline-offset-2" href={`https://hashscan.io/testnet/schedule/${r.schedule}`} target="_blank">Scheduled payout</a>}
                 </div>
+                {!r.paidAt && [...byHop.values()].some((h) => h.verdict === "unchecked") && (
+                  <Button variant="outline" className="rounded-lg border-ink shadow-sm active:translate-y-px" disabled={recheck.isPending} onClick={() => recheck.mutate(r.code)}>
+                    {recheck.isPending && recheck.variables === r.code ? "Asking 0G..." : "Recheck with 0G"}
+                  </Button>
+                )}
                 {reviewable && (
                   <Button className="rounded-lg bg-ink text-paper shadow-sm active:translate-y-px" disabled={approve.isPending} onClick={() => approve.mutate(r.code)}>
                     {approve.isPending && approve.variables === r.code ? "Paying..." : "Approve and pay drivers"}
