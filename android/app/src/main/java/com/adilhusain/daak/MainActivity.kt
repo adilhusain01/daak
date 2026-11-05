@@ -56,6 +56,9 @@ sealed interface Screen {
         val parcel: Tap? = null, val receivers: List<Receiver>? = null, val receiver: Receiver? = null,
         val plan: Plan? = null, val picks: List<Int> = emptyList(), val loading: Boolean = false, val paying: Boolean = false,
         val booking: Booking? = null, val written: Boolean = false, val problem: String? = null,
+        /** Today's daily order waiting for this parcel (code and receiver), and whether this booking now repeats daily. */
+        val dailyCode: String? = null, val dailyTo: String? = null, val drivers: List<String> = emptyList(),
+        val dailySaved: Boolean = false, val dailyBusy: Boolean = false,
     ) : Screen
     data class Look(val parcel: Tap? = null, val info: ParcelInfo? = null, val loading: Boolean = false) : Screen
 }
@@ -67,6 +70,7 @@ class MainActivity : ComponentActivity() {
     private var queued by mutableStateOf(0)
     private var work by mutableStateOf<Work?>(null)
     private var todo by mutableStateOf<List<Todo>?>(null)
+    private var daily by mutableStateOf<DailyList?>(null)
     private var savingBusy by mutableStateOf(false)
 
     private lateinit var nfc: Nfc
@@ -126,6 +130,7 @@ class MainActivity : ComponentActivity() {
         screen = Screen.Home
         val p = me ?: return
         if (p.role == "driver") loadWork()
+        if (p.role == "sender") thread { val d = runCatching { Api.daily(p.uid) }.getOrNull(); runOnUiThread { daily = d } }
         thread { val t = runCatching { Api.todo(p.uid) }.getOrNull(); runOnUiThread { todo = t } }
     }
 
@@ -312,9 +317,11 @@ class MainActivity : ComponentActivity() {
         screen = Screen.Pack(parcel = tap, loading = true)
         thread {
             val known = runCatching { Api.parcel(tap.uid) }.getOrNull()
+            val waiting = if (known?.registered == true) null else runCatching { Api.daily(me!!.uid) }.getOrNull()
             val receivers = runCatching { Api.receivers() }.getOrNull()
             runOnUiThread {
                 when {
+                    waiting?.waitingCode != null -> { screen = Screen.Pack(parcel = tap, receivers = receivers, dailyCode = waiting.waitingCode, dailyTo = waiting.waitingReceiver); voice.buzz(); voice.say("आज का रोज़ का पार्सल बुक है। इसे जोड़िए।") }
                     known?.registered == true && known.delivered -> { screen = Screen.Pack(problem = "${known.code} was already delivered. Use a new sticker for a new parcel."); voice.buzz(false) }
                     known?.registered == true -> { startHandoff(tap) } // already booked: the shop's next job is the pickup handoff
                     receivers == null -> { screen = Screen.Pack(problem = "इंटरनेट नहीं मिला। No internet; booking needs signal."); voice.buzz(false) }
@@ -349,9 +356,37 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 r.onSuccess { b ->
                     nfc.pendingWrite = b.trackUrl
-                    screen = s.copy(paying = false, booking = b)
+                    screen = s.copy(paying = false, booking = b, drivers = drivers)
                     voice.buzz(); voice.say("बुकिंग हो गई। कोड ढक्कन पर लिखिए, फिर पार्सल दोबारा लगाइए।")
                 }.onFailure { screen = s.copy(paying = false, problem = "बुकिंग नहीं हुई: ${it.message}. Nothing was charged.") ; voice.buzz(false) }
+            }
+        }
+    }
+
+    /** The shop's daily order was booked and paid this morning; this parcel becomes it. */
+    private fun attachDaily(s: Screen.Pack) {
+        screen = s.copy(paying = true)
+        thread {
+            val r = runCatching { Api.attachDaily(me!!.uid, s.parcel!!.uid) }
+            runOnUiThread {
+                r.onSuccess { code ->
+                    val b = Booking(code, "${Api.base}/track/$code", emptyList())
+                    nfc.pendingWrite = b.trackUrl
+                    screen = s.copy(paying = false, booking = b, dailySaved = true)
+                    voice.buzz(); voice.say("जुड़ गया। कोड ढक्कन पर लिखिए, फिर पार्सल दोबारा लगाइए।")
+                }.onFailure { screen = s.copy(paying = false, problem = it.message); voice.buzz(false) }
+            }
+        }
+    }
+
+    private fun makeDaily(s: Screen.Pack) {
+        screen = s.copy(dailyBusy = true)
+        thread {
+            val r = runCatching { Api.makeDaily(me!!.uid, s.receiver!!.uid, s.drivers) }
+            runOnUiThread {
+                val now = screen as? Screen.Pack ?: return@runOnUiThread
+                r.onSuccess { screen = now.copy(dailyBusy = false, dailySaved = true); voice.buzz(); voice.say("हर दिन सुबह चार बजे बुक होगा।") }
+                    .onFailure { screen = now.copy(dailyBusy = false, problem = it.message); voice.buzz(false) }
             }
         }
     }
@@ -490,6 +525,7 @@ class MainActivity : ComponentActivity() {
     private fun HomeScreen() {
         val p = me ?: return
         if (p.role == "driver") WorkCard(work)
+        if (p.role == "sender") DailyCard()
         TodoCard()
         when (p.role) {
             "driver" -> {
@@ -513,6 +549,17 @@ class MainActivity : ComponentActivity() {
         if (queued > 0) Sheet { Bi("$queued हैंडऑफ़ सिग्नल का इंतज़ार कर रहे हैं", "$queued handoff(s) waiting for signal; they send by themselves", Tokens.amber, 18) }
         Spacer(Modifier.height(8.dp))
         Secondary("बैज बदलें · Switch badge") { signOut() }
+    }
+
+    @Composable
+    private fun DailyCard() {
+        val d = daily ?: return
+        if (d.orders.isEmpty()) return
+        Sheet {
+            Body("रोज़ के पार्सल · Daily orders", Tokens.muted, 15)
+            d.waitingCode?.let { Body("आज का पार्सल बुक है: ${d.waitingReceiver} ($it). Tap the parcel to attach it.", Tokens.green, 17, FontWeight.SemiBold) }
+            d.orders.filter { it.active }.take(4).forEach { Body("${it.receiver} · ${it.daysText}${it.lastCode?.let { c -> " · last $c" } ?: " · books at 4 am"}", size = 17, weight = FontWeight.Medium) }
+        }
     }
 
     @Composable
@@ -576,6 +623,15 @@ class MainActivity : ComponentActivity() {
     private fun PackScreen(s: Screen.Pack) {
         val plan = s.plan
         Step(1, "नया पार्सल लगाइए", "Tap the new parcel", when { s.parcel != null -> "Parcel ${s.parcel.uid.takeLast(8)}"; else -> null }, s.parcel == null && s.problem == null)
+        if (s.dailyCode != null && s.booking == null) {
+            Sheet {
+                Body("रोज़ का पार्सल · Today's daily order", Tokens.green, 16, FontWeight.SemiBold)
+                Bi("${s.dailyTo} के लिए आज की बुकिंग हो चुकी है", "Daak booked and paid today's parcel to ${s.dailyTo} at 4 am (${s.dailyCode}). Attach this parcel to it.", size = 18)
+            }
+            if (s.paying) Body("Attaching…", Tokens.muted, 16)
+            else Action("इसे जोड़ें", "Use this parcel for today's order") { attachDaily(s) }
+            Body("या नया पार्सल बुक करें · Or book a different parcel below", Tokens.muted, 15)
+        }
         if (s.receivers != null && s.booking == null) {
             Body("किसे भेजना है? · Send to", Tokens.muted, 15)
             s.receivers.forEach { r -> Choice(r.name, r.stopName, s.receiver?.uid == r.uid) { if (!s.loading && !s.paying) chooseReceiver(s, r) } }
@@ -609,6 +665,10 @@ class MainActivity : ComponentActivity() {
             }
             Step(2, "पार्सल दोबारा लगाइए", "Tap the parcel again to attach its tracking link", if (s.written && s.problem == null) "Link attached" else null, !s.written)
             if (s.written) Sheet { Bi("अब ड्राइवर को सौंपिए", "Next: when the driver comes, tap this parcel and the driver's badge to hand it over.", size = 18) }
+            if (s.receiver != null && s.drivers.isNotEmpty()) {
+                if (s.dailySaved) Body("रोज़ जाएगा · Repeats Monday to Saturday. Daak books and pays it at 4 am; you only tap that day's parcel.", Tokens.green, 16, FontWeight.SemiBold)
+                else Secondary(if (s.dailyBusy) "Saving…" else "हर दिन भेजें · Send this every day (Mon to Sat)") { if (!s.dailyBusy) makeDaily(s) }
+            }
         }
         s.problem?.let { Verdict(Tokens.amber, "ध्यान दें", "Please note", it) }
         if (s.written || (s.problem != null && s.booking != null)) Action("अगला पार्सल", "Book another parcel") { nfc.pendingWrite = null; screen = Screen.Pack() }

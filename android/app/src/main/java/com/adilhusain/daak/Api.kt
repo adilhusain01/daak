@@ -39,9 +39,12 @@ fun badgeHash(uid: String): String =
     java.security.MessageDigest.getInstance("SHA-256").digest(uid.toByteArray()).joinToString("") { "%02x".format(it) }.take(12)
 
 data class Booking(val code: String, val trackUrl: String, val shares: List<Double>)
+/** A shop's standing order, and today's booking of one that waits for its parcel. */
+data class Daily(val id: String, val receiver: String, val daysText: String, val active: Boolean, val lastRun: String?, val lastCode: String?)
+data class DailyList(val orders: List<Daily>, val waitingCode: String?, val waitingReceiver: String?)
 
 object Api {
-    private val base = BuildConfig.API_BASE
+    val base: String = BuildConfig.API_BASE
 
     private fun enc(s: String) = java.net.URLEncoder.encode(s, "UTF-8")
 
@@ -115,6 +118,34 @@ object Api {
         val e = j.optJSONArray("errors") ?: return listOf("Server ${code}")
         return List(e.length()) { e.getString(it) }
     }
+
+    fun daily(sender: String): DailyList {
+        val (code, j) = get("/api/standing?sender=${enc(sender)}")
+        if (code !in 200..299) error(j.optString("error", "server $code"))
+        val a = j.getJSONArray("orders")
+        val w = j.optJSONObject("waiting")
+        return DailyList(
+            List(a.length()) { a.getJSONObject(it).let { o ->
+                Daily(o.getString("id"), o.getString("receiver"), o.getString("daysText"), o.getBoolean("active"),
+                    if (o.isNull("lastRun")) null else o.getString("lastRun"), if (o.isNull("lastCode")) null else o.getString("lastCode"))
+            } },
+            w?.getString("code"), w?.getString("receiver"),
+        )
+    }
+
+    /** Makes a booking repeat Monday to Saturday; Daak's agent books and pays it each morning. */
+    fun makeDaily(sender: String, receiver: String, drivers: List<String>) {
+        val (code, j) = post("/api/standing", JSONObject().put("sender", sender).put("receiver", receiver).put("drivers", org.json.JSONArray(drivers)).put("days", "1111110"), 60000)
+        if (code !in 200..299) error(j.optString("error", "server $code"))
+    }
+
+    /** Attaches the tapped parcel to today's daily booking; returns its code. */
+    fun attachDaily(sender: String, parcel: String): String {
+        val (code, j) = post("/api/standing/attach", JSONObject().put("sender", sender).put("parcel", parcel), 60000)
+        if (code !in 200..299) error(j.optString("error", "server $code"))
+        return j.getString("code")
+    }
+
 
     fun registerDevice(uid: String, devicePub: String) {
         post("/api/device", JSONObject().put("uid", uid).put("devicePub", devicePub))
