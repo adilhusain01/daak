@@ -52,7 +52,9 @@ Daak makes every handoff provable with a tap and a photo, has a sealed AI check 
 | Protection pool | [0.0.11330722](https://hashscan.io/testnet/account/0.0.11330722) |
 | Arkiv owner wallet (Rabdi) | `0x610FdB41DA83138615C317c89fd9EB09271a46fe` |
 
-Deployed web app: https://web-ivory-delta-46.vercel.app (landing at `/`, operator dashboard at `/ops`, drivers at `/drivers`, tracking at `/track/<code>`).
+Deployed web app: https://web-ivory-delta-46.vercel.app (landing at `/`, operator dashboard at `/ops`, drivers at `/drivers`, the network map at `/network`, tracking at `/track/<code>`).
+
+The network map draws India Post's 1,43,609 offices (All India Pincode Directory, GODL-India), 6,021 bus stations from OpenStreetMap (ODbL) and Daak's corridor along the road (OSRM), on an OpenFreeMap basemap. The data is baked into `web/public/map/india.json`, so the page calls no outside API except the map tiles.
 
 ## Layout
 

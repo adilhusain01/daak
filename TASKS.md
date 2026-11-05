@@ -25,7 +25,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30.
 - [ ] Weight in the meter: km and weight band.
 - [ ] Standing orders: a sender's daily repeat booking on a fixed route.
 - [x] Booking fee: 12% of the meter, at least ₹5, on top of the meter (configurable).
-- [ ] The network map page: India Post offices (pincode directory) and UP bus depots and corridors, with Daak's live routes on top.
+- [x] The network map page (`/network`): 1,43,609 India Post offices, 6,021 bus stations from OpenStreetMap, the live corridor drawn along the road, opening on North India.
 - [ ] Run and film a real three-hop delivery with the stickers.
 
 ## Story and submission

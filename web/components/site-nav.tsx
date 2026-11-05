@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-/** The operator's two places: deliveries and drivers. The current one sits in, the other can be pressed. */
+/** The operator's places: deliveries, drivers and the network map. The current one sits in, the other can be pressed. */
 export function SiteNav() {
   const path = usePathname();
   const item = (href: string, label: string) => {
@@ -20,7 +20,7 @@ export function SiteNav() {
   return (
     <nav className="mb-8 flex items-center justify-between gap-3">
       <Link href="/" className="text-2xl font-semibold tracking-tight">Daak</Link>
-      <div className="flex gap-2">{item("/ops", "Deliveries")}{item("/drivers", "Drivers")}</div>
+      <div className="flex gap-2">{item("/ops", "Deliveries")}{item("/drivers", "Drivers")}{item("/network", "Network")}</div>
     </nav>
   );
 }

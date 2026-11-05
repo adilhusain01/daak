@@ -1,11 +1,42 @@
 {
   "stops": [
-    { "id": "KNP", "name": "Kanpur, Jhakarkati bus stand" },
-    { "id": "LKO", "name": "Lucknow, Charbagh bus stand" },
-    { "id": "GKP", "name": "Gorakhpur bus stand" }
+    {
+      "id": "KNP",
+      "name": "Kanpur, Jhakarkati bus stand",
+      "at": [
+        26.4505,
+        80.3402
+      ]
+    },
+    {
+      "id": "LKO",
+      "name": "Lucknow, Charbagh bus stand",
+      "at": [
+        26.8327,
+        80.9202
+      ]
+    },
+    {
+      "id": "GKP",
+      "name": "Gorakhpur bus stand",
+      "at": [
+        26.754,
+        83.372
+      ]
+    }
   ],
   "legs": [
-    { "id": "KNP-LKO", "from": "KNP", "to": "LKO", "km": 80 },
-    { "id": "LKO-GKP", "from": "LKO", "to": "GKP", "km": 270 }
+    {
+      "id": "KNP-LKO",
+      "from": "KNP",
+      "to": "LKO",
+      "km": 80
+    },
+    {
+      "id": "LKO-GKP",
+      "from": "LKO",
+      "to": "GKP",
+      "km": 270
+    }
   ]
 }

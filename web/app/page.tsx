@@ -29,6 +29,7 @@ export default function Landing() {
       <nav className="mb-14 flex items-center justify-between gap-3">
         <span className="text-2xl font-semibold tracking-tight">Daak</span>
         <div className="flex gap-2">
+          <Link href="/network" className="rounded-lg bg-card-paper px-3 py-1.5 text-sm font-medium shadow-sm transition-transform active:scale-[0.97]">Network</Link>
           <Link href="/drivers" className="rounded-lg bg-card-paper px-3 py-1.5 text-sm font-medium shadow-sm transition-transform active:scale-[0.97]">Drivers</Link>
           <Link href="/ops" className="rounded-lg bg-card-paper px-3 py-1.5 text-sm font-medium shadow-sm transition-transform active:scale-[0.97]">Operations</Link>
         </div>

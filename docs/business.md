@@ -77,10 +77,11 @@ The consistency argument: standing orders make the daily count predictable, so e
 
 India Post's office tree plus the state bus network, on one map: every head office as a hub, sub and branch offices around it, bus depots and corridors between them, and Daak's live routes on top. It shows the network already exists and where Daak goes next.
 
-Data:
+Live at `/network`. Data:
 
-- **Post offices:** the All India Pincode Directory on data.gov.in (office type, division, region, circle; latitude and longitude for most rows). Government Open Data Licence, attribution required; about 9,000 rows have unusable coordinates and get filtered.
-- **Buses:** UPSRTC runs 115 depots (Wikipedia, redBus). No official GTFS feed exists; route and stop data would come from UPSRTC's Margdarshi passenger system or be drawn by hand for the pilot corridors.
+- **Post offices:** the All India Pincode Directory (Department of Posts, data.gov.in, GODL-India): 807 head offices, 24,278 sub offices and 1,18,524 branch offices with usable coordinates across 36 states and union territories (1,03,434 distinct points on the map).
+- **Buses:** 6,021 bus stations tagged on OpenStreetMap (ODbL). UPSRTC runs 115 depots (Wikipedia, redBus); no official GTFS feed exists.
+- **The corridor:** drawn along the driving route on OpenStreetMap roads (OSRM). By road, Kanpur to Lucknow is 87 km and Lucknow to Gorakhpur 272 km; the meter currently charges 80 and 270.
 
 ## Traction before Saturday
 

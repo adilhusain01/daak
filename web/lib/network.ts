@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 /** The stops and stretches Daak runs on, and the meter that prices them. */
-export type Stop = { id: string; name: string; lat?: number; lng?: number };
+export type Stop = { id: string; name: string; lat?: number; lng?: number; /** Map position only (OSM stand, or the town head post office); never used for the 500 m handoff rule. */ at?: [number, number] };
 export type NetLeg = { id: string; from: string; to: string; km: number };
 export const METER = { baseRupees: 5, perKmRupees: 0.5 };
 /**
