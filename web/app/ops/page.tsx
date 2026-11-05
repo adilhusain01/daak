@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SiteNav, ProofButton } from "@/components/site-nav";
+import { UpiPay } from "@/components/upi-pay";
 import { useState } from "react";
 import { arkivEntity, hashscanTopic, verdictText, when, type HandoffView, type LegView } from "@/lib/ui";
 
@@ -170,6 +171,12 @@ export default function Dashboard() {
                     );
                   })}
                   <p className="mt-1 text-muted-ink">Daak&apos;s 2% was taken by the dINR token&apos;s own fee rule on the way.</p>
+                  {r.money.some((m) => m.upiStatus === "not_connected") && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer font-medium">Pay the drivers by UPI</summary>
+                      <UpiPay code={r.code} />
+                    </details>
+                  )}
                 </div>
               )}
 
