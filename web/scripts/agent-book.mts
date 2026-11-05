@@ -17,7 +17,12 @@ if (bal.balance.balance < 3e8) {
 }
 
 const signer = createClientHederaSigner(agentId, keyFor("sender-agent"), { network: "hedera:testnet" });
-const pay = wrapFetchWithPaymentFromConfig(fetch, { schemes: [{ network: "hedera:testnet", client: new ExactHederaScheme(signer) }] });
+// Spending controls: HBAR only, at most 2 HBAR per booking, and only ever paid to Daak's own account.
+const pay = wrapFetchWithPaymentFromConfig(fetch, {
+  schemes: [{ network: "hedera:testnet", client: new ExactHederaScheme(signer) }],
+  spendControls: { allowedAssets: [{ network: "hedera:testnet", asset: "0.0.0", maxAmountPerPayment: String(2 * 100_000_000) }] },
+  policies: [(_v, reqs) => reqs.filter((r) => r.payTo === process.env.HEDERA_OPERATOR_ID)],
+});
 
 const res = await pay(`${base}/api/book`, {
   method: "POST",
