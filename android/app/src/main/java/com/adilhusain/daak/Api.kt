@@ -19,12 +19,59 @@ data class Work(
     val cleanPercent: Int, val advance: Int, val advanceReason: String, val savePercent: Int,
 )
 
+data class Me(val known: Boolean, val name: String?, val role: String?, val vehicle: String?)
+data class Next(val hop: Int, val place: String, val km: Int?, val fromHash: String, val toHash: String, val toName: String, val toRole: String)
+data class ParcelInfo(val registered: Boolean, val code: String?, val label: String?, val delivered: Boolean, val next: Next?)
+data class RoutePlan(val label: String, val from: String, val to: String, val stops: List<Pair<String, Int>>, val km: Int, val fee: Double, val meter: String)
+
+/** First 12 hex characters of SHA-256, the same short id the server and the public log use for a badge. */
+fun badgeHash(uid: String): String =
+    java.security.MessageDigest.getInstance("SHA-256").digest(uid.toByteArray()).joinToString("") { "%02x".format(it) }.take(12)
+
 data class Booking(val code: String, val trackUrl: String, val shares: List<Double>)
 
 object Api {
     private val base = BuildConfig.API_BASE
 
     private fun enc(s: String) = java.net.URLEncoder.encode(s, "UTF-8")
+
+    private fun get(path: String): Pair<Int, JSONObject> {
+        val conn = URL("$base$path").openConnection() as HttpURLConnection
+        conn.connectTimeout = 8000
+        conn.readTimeout = 30000
+        val code = conn.responseCode
+        val text = (if (code in 200..299) conn.inputStream else conn.errorStream).bufferedReader().readText()
+        return code to JSONObject(text)
+    }
+
+    fun me(uid: String): Me {
+        val (code, j) = get("/api/me/${enc(uid)}")
+        if (code == 404) return Me(false, null, null, null)
+        if (code !in 200..299) error("server $code")
+        return Me(true, j.optString("name"), j.optString("role"), j.optString("vehicle"))
+    }
+
+    fun parcel(uid: String): ParcelInfo {
+        val (code, j) = get("/api/parcel/${enc(uid)}")
+        if (code == 404) return ParcelInfo(false, null, null, false, null)
+        if (code !in 200..299) error("server $code")
+        val n = j.optJSONObject("next")
+        return ParcelInfo(
+            true, j.optString("code"), j.optString("label"), j.optBoolean("delivered"),
+            n?.let { Next(it.getInt("hop"), it.getString("place"), if (it.isNull("km")) null else it.getInt("km"), it.getString("fromHash"), it.getString("toHash"), it.getString("toName"), it.getString("toRole")) },
+        )
+    }
+
+    fun route(): RoutePlan {
+        val (_, j) = get("/api/routes")
+        val r = j.getJSONArray("routes").getJSONObject(0)
+        val stops = r.getJSONArray("stops")
+        return RoutePlan(
+            r.getString("label"), r.getString("from"), r.getString("to"),
+            List(stops.length()) { stops.getJSONObject(it).let { s -> s.getString("place") to s.getInt("km") } },
+            r.getInt("km"), r.getDouble("feeRupees"), r.getString("meter"),
+        )
+    }
 
     fun work(uid: String): Work {
         val conn = URL("$base/api/driver/${enc(uid)}").openConnection() as HttpURLConnection
