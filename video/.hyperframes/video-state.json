@@ -1,0 +1,829 @@
+{
+  "version": 1,
+  "historyId": "ca519e2e-4bf9-449b-ae5d-30498e61acff",
+  "currentRevision": "b3eea01e-e133-4411-96ee-64abb115ceea",
+  "pendingChanges": false,
+  "files": {
+    "AGENTS.md": {
+      "hash": "1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/1a/1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3"
+    },
+    "CLAUDE.md": {
+      "hash": "1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/1a/1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3"
+    },
+    "SCRIPT.md": {
+      "hash": "2cdc2aac151cf40903a0cd8a0832e85d4cc1dda1681e13052c911aa036c78c10",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/2c/2cdc2aac151cf40903a0cd8a0832e85d4cc1dda1681e13052c911aa036c78c10"
+    },
+    "SPEC.md": {
+      "hash": "d7029adb2e05df7c8613c4dec92af75674a9b9b8450d6a309aeeec09b12e8fc4",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/d7/d7029adb2e05df7c8613c4dec92af75674a9b9b8450d6a309aeeec09b12e8fc4"
+    },
+    "STORYLINES.md": {
+      "hash": "a17946ecbdcb33fdf9edab8046654d0c7229219c0a80ba748d2d7829091b73d2",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/a1/a17946ecbdcb33fdf9edab8046654d0c7229219c0a80ba748d2d7829091b73d2"
+    },
+    "assets/fonts/Geist-Variable.woff2": {
+      "hash": "426b7334d14e0b1c4021e00249fa26938f3d812e36644a2b58b4ecfae0803bbc",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/42/426b7334d14e0b1c4021e00249fa26938f3d812e36644a2b58b4ecfae0803bbc"
+    },
+    "assets/fonts/GeistMono-Variable.woff2": {
+      "hash": "d3e5c101bb65fab2e62e53082a99d2ba4c48e54aa7670365440f559e277818b4",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/d3/d3e5c101bb65fab2e62e53082a99d2ba4c48e54aa7670365440f559e277818b4"
+    },
+    "compositions/breaks.html": {
+      "hash": "4861b77eb457237d200761dec5a57c2241635220896712fb225545f5469c889e",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/48/4861b77eb457237d200761dec5a57c2241635220896712fb225545f5469c889e"
+    },
+    "compositions/claim.html": {
+      "hash": "72761bc80db2fe4630f171716e990f8d34857e4ac5d8dff2a202cbe4700cf770",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/72/72761bc80db2fe4630f171716e990f8d34857e4ac5d8dff2a202cbe4700cf770"
+    },
+    "compositions/gains.html": {
+      "hash": "9619cbaa6d66f734c09ad16419aa66da81e53f325610a89ecb3ab0855edf3992",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/96/9619cbaa6d66f734c09ad16419aa66da81e53f325610a89ecb3ab0855edf3992"
+    },
+    "compositions/journey.html": {
+      "hash": "b831e2e810cc52e56f94ae9cd357c246de1700a2ab7f04f60d47299086b078d2",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/b8/b831e2e810cc52e56f94ae9cd357c246de1700a2ab7f04f60d47299086b078d2"
+    },
+    "compositions/reveal.html": {
+      "hash": "1c52a085f1c9cb74a7ea7255d22a6aff727d8132a1442beee487191dceb472b9",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/1c/1c52a085f1c9cb74a7ea7255d22a6aff727d8132a1442beee487191dceb472b9"
+    },
+    "compositions/thennow.html": {
+      "hash": "23086b4430fa03e00f932db96df539e19ca2cbd5e100eec5100cceb0a58de5a7",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/23/23086b4430fa03e00f932db96df539e19ca2cbd5e100eec5100cceb0a58de5a7"
+    },
+    "hyperframes.json": {
+      "hash": "35a6d4ea79ebe911f0d81705f7aace5d8ff0316b745b0311d56af50c9c237cb7",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/35/35a6d4ea79ebe911f0d81705f7aace5d8ff0316b745b0311d56af50c9c237cb7"
+    },
+    "index.html": {
+      "hash": "11abfda1fc9cf82dbf99f9593a6c103690b79aa333e7b2a87579bc92d7a5abe7",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/11/11abfda1fc9cf82dbf99f9593a6c103690b79aa333e7b2a87579bc92d7a5abe7"
+    },
+    "meta.json": {
+      "hash": "4ac8e5d9fbd1c641b8b2dc29ee165d7e1eb9561149022be0f47639dae851d88e",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/4a/4ac8e5d9fbd1c641b8b2dc29ee165d7e1eb9561149022be0f47639dae851d88e"
+    },
+    "package.json": {
+      "hash": "aff508f397991866fa4a8b5bc1c8e9a410f6170850f12c52024c70a520a01a70",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/af/aff508f397991866fa4a8b5bc1c8e9a410f6170850f12c52024c70a520a01a70"
+    },
+    "boards/stills/frame-00-at-2s.png": {
+      "hash": "b4ab8ccb633bbd9aebefebbabf9836acbef5610634728d1210ee2fae814a328c",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/b4/b4ab8ccb633bbd9aebefebbabf9836acbef5610634728d1210ee2fae814a328c"
+    },
+    "boards/stills/frame-01-at-6s.png": {
+      "hash": "34f9a94c7dfbdd886335cf3ab6aefab5ff99f36f2c35ac332af0fabb27d05ec2",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/34/34f9a94c7dfbdd886335cf3ab6aefab5ff99f36f2c35ac332af0fabb27d05ec2"
+    },
+    "boards/stills/frame-02-at-9.5s.png": {
+      "hash": "9e75cf35b52027d3d3d04817ecf2a793f4f272cf53c2da8ee45c991ad1572ad0",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/9e/9e75cf35b52027d3d3d04817ecf2a793f4f272cf53c2da8ee45c991ad1572ad0"
+    },
+    "boards/stills/frame-03-at-13s.png": {
+      "hash": "8c06926b497588e385a0e95212741e58fdaa76c6d8fe0860cbc205ae72463d17",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/8c/8c06926b497588e385a0e95212741e58fdaa76c6d8fe0860cbc205ae72463d17"
+    },
+    "boards/stills/frame-04-at-16s.png": {
+      "hash": "154e674ea02f3c9cb16e5fad6b777a62a1554150cb9977ee76fd52e94a53ddfb",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/15/154e674ea02f3c9cb16e5fad6b777a62a1554150cb9977ee76fd52e94a53ddfb"
+    },
+    "boards/stills/frame-05-at-20s.png": {
+      "hash": "981ab24ba8c48d68b018f3fff9a31026c48964a884607ebdd15217bffa8c9d88",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/98/981ab24ba8c48d68b018f3fff9a31026c48964a884607ebdd15217bffa8c9d88"
+    },
+    "boards/stills/frame-06-at-24s.png": {
+      "hash": "91db297d1b7a1d40335352ba7f2187d0e5e5609f132ea65f71e8be7dc0af63cf",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/91/91db297d1b7a1d40335352ba7f2187d0e5e5609f132ea65f71e8be7dc0af63cf"
+    },
+    "boards/stills/frame-07-at-28.5s.png": {
+      "hash": "fbeda7adb5a0b372da84e8318b4a7587115624bd541b39051ec95b2f67c04cac",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/fb/fbeda7adb5a0b372da84e8318b4a7587115624bd541b39051ec95b2f67c04cac"
+    },
+    "boards/stills/frame-08-at-33s.png": {
+      "hash": "68797cfa7f7cb26f6503f0829bd646fa49ae4203ecf660e102da0ccbb9869435",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/68/68797cfa7f7cb26f6503f0829bd646fa49ae4203ecf660e102da0ccbb9869435"
+    },
+    "boards/stills/frame-09-at-37.5s.png": {
+      "hash": "fdc9e18d4c44aa817fe687d6c37950169271676baa426165e6dd164ce4a28958",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/fd/fdc9e18d4c44aa817fe687d6c37950169271676baa426165e6dd164ce4a28958"
+    },
+    "boards/stills/frame-10-at-42.5s.png": {
+      "hash": "f2afce27d02c9052ee2a7bcad6cbae9575adc7330021b50eb9c5b435cc6cfaaa",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/f2/f2afce27d02c9052ee2a7bcad6cbae9575adc7330021b50eb9c5b435cc6cfaaa"
+    },
+    "boards/stills/frame-11-at-47s.png": {
+      "hash": "f995171612b5f60bf7f1332b3738223c897654c3c26e1ad4ce09c88939681317",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/f9/f995171612b5f60bf7f1332b3738223c897654c3c26e1ad4ce09c88939681317"
+    },
+    "boards/stills/frame-12-at-51s.png": {
+      "hash": "300229b56e15cf8e8c9e15cf6ed4d34019f6552eb34ba29049b3e0ff89734361",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/30/300229b56e15cf8e8c9e15cf6ed4d34019f6552eb34ba29049b3e0ff89734361"
+    },
+    "boards/stills/frame-13-at-56s.png": {
+      "hash": "f28262a9028ba593e79384ea631298e2198a8d1ac5024d4b0123a697388d877d",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/f2/f28262a9028ba593e79384ea631298e2198a8d1ac5024d4b0123a697388d877d"
+    },
+    "boards/stills/frame-14-at-61s.png": {
+      "hash": "9e3de210e054dc9eb3ca6f7d9423b4f7639144630291cb4ab1807ceaf9932855",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/9e/9e3de210e054dc9eb3ca6f7d9423b4f7639144630291cb4ab1807ceaf9932855"
+    },
+    "boards/stills/frame-15-at-65s.png": {
+      "hash": "588195edf228e219a526e91998b841f3cc08d66718101cfd378fde72007763f4",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/58/588195edf228e219a526e91998b841f3cc08d66718101cfd378fde72007763f4"
+    },
+    "boards/stills/frame-16-at-69s.png": {
+      "hash": "b7f487209e6b65bb7185eace92200cb69d2cb34c8c0b2240f4117ee61be5f645",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/b7/b7f487209e6b65bb7185eace92200cb69d2cb34c8c0b2240f4117ee61be5f645"
+    },
+    "boards/stills/frame-17-at-74s.png": {
+      "hash": "7b3902bbc56dc8dfa382ccaed6480ab2f846d13454ad687e2c1a9cee1de6df5e",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/7b/7b3902bbc56dc8dfa382ccaed6480ab2f846d13454ad687e2c1a9cee1de6df5e"
+    },
+    "boards/stills/frame-18-at-80s.png": {
+      "hash": "9701d47e6c97c2ff02249557f5af1b9c3e94f6ed0ed6a2d9c452bb90b3971652",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/97/9701d47e6c97c2ff02249557f5af1b9c3e94f6ed0ed6a2d9c452bb90b3971652"
+    },
+    "boards/stills/frame-19-at-86s.png": {
+      "hash": "bf3d3d11ef17a30e5cd2cea6a310ce3ba451bd4dfedad25cca3d5b13ff3846a5",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/bf/bf3d3d11ef17a30e5cd2cea6a310ce3ba451bd4dfedad25cca3d5b13ff3846a5"
+    },
+    "boards/stills/frame-20-at-91s.png": {
+      "hash": "99541b7cd0af79654be2d5fb0618a339a29c1eb94126d8bda45e011ccb9fcdb2",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/99/99541b7cd0af79654be2d5fb0618a339a29c1eb94126d8bda45e011ccb9fcdb2"
+    },
+    "boards/stills/frame-21-at-94s.png": {
+      "hash": "f0d046650afc07beaab413b322d4632325ece594ca8749544e66d7c1d97ca0c8",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/f0/f0d046650afc07beaab413b322d4632325ece594ca8749544e66d7c1d97ca0c8"
+    },
+    "boards/stills/contact-sheet-1.jpg": {
+      "hash": "c325247f887c16eaf1e721d6d2a35b33d93e822a530626b69684b47ee73dab6e",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/c3/c325247f887c16eaf1e721d6d2a35b33d93e822a530626b69684b47ee73dab6e"
+    },
+    "boards/stills/contact-sheet-2.jpg": {
+      "hash": "85ed059612403469ff1b727d969243be5f5683eaa7b5ddcc2c9495ddc3ebb36f",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/85/85ed059612403469ff1b727d969243be5f5683eaa7b5ddcc2c9495ddc3ebb36f"
+    },
+    "boards/stills/contact-sheet-3.jpg": {
+      "hash": "beb6a83f843629d1efe6a4834fc6fea82be139b7d41d78c6d6f91ddef28fa971",
+      "content": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/be/beb6a83f843629d1efe6a4834fc6fea82be139b7d41d78c6d6f91ddef28fa971"
+    }
+  },
+  "revisions": {
+    "15829aba-7949-43ae-b666-2c1cc5190b2a": {
+      "actor": {
+        "kind": "outside",
+        "name": "Outside"
+      },
+      "label": "Changed outside the app",
+      "startedAt": 1793901945360,
+      "endedAt": 1793901945368,
+      "files": {
+        "compositions/breaks.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/f4/f4e25d7571b622680f70428a56f370ec132c34b399c33af8b0d89405b44c1e4f",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/bd/bd0cbefc1575f45b53e5eaff8bc0fc2480750ca2ca76755c9ec3afa8285899bf"
+        },
+        "compositions/claim.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/6f/6fc0aa79054d61915769cdbd62c7c846fb4a033b1870ceaad43c3909cf21d866",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/46/46052f1cb94e0f7559260b08759cde8a1fadbbccd6110679cfdcccd8898f249e"
+        },
+        "compositions/gains.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/5a/5a2af4f747a5d144878ff4ed68576a823f4df7d8357b3535d02b28372a62ed81",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/4c/4cdf36b33ff0ec44fdb861bd23a4d2f5c38f69c808d4c7fdaf650dbe6bb11581"
+        },
+        "compositions/journey.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/e9/e98242425511dc383617c2a33e3a065b32dd1183e3ad28215d5062f8c58522a4",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/df/dfdf138681fea2fec810b7b953e98a910680bc60feb55172b987db55fb640f8c"
+        },
+        "compositions/reveal.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/33/337e30c5cf9a7c6102a559ae48f9bdb58c3a1f8417761ce13fb63e78c0da7731",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/7b/7b64105062c3dedec7ddddf527e4d9cae5bdc1988c370f1390075b552e842043"
+        },
+        "compositions/thennow.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/07/0723daaca20b763746e041bba011120b7cc931feb4684841a0f80ac3d0bfb7df",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/23/23086b4430fa03e00f932db96df539e19ca2cbd5e100eec5100cceb0a58de5a7"
+        }
+      }
+    },
+    "b3eea01e-e133-4411-96ee-64abb115ceea": {
+      "actor": {
+        "kind": "outside",
+        "name": "Outside"
+      },
+      "label": "Changed outside the app",
+      "startedAt": 1793901978766,
+      "endedAt": 1793901978822,
+      "files": {
+        "boards/stills/contact-sheet-1.jpg": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/c3/c325247f887c16eaf1e721d6d2a35b33d93e822a530626b69684b47ee73dab6e"
+        },
+        "boards/stills/contact-sheet-2.jpg": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/85/85ed059612403469ff1b727d969243be5f5683eaa7b5ddcc2c9495ddc3ebb36f"
+        },
+        "boards/stills/contact-sheet-3.jpg": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/be/beb6a83f843629d1efe6a4834fc6fea82be139b7d41d78c6d6f91ddef28fa971"
+        },
+        "boards/stills/frame-00-at-2s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/b4/b4ab8ccb633bbd9aebefebbabf9836acbef5610634728d1210ee2fae814a328c"
+        },
+        "boards/stills/frame-01-at-6s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/34/34f9a94c7dfbdd886335cf3ab6aefab5ff99f36f2c35ac332af0fabb27d05ec2"
+        },
+        "boards/stills/frame-02-at-9.5s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/9e/9e75cf35b52027d3d3d04817ecf2a793f4f272cf53c2da8ee45c991ad1572ad0"
+        },
+        "boards/stills/frame-03-at-13s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/8c/8c06926b497588e385a0e95212741e58fdaa76c6d8fe0860cbc205ae72463d17"
+        },
+        "boards/stills/frame-04-at-16s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/15/154e674ea02f3c9cb16e5fad6b777a62a1554150cb9977ee76fd52e94a53ddfb"
+        },
+        "boards/stills/frame-05-at-20s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/98/981ab24ba8c48d68b018f3fff9a31026c48964a884607ebdd15217bffa8c9d88"
+        },
+        "boards/stills/frame-06-at-24s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/91/91db297d1b7a1d40335352ba7f2187d0e5e5609f132ea65f71e8be7dc0af63cf"
+        },
+        "boards/stills/frame-07-at-28.5s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/fb/fbeda7adb5a0b372da84e8318b4a7587115624bd541b39051ec95b2f67c04cac"
+        },
+        "boards/stills/frame-08-at-33s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/68/68797cfa7f7cb26f6503f0829bd646fa49ae4203ecf660e102da0ccbb9869435"
+        },
+        "boards/stills/frame-09-at-37.5s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/fd/fdc9e18d4c44aa817fe687d6c37950169271676baa426165e6dd164ce4a28958"
+        },
+        "boards/stills/frame-10-at-42.5s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/f2/f2afce27d02c9052ee2a7bcad6cbae9575adc7330021b50eb9c5b435cc6cfaaa"
+        },
+        "boards/stills/frame-11-at-47s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/f9/f995171612b5f60bf7f1332b3738223c897654c3c26e1ad4ce09c88939681317"
+        },
+        "boards/stills/frame-12-at-51s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/30/300229b56e15cf8e8c9e15cf6ed4d34019f6552eb34ba29049b3e0ff89734361"
+        },
+        "boards/stills/frame-13-at-56s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/f2/f28262a9028ba593e79384ea631298e2198a8d1ac5024d4b0123a697388d877d"
+        },
+        "boards/stills/frame-14-at-61s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/9e/9e3de210e054dc9eb3ca6f7d9423b4f7639144630291cb4ab1807ceaf9932855"
+        },
+        "boards/stills/frame-15-at-65s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/58/588195edf228e219a526e91998b841f3cc08d66718101cfd378fde72007763f4"
+        },
+        "boards/stills/frame-16-at-69s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/b7/b7f487209e6b65bb7185eace92200cb69d2cb34c8c0b2240f4117ee61be5f645"
+        },
+        "boards/stills/frame-17-at-74s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/7b/7b3902bbc56dc8dfa382ccaed6480ab2f846d13454ad687e2c1a9cee1de6df5e"
+        },
+        "boards/stills/frame-18-at-80s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/97/9701d47e6c97c2ff02249557f5af1b9c3e94f6ed0ed6a2d9c452bb90b3971652"
+        },
+        "boards/stills/frame-19-at-86s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/bf/bf3d3d11ef17a30e5cd2cea6a310ce3ba451bd4dfedad25cca3d5b13ff3846a5"
+        },
+        "boards/stills/frame-20-at-91s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/99/99541b7cd0af79654be2d5fb0618a339a29c1eb94126d8bda45e011ccb9fcdb2"
+        },
+        "boards/stills/frame-21-at-94s.png": {
+          "before": null,
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/f0/f0d046650afc07beaab413b322d4632325ece594ca8749544e66d7c1d97ca0c8"
+        },
+        "compositions/breaks.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/bd/bd0cbefc1575f45b53e5eaff8bc0fc2480750ca2ca76755c9ec3afa8285899bf",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/48/4861b77eb457237d200761dec5a57c2241635220896712fb225545f5469c889e"
+        },
+        "compositions/claim.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/46/46052f1cb94e0f7559260b08759cde8a1fadbbccd6110679cfdcccd8898f249e",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/72/72761bc80db2fe4630f171716e990f8d34857e4ac5d8dff2a202cbe4700cf770"
+        },
+        "compositions/gains.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/4c/4cdf36b33ff0ec44fdb861bd23a4d2f5c38f69c808d4c7fdaf650dbe6bb11581",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/96/9619cbaa6d66f734c09ad16419aa66da81e53f325610a89ecb3ab0855edf3992"
+        },
+        "compositions/journey.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/df/dfdf138681fea2fec810b7b953e98a910680bc60feb55172b987db55fb640f8c",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/b8/b831e2e810cc52e56f94ae9cd357c246de1700a2ab7f04f60d47299086b078d2"
+        },
+        "compositions/reveal.html": {
+          "before": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/7b/7b64105062c3dedec7ddddf527e4d9cae5bdc1988c370f1390075b552e842043",
+          "after": "/Users/adilhusain/.cache/hyperframes/history/ca519e2e-4bf9-449b-ae5d-30498e61acff/blobs/1c/1c52a085f1c9cb74a7ea7255d22a6aff727d8132a1442beee487191dceb472b9"
+        }
+      }
+    }
+  },
+  "checks": {
+    "latest": {
+      "revision": null,
+      "id": "30cdae73-be11-4fc8-9816-26077a8cb28c"
+    },
+    "revisions": {},
+    "unversioned": [
+      {
+        "id": "30cdae73-be11-4fc8-9816-26077a8cb28c",
+        "scope": "project",
+        "report": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/.hyperframes/artifacts/checks/30cdae73-be11-4fc8-9816-26077a8cb28c.json",
+        "metadata": {
+          "ok": true,
+          "browserSkipped": false,
+          "options": {
+            "samples": 9,
+            "atTransitions": false,
+            "maxIssues": 80,
+            "collapseStatic": true,
+            "tolerance": 2,
+            "timeout": 45000,
+            "contrast": true,
+            "strict": false,
+            "snapshots": false,
+            "browserGpuMode": "auto"
+          }
+        },
+        "createdAt": 1793901930685,
+        "contentHash": "4ee9bc98244908777c497ed3352632a7751f330f53ca0c01cc451b0d80c2c2df",
+        "revision": null,
+        "inputFingerprint": "ac293ccd62090003d54ff68cc33128d022ce48df290369f6a223c2ba7df45f87",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      }
+    ]
+  },
+  "snapshots": {
+    "latest": {
+      "revision": null,
+      "id": "dd6200be-6923-4107-ad80-024a21ad44f2-21"
+    },
+    "revisions": {},
+    "unversioned": [
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-0",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-00-at-2s.png",
+        "time": 2,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988112,
+        "contentHash": "b4ab8ccb633bbd9aebefebbabf9836acbef5610634728d1210ee2fae814a328c",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-1",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-01-at-6s.png",
+        "time": 6,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "34f9a94c7dfbdd886335cf3ab6aefab5ff99f36f2c35ac332af0fabb27d05ec2",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-2",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-02-at-9.5s.png",
+        "time": 9.5,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "9e75cf35b52027d3d3d04817ecf2a793f4f272cf53c2da8ee45c991ad1572ad0",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-3",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-03-at-13s.png",
+        "time": 13,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "8c06926b497588e385a0e95212741e58fdaa76c6d8fe0860cbc205ae72463d17",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-4",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-04-at-16s.png",
+        "time": 16,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "154e674ea02f3c9cb16e5fad6b777a62a1554150cb9977ee76fd52e94a53ddfb",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-5",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-05-at-20s.png",
+        "time": 20,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "981ab24ba8c48d68b018f3fff9a31026c48964a884607ebdd15217bffa8c9d88",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-6",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-06-at-24s.png",
+        "time": 24,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "a3a379956ada58ce6b09b4830a2164c6317677721d66d4da6348c4fed591ef1f",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-7",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-07-at-28.5s.png",
+        "time": 28.5,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "448d63b228f249a7182600740453ed729daa9675b0776cf55c6a085992165d8f",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-8",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-08-at-33s.png",
+        "time": 33,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "91b18d4551a6b001ee2b0db9dc972304a9556b2de41c52f56f134981561c621b",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-9",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-09-at-37.5s.png",
+        "time": 37.5,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "fdc9e18d4c44aa817fe687d6c37950169271676baa426165e6dd164ce4a28958",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-10",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-10-at-42.5s.png",
+        "time": 42.5,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "f2afce27d02c9052ee2a7bcad6cbae9575adc7330021b50eb9c5b435cc6cfaaa",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-11",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-11-at-47s.png",
+        "time": 47,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "f995171612b5f60bf7f1332b3738223c897654c3c26e1ad4ce09c88939681317",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-12",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-12-at-51s.png",
+        "time": 51,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "24981b1c144f4e5ddf6ff89d2b64e71c138242f774e1b331e3f8489137ed1e38",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-13",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-13-at-56s.png",
+        "time": 56,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "f28262a9028ba593e79384ea631298e2198a8d1ac5024d4b0123a697388d877d",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-14",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-14-at-61s.png",
+        "time": 61,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "9e3de210e054dc9eb3ca6f7d9423b4f7639144630291cb4ab1807ceaf9932855",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-15",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-15-at-65s.png",
+        "time": 65,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "588195edf228e219a526e91998b841f3cc08d66718101cfd378fde72007763f4",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-16",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-16-at-69s.png",
+        "time": 69,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "b7f487209e6b65bb7185eace92200cb69d2cb34c8c0b2240f4117ee61be5f645",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-17",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-17-at-74s.png",
+        "time": 74,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "7b3902bbc56dc8dfa382ccaed6480ab2f846d13454ad687e2c1a9cee1de6df5e",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-18",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-18-at-80s.png",
+        "time": 80,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "b3664f4a16ea449bad71850ac6d5b8c0d7a14028df7836f5da1fd244061db698",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-19",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-19-at-86s.png",
+        "time": 86,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "bf3d3d11ef17a30e5cd2cea6a310ce3ba451bd4dfedad25cca3d5b13ff3846a5",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-20",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-20-at-91s.png",
+        "time": 91,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "c265b6069628d9206376c2c882d10c2924c921b46a62854cb9b41c62f5290e3f",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      },
+      {
+        "scope": "full",
+        "id": "dd6200be-6923-4107-ad80-024a21ad44f2-21",
+        "image": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/boards/stills/frame-21-at-94s.png",
+        "time": 94,
+        "metadata": {
+          "width": 1920,
+          "height": 1080,
+          "zoomScale": 1,
+          "browserGpuMode": "auto",
+          "warnings": [],
+          "partial": false
+        },
+        "createdAt": 1793901988113,
+        "contentHash": "f0d046650afc07beaab413b322d4632325ece594ca8749544e66d7c1d97ca0c8",
+        "revision": null,
+        "inputFingerprint": "f85400d5cd0c6cd8917ec0f3f06bc80b4c58d5673ce68eb2bf6eeccefa29d39d",
+        "inputScope": "local-project-files",
+        "attribution": "inputs-changed"
+      }
+    ]
+  }
+}

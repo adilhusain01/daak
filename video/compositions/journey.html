@@ -1,0 +1,126 @@
+<template>
+<style>
+@font-face{font-family:'Geist';src:url('assets/fonts/Geist-Variable.woff2') format('woff2');font-weight:100 900;}
+@font-face{font-family:'Geist Mono';src:url('assets/fonts/GeistMono-Variable.woff2') format('woff2');font-weight:100 900;}
+
+#root{position:absolute;inset:0;background:#F7F3EA;overflow:hidden;font-family:'Geist',sans-serif;color:#1F2A44}
+#root .grain{position:absolute;inset:0;opacity:.06;pointer-events:none}
+#root .shot{position:absolute;inset:0;opacity:0}
+#root .line{position:absolute;left:160px;top:820px;width:1600px;font-size:76px;line-height:1.08;font-weight:640;letter-spacing:-0.02em;color:#1F2A44}
+#root .line .w{display:inline-block;opacity:0;margin-right:0.24em}
+#root .line .hl{color:#2E7D4F}
+#root .line .bad{color:#B23A3A}
+#root .line .wait{color:#B7791F}
+#root .obj{position:absolute}
+#root .label{position:absolute;font-family:'Geist Mono',monospace;font-size:28px;font-weight:500;color:rgba(31,42,68,.7);white-space:nowrap}
+#root .phone-body{background:#1F2A44;border-radius:46px;padding:14px;box-shadow:0 18px 40px rgba(31,42,68,.14)}
+#root .phone-screen{background:#F7F3EA;border-radius:34px;width:100%;height:100%;position:relative;overflow:hidden;padding:30px 24px}
+#root .badge{background:#fff;border:3px solid #1F2A44;border-radius:18px;padding:18px;box-shadow:0 18px 40px rgba(31,42,68,.14)}
+#root .badge-photo{width:72px;height:72px;border-radius:10px;background:#D9CFBC;margin-bottom:12px}
+#root .badge-name{font-size:30px;font-weight:700}
+#root .badge-route{font-family:'Geist Mono',monospace;font-size:20px;opacity:.65;margin-top:4px}
+#root .badge-nfc{position:absolute;right:16px;top:16px}
+#root .card{position:absolute;background:#fff;border:3px solid #1F2A44;border-radius:20px;padding:28px 32px}
+#root .row{display:flex;align-items:center;gap:18px;font-size:34px;font-weight:600;margin:10px 0}
+#root .tick{width:40px;height:40px;border-radius:8px;border:3px solid #2E7D4F;display:inline-flex;align-items:center;justify-content:center;color:#2E7D4F;font-weight:800;font-size:28px}
+#root .big{font-weight:800;letter-spacing:-0.03em}
+#root .route{position:absolute}
+
+</style>
+<div id="root" data-composition-id="journey" data-width="1920" data-height="1080">
+<svg class="grain" width="1920" height="1080"><filter id="journey-n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0.12 0 0 0 0 0.16 0 0 0 0 0.27 0 0 0 0.9 0"/></filter><rect width="1920" height="1080" filter="url(#journey-n)"/></svg>
+<div id="s4-strip" class="obj" style="left:560px;top:40px;width:800px;height:60px">
+<svg width="800" height="60"><path d="M20 30 L780 30" stroke="#1F2A44" stroke-width="2.5" stroke-dasharray="2 10" stroke-linecap="round"/>
+<circle cx="20" cy="30" r="9" fill="#1F2A44"/><circle cx="217" cy="30" r="9" fill="#1F2A44"/><circle cx="780" cy="30" r="9" fill="#1F2A44"/></svg>
+<div id="s4-dot" class="obj" style="left:8px;top:16px;width:28px;height:28px;background:#C9A06A;border:3px solid #1F2A44;border-radius:6px"></div></div><div id="s4a" class="shot"><div id="s4a-slip" class="card" style="left:560px;top:120px;width:760px;"><div style="font-size:30px;font-weight:700">Booking KNP-7115</div><div class="label" style="position:static;margin:6px 0 20px">Kanpur › Lucknow › Gorakhpur · 350 km</div><div style="font-size:40px;font-weight:600">₹5 + ₹0.50 × 350 km</div><div class="big" style="font-size:120px">= ₹180</div></div><div id="s4a-402" class="obj stamp" style="left:1200px;top:130px;width:210px;height:210px">
+<svg width="210" height="210" viewBox="0 0 200 200" style="transform:rotate(-8deg)"><circle cx="100" cy="100" r="92" fill="none" stroke="#B7791F" stroke-width="7"/><circle cx="100" cy="100" r="78" fill="none" stroke="#B7791F" stroke-width="3"/>
+<text x="100" y="98" text-anchor="middle" font-family="Geist" font-weight="800" font-size="40" fill="#B7791F">402</text>
+<text x="100" y="130" text-anchor="middle" font-family="Geist Mono" font-weight="600" font-size="22" fill="#B7791F">pay first</text></svg></div><div id="s4a-paid" class="obj stamp" style="left:1210px;top:330px;width:230px;height:230px">
+<svg width="230" height="230" viewBox="0 0 200 200" style="transform:rotate(6deg)"><circle cx="100" cy="100" r="92" fill="none" stroke="#2E7D4F" stroke-width="7"/><circle cx="100" cy="100" r="78" fill="none" stroke="#2E7D4F" stroke-width="3"/>
+<text x="100" y="98" text-anchor="middle" font-family="Geist" font-weight="800" font-size="40" fill="#2E7D4F">PAID</text>
+<text x="100" y="130" text-anchor="middle" font-family="Geist Mono" font-weight="600" font-size="22" fill="#2E7D4F">x402</text></svg></div><div id="s4a-l" class="label" style="left:560px;top:660px;">paid by the shop's own agent, no human in the loop</div><h2 id="s4a-line" class="line"><span class="w">The</span><span class="w">shop's</span><span class="w">agent</span><span class="w">books</span><span class="w">and</span><span class="w">pays</span><span class="w">the</span><span class="w hl">meter:</span><span class="w">₹5</span><span class="w">+</span><span class="w">₹0.50</span><span class="w">a</span><span class="w">km.</span></h2></div><div id="s4b" class="shot"><div id="s4b-esc" class="card" style="left:420px;top:140px;width:1080px;"><div style="font-size:30px;font-weight:700;margin-bottom:24px">Escrow · ₹180 in rupee credits</div><div style="display:flex;gap:16px;align-items:flex-end"><div><div id="s4b-bar1" style="width:240px;height:60px;background:#1F2A44;border-radius:8px"></div><div class="label" style="position:static;margin-top:10px">Ramesh · 80 km</div><div id="s4b-n1" class="big" style="font-size:72px">₹0</div></div><div><div id="s4b-bar2" style="width:780px;height:60px;background:#1F2A44;border-radius:8px"></div><div class="label" style="position:static;margin-top:10px">Suresh · 270 km</div><div id="s4b-n2" class="big" style="font-size:72px">₹0</div></div></div></div><div id="s4b-l" class="label" style="left:420px;top:600px;">payout written now as a Hedera scheduled transaction, signed at delivery</div><h2 id="s4b-line" class="line"><span class="w">₹180</span><span class="w">locked</span><span class="w">in</span><span class="w">escrow,</span><span class="w">split</span><span class="w">by</span><span class="w hl">kilometre</span><span class="w">before</span><span class="w">the</span><span class="w">bus</span><span class="w">leaves.</span></h2></div><div id="s4c" class="shot"><div id="s4c-parcel" class="obj" style="left:240px;top:260px;width:340px;height:274px">
+<svg width="340" height="274" viewBox="0 0 340 274">
+<polygon points="0,43.92 278.8,43.92 340,0 61.199999999999996,0" fill="#D9B680" stroke="#1F2A44" stroke-width="3"/>
+<rect x="0" y="43.92" width="278.8" height="200.07999999999998" fill="#C9A06A" stroke="#1F2A44" stroke-width="3"/>
+<polygon points="278.8,43.92 340,0 340,200.07999999999998 278.8,244" fill="#A9814F" stroke="#1F2A44" stroke-width="3"/>
+<rect x="122.39999999999999" y="43.92" width="34.0" height="200.07999999999998" fill="#E8D3A8" opacity="0.8"/>
+<text x="20.4" y="122.0" font-family="Geist" font-weight="700" font-size="34.0" fill="#1F2A44">KNP-7115</text>
+<g class="sticker"><circle cx="265.2" cy="151.28" r="23.8" fill="#fff" stroke="#1F2A44" stroke-width="3"/><path d="M256.7,146.4 q8.5,-10.2 17.0,0 M260.1,152.5 q5.1,-6.119999999999999 10.2,0" stroke="#1F2A44" stroke-width="3" fill="none"/></g>
+</svg></div><div id="s4c-phone" class="obj phone" style="left:800px;top:60px;width:320px;height:656px">
+<div class="phone-body" style="width:320px;height:656px"><div class="phone-screen"><div class="row" style="font-size:24px"><span class="tick">✓</span> Parcel KNP-7115</div><div class="row" style="font-size:24px"><span class="tick">✓</span> Badge: Suresh</div><div class="row" style="font-size:24px"><span class="tick" id="s4c-t3" style="opacity:0">✓</span> Lid photo</div><div class="row" style="font-size:24px"><div id="s4c-photo" style="width:100%;height:230px;border:3px dashed #1F2A44;border-radius:14px;margin-top:10px"></div></div></div></div></div><div id="s4c-badge" class="obj badge" style="left:1300px;top:280px;width:260px">
+<div class="badge-photo"></div><div class="badge-name">Suresh</div><div class="badge-route">LKO › GKP</div>
+<svg class="badge-nfc" width="34" height="34" viewBox="0 0 34 34"><path d="M10 10 q8 7 0 14 M16 6 q12 11 0 22 M22 2 q16 15 0 30" stroke="#1F2A44" stroke-width="3" fill="none"/></svg></div><div id="s4c-gps" class="label" style="left:800px;top:740px;">26.8317, 80.9202 · Charbagh bus stand</div><h2 id="s4c-line" class="line"><span class="w">Lucknow.</span><span class="w">Tap</span><span class="w">the</span><span class="w">parcel.</span><span class="w">Tap</span><span class="w">the</span><span class="w">next</span><span class="w">driver's</span><span class="w">badge.</span><span class="w">Photo</span><span class="w">of</span><span class="w">the</span><span class="w">lid.</span></h2></div><div id="s4d" class="shot"><div id="s4d-check" class="card" style="left:520px;top:110px;width:880px;"><div style="font-size:30px;font-weight:700;margin-bottom:12px">Checked at Lucknow, hop 1</div><div class="row"><span class="tick" id="s4d-t0">✓</span>Right parcel: KNP-7115</div><div class="row"><span class="tick" id="s4d-t1">✓</span>Right stop: Lucknow</div><div class="row"><span class="tick" id="s4d-t2">✓</span>Still sealed: tape intact</div></div><div id="s4d-l" class="label" style="left:520px;top:560px;">0G sealed AI (TeeML) · decision and request id saved to 0G Storage</div><h2 id="s4d-line" class="line"><span class="w">A</span><span class="w">sealed</span><span class="w">AI</span><span class="w">on</span><span class="w hl">0G</span><span class="w">checks:</span><span class="w">right</span><span class="w">parcel,</span><span class="w">right</span><span class="w">stop,</span><span class="w">still</span><span class="w">sealed.</span></h2></div><div id="s4e" class="shot"><div id="s4e-h" class="obj stamp" style="left:420px;top:110px;width:300px;height:300px">
+<svg width="300" height="300" viewBox="0 0 200 200" style="transform:rotate(-7deg)"><circle cx="100" cy="100" r="92" fill="none" stroke="#2E7D4F" stroke-width="7"/><circle cx="100" cy="100" r="78" fill="none" stroke="#2E7D4F" stroke-width="3"/>
+<text x="100" y="98" text-anchor="middle" font-family="Geist" font-weight="800" font-size="40" fill="#2E7D4F">HEDERA</text>
+<text x="100" y="130" text-anchor="middle" font-family="Geist Mono" font-weight="600" font-size="20" fill="#2E7D4F">public log</text></svg></div><div id="s4e-a" class="obj stamp" style="left:860px;top:250px;width:300px;height:300px">
+<svg width="300" height="300" viewBox="0 0 200 200" style="transform:rotate(5deg)"><circle cx="100" cy="100" r="92" fill="none" stroke="#2E7D4F" stroke-width="7"/><circle cx="100" cy="100" r="78" fill="none" stroke="#2E7D4F" stroke-width="3"/>
+<text x="100" y="98" text-anchor="middle" font-family="Geist" font-weight="800" font-size="40" fill="#2E7D4F">ARKIV</text>
+<text x="100" y="130" text-anchor="middle" font-family="Geist Mono" font-weight="600" font-size="17" fill="#2E7D4F">1-day record</text></svg></div><div id="s4e-m" class="obj stamp" style="left:1300px;top:120px;width:300px;height:300px">
+<svg width="300" height="300" viewBox="0 0 200 200" style="transform:rotate(-3deg)"><circle cx="100" cy="100" r="92" fill="none" stroke="#2E7D4F" stroke-width="7"/><circle cx="100" cy="100" r="78" fill="none" stroke="#2E7D4F" stroke-width="3"/>
+<text x="100" y="98" text-anchor="middle" font-family="Geist" font-weight="800" font-size="40" fill="#2E7D4F">PINNED</text>
+<text x="100" y="130" text-anchor="middle" font-family="Geist Mono" font-weight="600" font-size="22" fill="#2E7D4F">Charbagh</text></svg></div><h2 id="s4e-line" class="line"><span class="w">Stamped</span><span class="w">on</span><span class="w hl">Hedera.</span><span class="w">Recorded</span><span class="w">on</span><span class="w hl">Arkiv.</span><span class="w">Pinned</span><span class="w">on</span><span class="w">the</span><span class="w">map.</span></h2></div><div id="s4f" class="shot"><svg class="route" style="left:0;top:0" width="1920" height="800"><path d="M0 560 L1920 520" stroke="#1F2A44" stroke-width="3"/><path d="M0 600 L1920 560" stroke="#1F2A44" stroke-width="3" stroke-dasharray="40 30"/></svg><div id="s4f-bus" class="obj" style="left:220px;top:330px;width:420px;height:216px">
+<svg width="420" height="216" viewBox="0 0 420 216">
+<rect x="4" y="4" width="412" height="176" rx="22" fill="#E9E2D2" stroke="#1F2A44" stroke-width="3"/>
+<rect x="4" y="109.12" width="412" height="21.119999999999997" fill="#1F2A44" opacity="0.85"/>
+<rect x="33.6" y="35.2" width="50.4" height="49.28" rx="6" fill="#DCE6F2" stroke="#1F2A44" stroke-width="3"/><rect x="96.6" y="35.2" width="50.4" height="49.28" rx="6" fill="#DCE6F2" stroke="#1F2A44" stroke-width="3"/><rect x="159.6" y="35.2" width="50.4" height="49.28" rx="6" fill="#DCE6F2" stroke="#1F2A44" stroke-width="3"/><rect x="222.6" y="35.2" width="50.4" height="49.28" rx="6" fill="#DCE6F2" stroke="#1F2A44" stroke-width="3"/><rect x="285.6" y="35.2" width="50.4" height="49.28" rx="6" fill="#DCE6F2" stroke="#1F2A44" stroke-width="3"/>
+<rect x="352.8" y="35.2" width="46.2" height="84.47999999999999" rx="6" fill="#DCE6F2" stroke="#1F2A44" stroke-width="3"/>
+<text x="42.0" y="22.880000000000003" font-family="Geist Mono" font-weight="600" font-size="16.8" fill="#1F2A44">LKO › GKP</text>
+<circle cx="84.0" cy="180" r="22.880000000000003" fill="#1F2A44"/><circle cx="336.0" cy="180" r="22.880000000000003" fill="#1F2A44"/>
+<circle cx="84.0" cy="180" r="8.8" fill="#F7F3EA"/><circle cx="336.0" cy="180" r="8.8" fill="#F7F3EA"/>
+</svg></div><div id="s4f-bar0" class="obj" style="left:900px;top:330px;width:30px;height:60px;background:#1F2A44;border-radius:4px"></div><div id="s4f-bar1" class="obj" style="left:944px;top:290px;width:30px;height:100px;background:#1F2A44;border-radius:4px"></div><div id="s4f-bar2" class="obj" style="left:988px;top:250px;width:30px;height:140px;background:#1F2A44;border-radius:4px"></div><div id="s4f-bar3" class="obj" style="left:1032px;top:210px;width:30px;height:180px;background:#1F2A44;border-radius:4px"></div><div id="s4f-held" class="card" style="left:1200px;top:160px;width:520px;border-color:#B7791F"><div style="font-size:34px;font-weight:700;color:#B7791F">Saved on the phone</div><div style="font-size:28px;margin-top:8px">Payment held until the check runs</div></div><h2 id="s4f-line" class="line"><span class="w">No</span><span class="w">signal</span><span class="w">on</span><span class="w">the</span><span class="w">highway?</span><span class="w">Saved</span><span class="w">on</span><span class="w">the</span><span class="w">phone.</span><span class="w wait">Payment</span><span class="w wait">held.</span><span class="w">Nothing</span><span class="w">faked.</span></h2></div><div id="s4g" class="shot"><div id="s4g-phone" class="obj phone" style="left:780px;top:50px;width:330px;height:676px">
+<div class="phone-body" style="width:330px;height:676px"><div class="phone-screen"><div class="label" style="position:static">Parcel KNP-7115</div><div class="big" style="font-size:52px;margin:8px 0 22px">Delivered</div><div class="row" style="font-size:24px"><span class="tick">✓</span> Lucknow</div><div class="row" style="font-size:24px"><span class="tick">✓</span> Gorakhpur</div></div></div></div><div id="s4g-l" class="label" style="left:1180px;top:300px;">the tracking page reads Arkiv</div><div id="s4g-l2" class="label" style="left:1180px;top:340px;">Ghosh Cloth House, Gorakhpur</div><h2 id="s4g-line" class="line"><span class="w">Gorakhpur.</span><span class="w">Last</span><span class="w">stop</span><span class="w">checked.</span><span class="w">The</span><span class="w">shop</span><span class="w">watched</span><span class="w">it</span><span class="w">the</span><span class="w">whole</span><span class="w">way.</span></h2></div><div id="s4h" class="shot"><div id="s4h-n1" class="obj big" style="left:300px;top:180px;font-size:200px;color:#2E7D4F">₹0</div><div id="s4h-n2" class="obj big" style="left:960px;top:180px;font-size:200px;color:#2E7D4F">₹0</div><div id="s4h-k1" class="label" style="left:310px;top:420px;">Ramesh · 80 km</div><div id="s4h-k2" class="label" style="left:970px;top:420px;">Suresh · 270 km</div><div id="s4h-l" class="label" style="left:310px;top:520px;">Daak's 2% is taken by the token's own fee rule</div><h2 id="s4h-line" class="line"><span class="w">₹41</span><span class="w">for</span><span class="w">80</span><span class="w">km.</span><span class="w">₹139</span><span class="w">for</span><span class="w">270</span><span class="w">km.</span><span class="w hl">Paid</span><span class="w">at</span><span class="w">once.</span></h2></div><div id="s4i" class="shot"><div id="s4i-phone" class="obj phone" style="left:800px;top:50px;width:330px;height:676px">
+<div class="phone-body" style="width:330px;height:676px"><div class="phone-screen"><div id="s4i-note" style="background:#fff;border:3px solid #1F2A44;border-radius:18px;padding:18px"><div class="label" style="position:static">UPI · just now</div><div style="font-size:30px;font-weight:700;margin-top:6px">₹40.31 received</div><div style="font-size:20px;margin-top:4px">Daak · KNP-7115 · 80 km</div></div></div></div></div><h2 id="s4i-line" class="line"><span class="w">Straight</span><span class="w">to</span><span class="w hl">UPI.</span><span class="w">No</span><span class="w">wallet,</span><span class="w">no</span><span class="w">crypto,</span><span class="w">just</span><span class="w">rupees.</span></h2></div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+const D = 40;
+function shot(sel, t0, t1) {
+  if (t0 <= 0) tl.set(sel, { opacity: 1 }, 0);
+  else tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" }, t0);
+  if (t1 < D - 0.01) tl.to(sel, { opacity: 0, duration: 0.22, ease: "power3.in" }, t1 - 0.22);
+}
+function say(sel, t) {
+  tl.fromTo(sel + " .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, ease: "power4.out", stagger: 0.07 }, t);
+}
+function arrive(sel, t, from) {
+  tl.fromTo(sel, Object.assign({ opacity: 0 }, from || { y: 40 }), { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.55, ease: "expo.out" }, t);
+}
+function stampIn(sel, t) {
+  tl.fromTo(sel, { opacity: 0, scale: 1.35 }, { opacity: 1, scale: 1, duration: 0.14, ease: "back.out(2)" }, t);
+}
+function count(sel, t, to, dec, pre) {
+  const o = { v: 0 };
+  tl.fromTo(o, { v: 0 }, { v: to, duration: 0.6, ease: "power2.out", onUpdate: () => { document.querySelector(sel).textContent = (pre || "") + o.v.toFixed(dec || 0); } }, t);
+}
+shot("#s4a", 0, 4.5);
+say("#s4a-line", 0+0.35);
+arrive("#s4a-slip", 0.1); stampIn("#s4a-402", 1.0); stampIn("#s4a-paid", 2.0);
+shot("#s4b", 4.5, 9);
+say("#s4b-line", 4.5+0.35);
+arrive("#s4b-esc", 4.6); tl.fromTo("#s4b-bar1", { scaleX: 0, transformOrigin: "0 50%" }, { scaleX: 1, duration: 0.6, ease: "expo.out" }, 5.4); tl.fromTo("#s4b-bar2", { scaleX: 0, transformOrigin: "0 50%" }, { scaleX: 1, duration: 0.8, ease: "expo.out" }, 5.6); count("#s4b-n1", 5.5, 41.14, 2, "₹"); count("#s4b-n2", 5.7, 138.86, 2, "₹");
+shot("#s4c", 9, 14);
+say("#s4c-line", 9+0.35);
+arrive("#s4c-phone", 9.05); arrive("#s4c-parcel", 9.4, { x: -60 }); arrive("#s4c-badge", 10.6, { x: 60 }); tl.fromTo("#s4c-t3", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 12.2); tl.fromTo("#s4c-photo", { backgroundColor: "rgba(201,160,106,0)" }, { backgroundColor: "rgba(201,160,106,1)", duration: 0.25 }, 12.1);
+shot("#s4d", 14, 18.5);
+say("#s4d-line", 14+0.35);
+arrive("#s4d-check", 14.05); tl.fromTo("#s4d-t0", { opacity: 0, scale: 1.4 }, { opacity: 1, scale: 1, duration: 0.15 }, 14.9); tl.fromTo("#s4d-t1", { opacity: 0, scale: 1.4 }, { opacity: 1, scale: 1, duration: 0.15 }, 15.4); tl.fromTo("#s4d-t2", { opacity: 0, scale: 1.4 }, { opacity: 1, scale: 1, duration: 0.15 }, 15.9);
+shot("#s4e", 18.5, 23);
+say("#s4e-line", 18.5+0.35);
+stampIn("#s4e-h", 18.9); stampIn("#s4e-a", 19.5); stampIn("#s4e-m", 20.1);
+shot("#s4f", 23, 28);
+say("#s4f-line", 23+0.35);
+arrive("#s4f-bus", 23.05, { x: -120 }); tl.to("#s4f-bar3", { opacity: 0.12, duration: 0.2 }, 24.0); tl.to("#s4f-bar2", { opacity: 0.12, duration: 0.2 }, 24.3); tl.to("#s4f-bar1", { opacity: 0.12, duration: 0.2 }, 24.6); tl.to("#s4f-bar0", { opacity: 0.12, duration: 0.2 }, 24.9); arrive("#s4f-held", 25.2, { x: 60 });
+shot("#s4g", 28, 32.5);
+say("#s4g-line", 28+0.35);
+arrive("#s4g-phone", 28.05);
+shot("#s4h", 32.5, 36.5);
+say("#s4h-line", 32.5+0.35);
+count("#s4h-n1", 32.9, 41, 0, "₹"); count("#s4h-n2", 33.1, 139, 0, "₹");
+shot("#s4i", 36.5, 40);
+say("#s4i-line", 36.5+0.35);
+arrive("#s4i-phone", 36.55); arrive("#s4i-note", 37.0, { y: -50 });
+tl.fromTo("#s4-dot", { x: 0 }, { x: 197, duration: 1.2, ease: "power2.inOut" }, 9.0); tl.to("#s4-dot", { x: 760, duration: 1.6, ease: "power2.inOut" }, 23.5); tl.to("#s4-dot", { backgroundColor: "#2E7D4F", duration: 0.2 }, 29.0);
+tl.to({}, { duration: 0.01 }, D - 0.01);
+window.__timelines["journey"] = tl;
+</script>
+</template>

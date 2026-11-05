@@ -1,0 +1,899 @@
+{
+  "ok": true,
+  "strict": false,
+  "browserSkipped": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 1,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "gsap_repeated_fromto_without_baseline",
+        "severity": "warning",
+        "message": "4 tl.fromTo() calls target \"proxy (unresolved DOM association)\" with no stable baseline. The last-authored fromTo \"from\" values become the element's resting state for any seek before the first tween actually runs, because GSAP applies fromTo from-values at authoring time (immediateRender), not at tween position.",
+        "selector": "proxy (unresolved DOM association)",
+        "dataAttributes": {},
+        "sourceFile": "/Users/adilhusain/Documents/Projects/mine/EthGlobalMumbai2026/daak/video/compositions/journey.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Add `immediateRender: false` to every fromTo except the earliest-positioned one (at 5.5s), so pre-first-tween seeks keep its \"from\" values. A hiding `tl.set(..., 0)` baseline trips gsap_timeline_set_initial_hide, and a `gsap.set` authored before the fromTo calls is overwritten by them."
+      }
+    ],
+    "filesScanned": 7
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "duration": 95,
+    "samples": [
+      5.278,
+      15.833,
+      26.389,
+      36.944,
+      47.5,
+      58.056,
+      68.611,
+      79.167,
+      89.722
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 0,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "samples": 0
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 1,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "contrast_aa_failure",
+        "severity": "warning",
+        "message": "Contrast is 4.4:1; WCAG AA requires 4.5:1.",
+        "text": "paid by the km",
+        "fg": "rgb(46,125,79)",
+        "bg": "rgb(243,239,231)",
+        "ratio": 4.4,
+        "requiredRatio": 4.5,
+        "suggestedColor": "rgb(45,123,78)",
+        "large": false,
+        "selector": "div > div:nth-of-type(6) > div > div:nth-of-type(1) > div:nth-of-type(2) > svg > text:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/claim.html",
+        "bbox": {
+          "x": 1114.54638671875,
+          "y": 329.2288818359375,
+          "width": 163.1563720703125,
+          "height": 44.66815185546875
+        },
+        "time": 89.722,
+        "times": [
+          89.722
+        ]
+      }
+    ],
+    "enabled": true,
+    "samples": [
+      5.278,
+      26.389,
+      47.5,
+      68.611,
+      89.722
+    ],
+    "checked": 62,
+    "passed": 61
+  },
+  "craft": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 11,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "first_frame_empty",
+        "severity": "warning",
+        "message": "Frame 0 shows only the background, and the first frame is the thumbnail on social players: have the title or key image already on screen at 0 s instead of entering from nothing; see references/review.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0
+      },
+      {
+        "code": "film_silent",
+        "severity": "warning",
+        "message": "This 95 s film has no sound source (no <audio>, no <video> with sound): add a music bed and sounds on the visible actions unless the person asked for silence; see references/sound.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 6 text elements stay under it for 0.5 s or more, the smallest \"chowki\" at 24 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "chowki",
+        "selector": "#s1a-l1",
+        "dataAttributes": {},
+        "sourceFile": "compositions/thennow.html",
+        "bbox": {
+          "x": 268,
+          "y": 620,
+          "width": 86.41,
+          "height": 31
+        },
+        "time": 0.159,
+        "times": [
+          0.159,
+          0.159,
+          0.159,
+          4.124,
+          4.124,
+          4.282
+        ],
+        "fontPx": 24,
+        "floorPx": 28,
+        "seconds": 3.965,
+        "elements": [
+          {
+            "selector": "#s1a-l1",
+            "text": "chowki",
+            "fontPx": 24,
+            "time": 0.159,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s1a-l2",
+            "text": "chowki",
+            "fontPx": 24,
+            "time": 0.159,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s1a-l3",
+            "text": "Grand Trunk Road, 1540",
+            "fontPx": 24,
+            "time": 0.159,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s1b-l1",
+            "text": "Grand Trunk Road, 2026",
+            "fontPx": 24,
+            "time": 4.124,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s1b-l2",
+            "text": "the seal is now an NFC sticker",
+            "fontPx": 24,
+            "time": 4.124,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s1b-bus > svg:nth-of-type(1) > text:nth-of-type(1)",
+            "text": "KNP › LKO",
+            "fontPx": 25.6,
+            "time": 4.282,
+            "seconds": 3.807
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 14 text elements stay under it for 0.5 s or more, the smallest \"KNP › LKO\" at 10 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "KNP › LKO",
+        "selector": "#s2a-b1 > svg:nth-of-type(1) > text:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/breaks.html",
+        "bbox": {
+          "x": 467.97,
+          "y": 363,
+          "width": 51.85,
+          "height": 13
+        },
+        "time": 8.406,
+        "times": [
+          8.088,
+          8.088,
+          8.088,
+          8.088,
+          8.406,
+          8.723,
+          11.578,
+          11.578,
+          11.578,
+          14.591,
+          14.75,
+          14.908,
+          15.067,
+          18.556
+        ],
+        "fontPx": 9.6,
+        "floorPx": 28,
+        "seconds": 3.172,
+        "elements": [
+          {
+            "selector": "#s2a-b1 > svg:nth-of-type(1) > text:nth-of-type(1)",
+            "text": "KNP › LKO",
+            "fontPx": 9.6,
+            "time": 8.406,
+            "seconds": 3.172
+          },
+          {
+            "selector": "#s2a-b2 > svg:nth-of-type(1) > text:nth-of-type(1)",
+            "text": "LKO › GKP",
+            "fontPx": 9.6,
+            "time": 8.723,
+            "seconds": 2.855
+          },
+          {
+            "selector": "#s2a-k",
+            "text": "Kanpur",
+            "fontPx": 24,
+            "time": 8.088,
+            "seconds": 3.49
+          },
+          {
+            "selector": "#s2a-l",
+            "text": "Lucknow",
+            "fontPx": 24,
+            "time": 8.088,
+            "seconds": 3.49
+          },
+          {
+            "selector": "#s2a-g",
+            "text": "Gorakhpur",
+            "fontPx": 24,
+            "time": 8.088,
+            "seconds": 3.49
+          },
+          {
+            "selector": "#s2a-r",
+            "text": "receipt?",
+            "fontPx": 24,
+            "time": 8.088,
+            "seconds": 3.49
+          },
+          {
+            "selector": "#s2b-a1",
+            "text": "driver 1 →",
+            "fontPx": 24,
+            "time": 11.578,
+            "seconds": 3.013
+          },
+          {
+            "selector": "#s2b-a2",
+            "text": "← driver 2",
+            "fontPx": 24,
+            "time": 11.578,
+            "seconds": 3.013
+          },
+          {
+            "selector": "#s2b-a3",
+            "text": "← the shop",
+            "fontPx": 24,
+            "time": 11.578,
+            "seconds": 3.013
+          },
+          {
+            "selector": "#s2c-l",
+            "text": "same parcel, same route, same day",
+            "fontPx": 24,
+            "time": 14.591,
+            "seconds": 3.49
+          },
+          {
+            "selector": "#s2c-q1 > div:nth-of-type(2)",
+            "text": "driver A",
+            "fontPx": 24,
+            "time": 14.75,
+            "seconds": 3.331
+          },
+          {
+            "selector": "#s2c-q2 > div:nth-of-type(2)",
+            "text": "driver B",
+            "fontPx": 24,
+            "time": 14.908,
+            "seconds": 3.173
+          },
+          {
+            "selector": "#s2c-q3 > div:nth-of-type(2)",
+            "text": "driver C",
+            "fontPx": 24,
+            "time": 15.067,
+            "seconds": 3.014
+          },
+          {
+            "selector": "#s2d-reg > div:nth-of-type(8)",
+            "text": "no entries",
+            "fontPx": 24,
+            "time": 18.556,
+            "seconds": 3.489
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 2 text elements stay under it for 0.5 s or more, the smallest \"from dak, the relay post of the Grand...\" at 24 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "from dak, the relay post of the Grand Trunk Road",
+        "selector": "#s3a-l",
+        "dataAttributes": {},
+        "sourceFile": "compositions/reveal.html",
+        "bbox": {
+          "x": 168,
+          "y": 600,
+          "width": 691.2,
+          "height": 31
+        },
+        "time": 26.169,
+        "times": [
+          26.169,
+          26.962
+        ],
+        "fontPx": 24,
+        "floorPx": 28,
+        "seconds": 3.965,
+        "elements": [
+          {
+            "selector": "#s3a-l",
+            "text": "from dak, the relay post of the Grand Trunk Road",
+            "fontPx": 24,
+            "time": 26.169,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s3a-st > svg:nth-of-type(1) > text:nth-of-type(2)",
+            "text": "every handoff",
+            "fontPx": 24,
+            "time": 26.962,
+            "seconds": 3.172
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 27 text elements stay under it for 0.5 s or more, the smallest \"payment required\" at 16 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "payment required",
+        "selector": "#s4a-402 > svg:nth-of-type(1) > text:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/journey.html",
+        "bbox": {
+          "x": 1230.67,
+          "y": 240.19,
+          "width": 156.08,
+          "height": 42.46
+        },
+        "time": 31.085,
+        "times": [
+          30.134,
+          30.292,
+          31.085,
+          32.037,
+          34.574,
+          34.733,
+          34.733,
+          39.174,
+          39.174,
+          39.174,
+          39.174,
+          40.76,
+          44.09,
+          49.007,
+          49.641,
+          50.275,
+          53.289,
+          58.205,
+          58.205,
+          58.205,
+          58.205,
+          58.205,
+          62.646,
+          62.646,
+          62.646,
+          67.087,
+          67.087
+        ],
+        "fontPx": 16.11,
+        "floorPx": 28,
+        "seconds": 3.49,
+        "elements": [
+          {
+            "selector": "#s4a-402 > svg:nth-of-type(1) > text:nth-of-type(2)",
+            "text": "payment required",
+            "fontPx": 16.11,
+            "time": 31.085,
+            "seconds": 3.49
+          },
+          {
+            "selector": "#s4f-bus > svg:nth-of-type(1) > text:nth-of-type(1)",
+            "text": "LKO › GKP",
+            "fontPx": 16.8,
+            "time": 53.289,
+            "seconds": 4.758
+          },
+          {
+            "selector": "#s4a-paid > svg:nth-of-type(1) > text:nth-of-type(2)",
+            "text": "x402 · Hedera",
+            "fontPx": 18.4,
+            "time": 32.037,
+            "seconds": 2.538
+          },
+          {
+            "selector": "div.badge-route",
+            "text": "LKO › GKP",
+            "fontPx": 20,
+            "time": 40.76,
+            "seconds": 3.331
+          },
+          {
+            "selector": "#s4i-note > div:nth-of-type(3)",
+            "text": "Daak · KNP-7115 · 80 km",
+            "fontPx": 20,
+            "time": 67.087,
+            "seconds": 3.014
+          },
+          {
+            "selector": "#s4e-h > svg:nth-of-type(1) > text:nth-of-type(2)",
+            "text": "public log #7",
+            "fontPx": 23.22,
+            "time": 49.007,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s4e-a > svg:nth-of-type(1) > text:nth-of-type(2)",
+            "text": "expires in a day",
+            "fontPx": 23.96,
+            "time": 49.641,
+            "seconds": 3.331
+          },
+          {
+            "selector": "#s4a-l",
+            "text": "paid by the shop's own agent, no human in the loop",
+            "fontPx": 24,
+            "time": 30.134,
+            "seconds": 4.441
+          },
+          {
+            "selector": "#s4a-slip > div:nth-of-type(2)",
+            "text": "Kanpur › Lucknow › Gorakhpur · 350 km",
+            "fontPx": 24,
+            "time": 30.292,
+            "seconds": 4.283
+          },
+          {
+            "selector": "#s4b-l",
+            "text": "payout written now as a Hedera scheduled transaction, signed at delivery",
+            "fontPx": 24,
+            "time": 34.574,
+            "seconds": 4.441
+          },
+          {
+            "selector": "#s4b-esc > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "Ramesh · 80 km",
+            "fontPx": 24,
+            "time": 34.733,
+            "seconds": 4.282
+          },
+          {
+            "selector": "#s4b-esc > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(2)",
+            "text": "Suresh · 270 km",
+            "fontPx": 24,
+            "time": 34.733,
+            "seconds": 4.282
+          },
+          {
+            "selector": "#s4c-phone > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Parcel KNP-7115",
+            "fontPx": 24,
+            "time": 39.174,
+            "seconds": 4.917
+          },
+          {
+            "selector": "#s4c-phone > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "Badge: Suresh",
+            "fontPx": 24,
+            "time": 39.174,
+            "seconds": 4.917
+          },
+          {
+            "selector": "#s4c-phone > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)",
+            "text": "Lid photo",
+            "fontPx": 24,
+            "time": 39.174,
+            "seconds": 4.917
+          },
+          {
+            "selector": "#s4c-gps",
+            "text": "26.8317, 80.9202 · Charbagh bus stand",
+            "fontPx": 24,
+            "time": 39.174,
+            "seconds": 4.917
+          },
+          {
+            "selector": "#s4d-l",
+            "text": "0G sealed AI (TeeML) · decision and request id saved to 0G Storage",
+            "fontPx": 24,
+            "time": 44.09,
+            "seconds": 4.441
+          },
+          {
+            "selector": "#s4e-m > svg:nth-of-type(1) > text:nth-of-type(2)",
+            "text": "Charbagh",
+            "fontPx": 24,
+            "time": 50.275,
+            "seconds": 2.697
+          },
+          {
+            "selector": "#s4g-phone > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Parcel KNP-7115",
+            "fontPx": 24,
+            "time": 58.205,
+            "seconds": 4.283
+          },
+          {
+            "selector": "#s4g-phone > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)",
+            "text": "Lucknow",
+            "fontPx": 24,
+            "time": 58.205,
+            "seconds": 4.283
+          },
+          {
+            "selector": "#s4g-phone > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(4)",
+            "text": "Gorakhpur",
+            "fontPx": 24,
+            "time": 58.205,
+            "seconds": 4.283
+          },
+          {
+            "selector": "#s4g-l",
+            "text": "the tracking page reads Arkiv",
+            "fontPx": 24,
+            "time": 58.205,
+            "seconds": 4.283
+          },
+          {
+            "selector": "#s4g-l2",
+            "text": "Ghosh Cloth House, Gorakhpur",
+            "fontPx": 24,
+            "time": 58.205,
+            "seconds": 4.283
+          },
+          {
+            "selector": "#s4h-k1",
+            "text": "Ramesh · 80 km",
+            "fontPx": 24,
+            "time": 62.646,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s4h-k2",
+            "text": "Suresh · 270 km",
+            "fontPx": 24,
+            "time": 62.646,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s4h-l",
+            "text": "Daak's 2% is taken by the token's own fee rule",
+            "fontPx": 24,
+            "time": 62.646,
+            "seconds": 3.965
+          },
+          {
+            "selector": "#s4i-note > div:nth-of-type(1)",
+            "text": "UPI · just now",
+            "fontPx": 24,
+            "time": 67.087,
+            "seconds": 3.014
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 13 text elements stay under it for 0.5 s or more, the smallest \"₹2.01 saved from this trip\" at 24 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "₹2.01 saved from this trip",
+        "selector": "#s5a-l",
+        "dataAttributes": {},
+        "sourceFile": "compositions/gains.html",
+        "bbox": {
+          "x": 820,
+          "y": 300,
+          "width": 374.41,
+          "height": 31
+        },
+        "time": 70.1,
+        "times": [
+          70.1,
+          70.1,
+          70.259,
+          76.127,
+          76.285,
+          76.285,
+          76.285,
+          76.285,
+          77.713,
+          82.312,
+          82.312,
+          82.471,
+          82.471
+        ],
+        "fontPx": 24,
+        "floorPx": 28,
+        "seconds": 5.869,
+        "elements": [
+          {
+            "selector": "#s5a-l",
+            "text": "₹2.01 saved from this trip",
+            "fontPx": 24,
+            "time": 70.1,
+            "seconds": 5.869
+          },
+          {
+            "selector": "#s5a-l2",
+            "text": "held with a partner bank in production",
+            "fontPx": 24,
+            "time": 70.1,
+            "seconds": 5.869
+          },
+          {
+            "selector": "#s5a-phone > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "save 5% of every payout · ON",
+            "fontPx": 24,
+            "time": 70.259,
+            "seconds": 5.71
+          },
+          {
+            "selector": "#s5b-l",
+            "text": "illustrative month of work",
+            "fontPx": 24,
+            "time": 76.127,
+            "seconds": 5.868
+          },
+          {
+            "selector": "#s5b-card > div:nth-of-type(2)",
+            "text": "work record, read from the public Hedera log",
+            "fontPx": 24,
+            "time": 76.285,
+            "seconds": 5.71
+          },
+          {
+            "selector": "#s5b-card > div:nth-of-type(3) > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "deliveries",
+            "fontPx": 24,
+            "time": 76.285,
+            "seconds": 5.71
+          },
+          {
+            "selector": "#s5b-card > div:nth-of-type(3) > div:nth-of-type(2) > div:nth-of-type(2)",
+            "text": "km",
+            "fontPx": 24,
+            "time": 76.285,
+            "seconds": 5.71
+          },
+          {
+            "selector": "#s5b-card > div:nth-of-type(3) > div:nth-of-type(3) > div:nth-of-type(2)",
+            "text": "clean",
+            "fontPx": 24,
+            "time": 76.285,
+            "seconds": 5.71
+          },
+          {
+            "selector": "#s5c-r0 > div:nth-of-type(2)",
+            "text": "KNP › LKO · 9,800 km",
+            "fontPx": 24,
+            "time": 82.312,
+            "seconds": 5.71
+          },
+          {
+            "selector": "#s5c-r1 > div:nth-of-type(2)",
+            "text": "KNP › LKO · 7,200 km",
+            "fontPx": 24,
+            "time": 82.312,
+            "seconds": 5.71
+          },
+          {
+            "selector": "#s5c-r2 > div:nth-of-type(2)",
+            "text": "KNP › LKO · 3,100 km",
+            "fontPx": 24,
+            "time": 82.471,
+            "seconds": 5.551
+          },
+          {
+            "selector": "#s5c-r3 > div:nth-of-type(2)",
+            "text": "KNP › LKO · 600 km",
+            "fontPx": 24,
+            "time": 82.471,
+            "seconds": 5.551
+          },
+          {
+            "selector": "#s5b-st > svg:nth-of-type(1) > text:nth-of-type(2)",
+            "text": "fuel advance",
+            "fontPx": 24.76,
+            "time": 77.713,
+            "seconds": 4.282
+          }
+        ]
+      },
+      {
+        "code": "dead_stretch",
+        "severity": "warning",
+        "message": "Nothing on screen changes for 4.12 s (71.53–75.65 s): start the next move within 3 s, or put data-hold on the element whose stillness is deliberate; see references/motion.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 71.528,
+        "seconds": 4.123,
+        "floorSeconds": 3,
+        "until": 75.651
+      },
+      {
+        "code": "dead_stretch",
+        "severity": "warning",
+        "message": "Nothing on screen changes for 3.81 s (77.87–81.68 s): start the next move within 3 s, or put data-hold on the element whose stillness is deliberate; see references/motion.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 77.871,
+        "seconds": 3.807,
+        "floorSeconds": 3,
+        "until": 81.678
+      },
+      {
+        "code": "dead_stretch",
+        "severity": "warning",
+        "message": "Nothing on screen changes for 4.76 s (83.11–87.86 s): start the next move within 3 s, or put data-hold on the element whose stillness is deliberate; see references/motion.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 83.105,
+        "seconds": 4.758,
+        "floorSeconds": 3,
+        "until": 87.863
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 3 text elements stay under it for 0.5 s or more, the smallest \"paid by the km\" at 19 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "paid by the km",
+        "selector": "#s6a-st > svg:nth-of-type(1) > text:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/claim.html",
+        "bbox": {
+          "x": 1109.58,
+          "y": 329.77,
+          "width": 172.64,
+          "height": 47.26
+        },
+        "time": 89.449,
+        "times": [
+          89.449,
+          91.987,
+          91.987
+        ],
+        "fontPx": 19.2,
+        "floorPx": 28,
+        "seconds": 2.379,
+        "elements": [
+          {
+            "selector": "#s6a-st > svg:nth-of-type(1) > text:nth-of-type(2)",
+            "text": "paid by the km",
+            "fontPx": 19.2,
+            "time": 89.449,
+            "seconds": 2.379
+          },
+          {
+            "selector": "#s6b-l",
+            "text": "Proof for every handoff. Pay for every kilometre.",
+            "fontPx": 24,
+            "time": 91.987,
+            "seconds": 3.013
+          },
+          {
+            "selector": "#s6b-l2",
+            "text": "ETHGlobal Mumbai 2026 · 0G · Hedera · Arkiv",
+            "fontPx": 24,
+            "time": 91.987,
+            "seconds": 3.013
+          }
+        ]
+      }
+    ],
+    "enabled": true,
+    "step": 0.15899999999999892,
+    "samples": 599
+  },
+  "audio": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 1,
+    "findings": [
+      {
+        "code": "audio_none",
+        "severity": "info",
+        "message": "The film has no sound: no clip in it plays audio.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0
+      }
+    ]
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": false,
+    "files": [],
+    "times": [],
+    "findingFiles": []
+  }
+}

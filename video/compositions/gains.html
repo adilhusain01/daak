@@ -1,0 +1,71 @@
+<template>
+<style>
+@font-face{font-family:'Geist';src:url('assets/fonts/Geist-Variable.woff2') format('woff2');font-weight:100 900;}
+@font-face{font-family:'Geist Mono';src:url('assets/fonts/GeistMono-Variable.woff2') format('woff2');font-weight:100 900;}
+
+#root{position:absolute;inset:0;background:#F7F3EA;overflow:hidden;font-family:'Geist',sans-serif;color:#1F2A44}
+#root .grain{position:absolute;inset:0;opacity:.06;pointer-events:none}
+#root .shot{position:absolute;inset:0;opacity:0}
+#root .line{position:absolute;left:160px;top:820px;width:1600px;font-size:76px;line-height:1.08;font-weight:640;letter-spacing:-0.02em;color:#1F2A44}
+#root .line .w{display:inline-block;opacity:0;margin-right:0.24em}
+#root .line .hl{color:#2E7D4F}
+#root .line .bad{color:#B23A3A}
+#root .line .wait{color:#B7791F}
+#root .obj{position:absolute}
+#root .label{position:absolute;font-family:'Geist Mono',monospace;font-size:28px;font-weight:500;color:rgba(31,42,68,.7);white-space:nowrap}
+#root .phone-body{background:#1F2A44;border-radius:46px;padding:14px;box-shadow:0 18px 40px rgba(31,42,68,.14)}
+#root .phone-screen{background:#F7F3EA;border-radius:34px;width:100%;height:100%;position:relative;overflow:hidden;padding:30px 24px}
+#root .badge{background:#fff;border:3px solid #1F2A44;border-radius:18px;padding:18px;box-shadow:0 18px 40px rgba(31,42,68,.14)}
+#root .badge-photo{width:72px;height:72px;border-radius:10px;background:#D9CFBC;margin-bottom:12px}
+#root .badge-name{font-size:30px;font-weight:700}
+#root .badge-route{font-family:'Geist Mono',monospace;font-size:20px;opacity:.65;margin-top:4px}
+#root .badge-nfc{position:absolute;right:16px;top:16px}
+#root .card{position:absolute;background:#fff;border:3px solid #1F2A44;border-radius:20px;padding:28px 32px}
+#root .row{display:flex;align-items:center;gap:18px;font-size:34px;font-weight:600;margin:10px 0}
+#root .tick{width:40px;height:40px;border-radius:8px;border:3px solid #2E7D4F;display:inline-flex;align-items:center;justify-content:center;color:#2E7D4F;font-weight:800;font-size:28px}
+#root .big{font-weight:800;letter-spacing:-0.03em}
+#root .route{position:absolute}
+
+</style>
+<div id="root" data-composition-id="gains" data-width="1920" data-height="1080">
+<svg class="grain" width="1920" height="1080"><filter id="gains-n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0.12 0 0 0 0 0.16 0 0 0 0 0.27 0 0 0 0.9 0"/></filter><rect width="1920" height="1080" filter="url(#gains-n)"/></svg>
+<div id="s5a" class="shot"><div id="s5a-phone" class="obj phone" style="left:360px;top:50px;width:330px;height:676px">
+<div class="phone-body" style="width:330px;height:676px"><div class="phone-screen"><div style="font-size:30px;font-weight:700">Bachat</div><div class="label" style="position:static;margin:6px 0 18px">save 5% of every payout · ON</div><div style="height:300px;border:3px solid #1F2A44;border-radius:16px;position:relative;overflow:hidden"><div id="s5a-fill" style="position:absolute;left:0;right:0;bottom:0;height:100%;background:#2E7D4F;transform-origin:50% 100%"></div></div><div id="s5a-n" class="big" style="font-size:44px;margin-top:14px">₹0.00</div></div></div></div><div id="s5a-l" class="label" style="left:820px;top:300px;">₹2.01 saved from this trip</div><div id="s5a-l2" class="label" style="left:820px;top:340px;">held with a partner bank in production</div><h2 id="s5a-line" class="line"><span class="w">Ramesh</span><span class="w">sets</span><span class="w">aside</span><span class="w hl">5%</span><span class="w">in</span><span class="w">Bachat,</span><span class="w">automatically.</span></h2></div><div id="s5b" class="shot"><div id="s5b-card" class="card" style="left:300px;top:120px;width:760px;"><div style="font-size:30px;font-weight:700">Ramesh · Kanpur › Lucknow bus</div><div class="label" style="position:static;margin:6px 0 20px">work record, read from the public Hedera log</div><div style="display:flex;gap:44px"><div><div class="big" style="font-size:72px">64</div><div class="label" style="position:static">deliveries</div></div><div><div class="big" style="font-size:72px">9,800</div><div class="label" style="position:static">km</div></div><div><div class="big" style="font-size:72px">98%</div><div class="label" style="position:static">clean</div></div></div></div><div id="s5b-st" class="obj stamp" style="left:1180px;top:140px;width:320px;height:320px">
+<svg width="320" height="320" viewBox="0 0 200 200" style="transform:rotate(-6deg)"><circle cx="100" cy="100" r="92" fill="none" stroke="#2E7D4F" stroke-width="7"/><circle cx="100" cy="100" r="78" fill="none" stroke="#2E7D4F" stroke-width="3"/>
+<text x="100" y="98" text-anchor="middle" font-family="Geist" font-weight="800" font-size="40" fill="#2E7D4F">₹2,000</text>
+<text x="100" y="130" text-anchor="middle" font-family="Geist Mono" font-weight="600" font-size="17" fill="#2E7D4F">fuel advance</text></svg></div><div id="s5b-l" class="label" style="left:300px;top:600px;">illustrative month of work</div><h2 id="s5b-line" class="line"><span class="w">His</span><span class="w">proven</span><span class="w hl">kilometres</span><span class="w">unlock</span><span class="w">a</span><span class="w">fuel</span><span class="w">advance.</span></h2></div><div id="s5c" class="shot"><div id="s5c-r0" class="card" style="left:420px;top:90px;width:1080px;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;border-color:#2E7D4F;box-shadow:0 18px 40px rgba(31,42,68,.14)"><div style="font-size:32px;font-weight:700">Ramesh</div><div class="label" style="position:static">KNP › LKO · 9,800 km</div><div style="font-size:30px;font-weight:700;color:#2E7D4F">98% clean · Book</div></div><div id="s5c-r1" class="card" style="left:420px;top:220px;width:1080px;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:32px;font-weight:700">Imran</div><div class="label" style="position:static">KNP › LKO · 7,200 km</div><div style="font-size:30px;font-weight:700;color:#1F2A44">95% clean</div></div><div id="s5c-r2" class="card" style="left:420px;top:350px;width:1080px;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:32px;font-weight:700">Vijay</div><div class="label" style="position:static">KNP › LKO · 3,100 km</div><div style="font-size:30px;font-weight:700;color:#1F2A44">91% clean</div></div><div id="s5c-r3" class="card" style="left:420px;top:480px;width:1080px;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:32px;font-weight:700">Ajay</div><div class="label" style="position:static">KNP › LKO · 600 km</div><div style="font-size:30px;font-weight:700;color:#1F2A44">new</div></div><h2 id="s5c-line" class="line"><span class="w">Shops</span><span class="w">find</span><span class="w">drivers</span><span class="w">by</span><span class="w">their</span><span class="w hl">record,</span><span class="w">not</span><span class="w">by</span><span class="w">luck.</span></h2></div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+const D = 18;
+function shot(sel, t0, t1) {
+  if (t0 <= 0) tl.set(sel, { opacity: 1 }, 0);
+  else tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" }, t0);
+  if (t1 < D - 0.01) tl.to(sel, { opacity: 0, duration: 0.22, ease: "power3.in" }, t1 - 0.22);
+}
+function say(sel, t) {
+  tl.fromTo(sel + " .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, ease: "power4.out", stagger: 0.07 }, t);
+}
+function arrive(sel, t, from) {
+  tl.fromTo(sel, Object.assign({ opacity: 0 }, from || { y: 40 }), { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.55, ease: "expo.out" }, t);
+}
+function stampIn(sel, t) {
+  tl.fromTo(sel, { opacity: 0, scale: 1.35 }, { opacity: 1, scale: 1, duration: 0.14, ease: "back.out(2)" }, t);
+}
+function count(sel, t, to, dec, pre) {
+  const o = { v: 0 };
+  tl.fromTo(o, { v: 0 }, { v: to, duration: 0.6, ease: "power2.out", onUpdate: () => { document.querySelector(sel).textContent = (pre || "") + o.v.toFixed(dec || 0); } }, t);
+}
+shot("#s5a", 0, 6);
+say("#s5a-line", 0+0.35);
+arrive("#s5a-phone", 0.05); tl.fromTo("#s5a-fill", { scaleY: 0 }, { scaleY: 0.22, duration: 0.9, ease: "expo.out" }, 0.9); count("#s5a-n", 0.9, 2.01, 2, "₹");
+shot("#s5b", 6, 12);
+say("#s5b-line", 6+0.35);
+arrive("#s5b-card", 6.05); stampIn("#s5b-st", 7.6);
+shot("#s5c", 12, 18);
+say("#s5c-line", 12+0.35);
+arrive("#s5c-r0", 12.1); arrive("#s5c-r1", 12.2); arrive("#s5c-r2", 12.3); arrive("#s5c-r3", 12.4);
+tl.to({}, { duration: 0.01 }, D - 0.01);
+window.__timelines["gains"] = tl;
+</script>
+</template>

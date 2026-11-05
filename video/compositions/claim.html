@@ -1,0 +1,74 @@
+<template>
+<style>
+@font-face{font-family:'Geist';src:url('assets/fonts/Geist-Variable.woff2') format('woff2');font-weight:100 900;}
+@font-face{font-family:'Geist Mono';src:url('assets/fonts/GeistMono-Variable.woff2') format('woff2');font-weight:100 900;}
+
+#root{position:absolute;inset:0;background:#F7F3EA;overflow:hidden;font-family:'Geist',sans-serif;color:#1F2A44}
+#root .grain{position:absolute;inset:0;opacity:.06;pointer-events:none}
+#root .shot{position:absolute;inset:0;opacity:0}
+#root .line{position:absolute;left:160px;top:820px;width:1600px;font-size:76px;line-height:1.08;font-weight:640;letter-spacing:-0.02em;color:#1F2A44}
+#root .line .w{display:inline-block;opacity:0;margin-right:0.24em}
+#root .line .hl{color:#2E7D4F}
+#root .line .bad{color:#B23A3A}
+#root .line .wait{color:#B7791F}
+#root .obj{position:absolute}
+#root .label{position:absolute;font-family:'Geist Mono',monospace;font-size:28px;font-weight:500;color:rgba(31,42,68,.7);white-space:nowrap}
+#root .phone-body{background:#1F2A44;border-radius:46px;padding:14px;box-shadow:0 18px 40px rgba(31,42,68,.14)}
+#root .phone-screen{background:#F7F3EA;border-radius:34px;width:100%;height:100%;position:relative;overflow:hidden;padding:30px 24px}
+#root .badge{background:#fff;border:3px solid #1F2A44;border-radius:18px;padding:18px;box-shadow:0 18px 40px rgba(31,42,68,.14)}
+#root .badge-photo{width:72px;height:72px;border-radius:10px;background:#D9CFBC;margin-bottom:12px}
+#root .badge-name{font-size:30px;font-weight:700}
+#root .badge-route{font-family:'Geist Mono',monospace;font-size:20px;opacity:.65;margin-top:4px}
+#root .badge-nfc{position:absolute;right:16px;top:16px}
+#root .card{position:absolute;background:#fff;border:3px solid #1F2A44;border-radius:20px;padding:28px 32px}
+#root .row{display:flex;align-items:center;gap:18px;font-size:34px;font-weight:600;margin:10px 0}
+#root .tick{width:40px;height:40px;border-radius:8px;border:3px solid #2E7D4F;display:inline-flex;align-items:center;justify-content:center;color:#2E7D4F;font-weight:800;font-size:28px}
+#root .big{font-weight:800;letter-spacing:-0.03em}
+#root .route{position:absolute}
+
+</style>
+<div id="root" data-composition-id="claim" data-width="1920" data-height="1080">
+<svg class="grain" width="1920" height="1080"><filter id="claim-n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0.12 0 0 0 0 0.16 0 0 0 0 0.27 0 0 0 0.9 0"/></filter><rect width="1920" height="1080" filter="url(#claim-n)"/></svg>
+<div id="s6a" class="shot"><div id="s6a-parcel" class="obj" style="left:700px;top:120px;width:420px;height:332px">
+<svg width="420" height="332" viewBox="0 0 420 332">
+<polygon points="0,54.36 344.4,54.36 420,0 75.6,0" fill="#D9B680" stroke="#1F2A44" stroke-width="3"/>
+<rect x="0" y="54.36" width="344.4" height="247.64" fill="#C9A06A" stroke="#1F2A44" stroke-width="3"/>
+<polygon points="344.4,54.36 420,0 420,247.64 344.4,302" fill="#A9814F" stroke="#1F2A44" stroke-width="3"/>
+<rect x="151.2" y="54.36" width="42.0" height="247.64" fill="#E8D3A8" opacity="0.8"/>
+<text x="25.2" y="151.0" font-family="Geist" font-weight="700" font-size="42.0" fill="#1F2A44">KNP-7115</text>
+<g class="sticker"><circle cx="327.6" cy="187.24" r="29.400000000000002" fill="#fff" stroke="#1F2A44" stroke-width="3"/><path d="M317.1,181.2 q10.5,-12.6 21.0,0 M321.3,188.75 q6.3,-7.56 12.6,0" stroke="#1F2A44" stroke-width="3" fill="none"/></g>
+</svg></div><div id="s6a-st" class="obj stamp" style="left:1080px;top:200px;width:240px;height:240px">
+<svg width="240" height="240" viewBox="0 0 200 200" style="transform:rotate(7deg)"><circle cx="100" cy="100" r="92" fill="none" stroke="#2E7D4F" stroke-width="7"/><circle cx="100" cy="100" r="78" fill="none" stroke="#2E7D4F" stroke-width="3"/>
+<text x="100" y="98" text-anchor="middle" font-family="Geist" font-weight="800" font-size="40" fill="#2E7D4F">PROVEN</text>
+<text x="100" y="130" text-anchor="middle" font-family="Geist Mono" font-weight="600" font-size="18" fill="#2E7D4F">paid per km</text></svg></div><h2 id="s6a-line" class="line"><span class="w">A</span><span class="w">meter</span><span class="w">and</span><span class="w">a</span><span class="w">receipt</span><span class="w">for</span><span class="w">every</span><span class="w">parcel</span><span class="w">that</span><span class="w">changes</span><span class="w">hands.</span></h2></div><div id="s6b" class="shot"><div id="s6b-word" class="obj big" style="left:150px;top:300px;font-size:400px;line-height:1">Daak</div><div id="s6b-l" class="label" style="left:168px;top:760px;">Proof for every handoff. Pay for every kilometre.</div><div id="s6b-l2" class="label" style="left:168px;top:800px;">ETHGlobal Mumbai 2026 · 0G · Hedera · Arkiv</div><h2 id="s6b-line" class="line"></h2></div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+const D = 7;
+function shot(sel, t0, t1) {
+  if (t0 <= 0) tl.set(sel, { opacity: 1 }, 0);
+  else tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" }, t0);
+  if (t1 < D - 0.01) tl.to(sel, { opacity: 0, duration: 0.22, ease: "power3.in" }, t1 - 0.22);
+}
+function say(sel, t) {
+  tl.fromTo(sel + " .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, ease: "power4.out", stagger: 0.07 }, t);
+}
+function arrive(sel, t, from) {
+  tl.fromTo(sel, Object.assign({ opacity: 0 }, from || { y: 40 }), { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.55, ease: "expo.out" }, t);
+}
+function stampIn(sel, t) {
+  tl.fromTo(sel, { opacity: 0, scale: 1.35 }, { opacity: 1, scale: 1, duration: 0.14, ease: "back.out(2)" }, t);
+}
+function count(sel, t, to, dec, pre) {
+  const o = { v: 0 };
+  tl.fromTo(o, { v: 0 }, { v: to, duration: 0.6, ease: "power2.out", onUpdate: () => { document.querySelector(sel).textContent = (pre || "") + o.v.toFixed(dec || 0); } }, t);
+}
+shot("#s6a", 0, 3.8);
+say("#s6a-line", 0+0.35);
+arrive("#s6a-parcel", 0.05); stampIn("#s6a-st", 1.4);
+shot("#s6b", 3.8, 7);
+stampIn("#s6b-word", 3.9);
+tl.to({}, { duration: 0.01 }, D - 0.01);
+window.__timelines["claim"] = tl;
+</script>
+</template>
