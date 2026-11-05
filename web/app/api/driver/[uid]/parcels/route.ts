@@ -1,8 +1,10 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { recentConsignments, handoffsFor, getBadge } from "@/lib/arkiv";
 
 /** What a person should do next: parcels where they are the giver or the taker of the next handoff. */
 export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }> }) {
+  if (!isApp(_req)) return denied("app");
   const uid = decodeURIComponent((await ctx.params).uid);
   const list = await recentConsignments();
   const out = [];

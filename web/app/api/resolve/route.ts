@@ -1,3 +1,4 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { ScheduleDeleteTransaction, ScheduleId, TransferTransaction, PrivateKey } from "@hiero-ledger/sdk";
 import { consignmentByCode } from "@/lib/arkiv";
@@ -12,6 +13,7 @@ import { env } from "@/lib/env";
  * Either way the decision and who made it go on the public log.
  */
 export async function POST(req: Request) {
+  if (!isOperator(req)) return denied("operator");
   const { code, action, reviewer, note } = (await req.json()) as { code: string; action: "pay" | "refund"; reviewer?: string; note?: string };
   const c = await consignmentByCode(code);
   if (!c?.schedule) return NextResponse.json({ error: "Unknown consignment" }, { status: 404 });

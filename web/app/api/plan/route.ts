@@ -1,3 +1,4 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { getBadge, badgesByRole } from "@/lib/arkiv";
 import { pathBetween, stopName, meterFee, METER } from "@/lib/network";
@@ -8,6 +9,7 @@ import { readLog, workHistory } from "@/lib/history";
  * drivers who run it, best proven record first. The shop can take the suggestion or pick another driver.
  */
 export async function POST(req: Request) {
+  if (!isApp(req)) return denied("app");
   const { sender, receiver } = (await req.json()) as { sender: string; receiver: string };
   const [s, r] = await Promise.all([getBadge(sender), getBadge(receiver)]);
   if (!s?.stop || !r?.stop) return NextResponse.json({ error: "Shop or receiver has no bus stand" }, { status: 400 });

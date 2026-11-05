@@ -1,3 +1,4 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { consignmentByParcel, handoffsFor, getBadge } from "@/lib/arkiv";
 import { badgeHash } from "@/lib/history";
@@ -7,6 +8,7 @@ import { badgeHash } from "@/lib/history";
  * The next receiver is sent as a hash of their badge, so the app can warn about a wrong badge before sending.
  */
 export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }> }) {
+  if (!isApp(_req)) return denied("app");
   const uid = decodeURIComponent((await ctx.params).uid);
   const c = await consignmentByParcel(uid);
   if (!c) return NextResponse.json({ registered: false }, { status: 404 });

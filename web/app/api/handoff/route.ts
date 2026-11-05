@@ -1,3 +1,4 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { createHash } from "node:crypto";
 import { after, NextResponse } from "next/server";
 import { checkParcel, type Check } from "@/lib/zg";
@@ -24,6 +25,7 @@ const short = (uid: string) => createHash("sha256").update(uid).digest("hex").sl
  * record, the encrypted photo on Swarm and any payout finish after the response.
  */
 export async function POST(req: Request) {
+  if (!isApp(req)) return denied("app");
   const form = await req.formData();
   const parcel = String(form.get("parcel") ?? "");
   const from = String(form.get("from") ?? "");

@@ -1,3 +1,4 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { consignmentByCode, handoffsFor, writeHandoff } from "@/lib/arkiv";
 import { checkParcel } from "@/lib/zg";
@@ -13,6 +14,7 @@ import { cashOutAll } from "@/lib/settle";
  * then green, the scheduled payout releases with no person involved. A fail holds the hop.
  */
 export async function POST(req: Request) {
+  if (!isOperator(req)) return denied("operator");
   const { code } = (await req.json()) as { code: string };
   const c = await consignmentByCode(code);
   if (!c) return NextResponse.json({ error: "Unknown consignment" }, { status: 404 });

@@ -45,6 +45,7 @@ object Api {
 
     private fun get(path: String): Pair<Int, JSONObject> {
         val conn = URL("$base$path").openConnection() as HttpURLConnection
+        conn.setRequestProperty("x-daak-app", BuildConfig.APP_KEY)
         conn.connectTimeout = 8000
         conn.readTimeout = 30000
         val code = conn.responseCode
@@ -72,6 +73,7 @@ object Api {
 
     private fun post(path: String, body: JSONObject, readMs: Int = 30000): Pair<Int, JSONObject> {
         val conn = URL("$base$path").openConnection() as HttpURLConnection
+        conn.setRequestProperty("x-daak-app", BuildConfig.APP_KEY)
         conn.requestMethod = "POST"
         conn.connectTimeout = 8000
         conn.readTimeout = readMs
@@ -140,6 +142,7 @@ object Api {
 
     fun work(uid: String): Work {
         val conn = URL("$base/api/driver/${enc(uid)}").openConnection() as HttpURLConnection
+        conn.setRequestProperty("x-daak-app", BuildConfig.APP_KEY)
         conn.connectTimeout = 8000
         conn.readTimeout = 30000
         val j = JSONObject(conn.inputStream.bufferedReader().readText())
@@ -153,6 +156,7 @@ object Api {
 
     fun setSave(uid: String, percent: Int) {
         val conn = URL("$base/api/driver/${enc(uid)}").openConnection() as HttpURLConnection
+        conn.setRequestProperty("x-daak-app", BuildConfig.APP_KEY)
         conn.requestMethod = "POST"
         conn.connectTimeout = 8000
         conn.readTimeout = 30000
@@ -165,6 +169,7 @@ object Api {
     /** The shop's agent books and pays for this parcel's delivery; returns the link to write on its tag. */
     fun pack(parcel: String, sender: String? = null, receiver: String? = null, drivers: List<String> = emptyList()): Booking {
         val conn = URL("$base/api/pack").openConnection() as HttpURLConnection
+        conn.setRequestProperty("x-daak-app", BuildConfig.APP_KEY)
         conn.requestMethod = "POST"
         conn.connectTimeout = 8000
         conn.readTimeout = 90000
@@ -198,6 +203,8 @@ object Api {
         }.toByteArray()
 
         val conn = URL("$base/api/handoff").openConnection() as HttpURLConnection
+
+        conn.setRequestProperty("x-daak-app", BuildConfig.APP_KEY)
         conn.requestMethod = "POST"
         conn.connectTimeout = 8000
         conn.readTimeout = 60000

@@ -1,3 +1,4 @@
+import { denied, isApp } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { workHistory } from "@/lib/history";
 import { getBadge, getPrefs, putPrefs } from "@/lib/arkiv";
@@ -12,6 +13,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
 
 /** The driver opts in or out of Bachat (0 to 20% of each payout). */
 export async function POST(req: Request, ctx: { params: Promise<{ uid: string }> }) {
+  if (!isApp(req)) return denied("app");
   const { uid } = await ctx.params;
   const { savePercent } = (await req.json()) as { savePercent: number };
   const pct = Math.max(0, Math.min(20, Math.round(Number(savePercent) || 0)));

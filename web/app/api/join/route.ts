@@ -1,3 +1,4 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { putBadge } from "@/lib/arkiv";
 import { network } from "@/lib/network";
@@ -12,6 +13,7 @@ type Join = { uid: string; role: "driver" | "sender" | "receiver"; name: string;
  * are sealed before they go into the public record. The join is announced on the public log by badge hash only.
  */
 export async function POST(req: Request) {
+  if (!isApp(req)) return denied("app");
   const j = (await req.json()) as Join;
   const net = network();
   const errors: string[] = [];

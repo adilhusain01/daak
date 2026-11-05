@@ -1,3 +1,4 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { consignmentByCode, handoffsFor } from "@/lib/arkiv";
 import { releaseFee, hashscan } from "@/lib/payout";
@@ -9,6 +10,7 @@ import { logHandoff } from "@/lib/hedera";
  * Held handoffs are never paid from here.
  */
 export async function POST(req: Request) {
+  if (!isOperator(req)) return denied("operator");
   const { code, reviewer } = (await req.json()) as { code: string; reviewer?: string };
   const c = await consignmentByCode(code);
   if (!c?.schedule) return NextResponse.json({ error: "Unknown consignment or no scheduled payout" }, { status: 404 });

@@ -1,8 +1,10 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { handoffsFor } from "@/lib/arkiv";
 import { downloadPhoto, openRef } from "@/lib/swarm";
 
 /** The lid photo of one handoff: Daak unseals the Swarm reference from Arkiv and streams the image. */
 export async function GET(_req: Request, ctx: { params: Promise<{ code: string; hop: string }> }) {
+  if (!isOperator(_req)) return denied("operator");
   const { code, hop } = await ctx.params;
   const h = (await handoffsFor(code)).find((x) => x.hop === Number(hop) && x.photo);
   if (!h?.photo) return new Response("No photo for this handoff", { status: 404 });

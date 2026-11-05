@@ -1,8 +1,9 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { agentBook } from "@/lib/agent";
-import { getBadge, type Leg } from "@/lib/arkiv";
+import { getBadge, recentConsignments, type Leg } from "@/lib/arkiv";
 import { pathBetween, stopName } from "@/lib/network";
 
 /**
@@ -11,8 +12,13 @@ import { pathBetween, stopName } from "@/lib/network";
  * pays its giver for the stretch they carried. The shop's agent then pays for the booking over x402.
  */
 export async function POST(req: Request) {
+  if (!isApp(req)) return denied("app");
   const body = (await req.json()) as { parcel: string; sender?: string; receiver?: string; drivers?: string[] };
   if (!body.parcel) return NextResponse.json({ error: "Tap a parcel first" }, { status: 400 });
+  // A cap so a leaked app key cannot make Daak's agent spend without limit.
+  const cap = Number(process.env.BOOKINGS_PER_HOUR ?? 12);
+  const lastHour = (await recentConsignments()).filter((c) => c.createdAt > Date.now() - 3600_000).length;
+  if (lastHour >= cap) return NextResponse.json({ error: `Booking limit reached (${cap} an hour). Try again later.` }, { status: 429 });
   const origin = new URL(req.url).origin;
 
   let route: Leg[];

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "@x402/next";
 import { x402Server, BOOKING_PRICE } from "@/lib/x402";
-import { putConsignment, type Leg } from "@/lib/arkiv";
+import { putConsignment, getBadge, type Leg } from "@/lib/arkiv";
 import { lockFee, hashscan } from "@/lib/payout";
 import { logHandoff } from "@/lib/hedera";
 
@@ -21,6 +21,10 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
     return NextResponse.json({ error: "Need parcel and route" }, { status: 400 });
   }
   b.feeRupees = Math.round(meterFee(b.route) * 100) / 100;
+  // Only people who have joined Daak can be on a route: no accounts are created for made-up badges.
+  const people = [...new Set(b.route.flatMap((l) => [l.from, l.to]))];
+  const known = await Promise.all(people.map((u) => getBadge(u).catch(() => null)));
+  if (known.some((k) => !k)) return NextResponse.json({ error: "Everyone on the route must join Daak first" }, { status: 400 });
   const code = `KNP-${String(Date.now()).slice(-4)}`;
   const money = await lockFee(code, b.feeRupees, b.route.filter((l) => (l.km ?? 0) > 0).map((l) => ({ badge: l.from, km: l.km! })));
   const arkiv = await putConsignment({ code, parcel: b.parcel, label: b.label ?? "", route: b.route, feeRupees: b.feeRupees, schedule: money.scheduleId });

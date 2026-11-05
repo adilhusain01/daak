@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 export function SiteNav() {
   const path = usePathname();
   const item = (href: string, label: string) => {
-    const on = href === "/" ? path === "/" : path.startsWith(href);
+    const on = path.startsWith(href);
     return (
       <Link
         href={href}
@@ -20,7 +20,7 @@ export function SiteNav() {
   return (
     <nav className="mb-8 flex items-center justify-between gap-3">
       <Link href="/" className="text-2xl font-semibold tracking-tight">Daak</Link>
-      <div className="flex gap-2">{item("/", "Deliveries")}{item("/drivers", "Drivers")}</div>
+      <div className="flex gap-2">{item("/ops", "Deliveries")}{item("/drivers", "Drivers")}</div>
     </nav>
   );
 }

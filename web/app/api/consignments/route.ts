@@ -1,3 +1,4 @@
+import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { recentConsignments, handoffsFor } from "@/lib/arkiv";
 import { chain } from "@/lib/hedera";
@@ -15,8 +16,11 @@ async function paidAt(schedule?: string) {
 }
 
 /** Everything the operator dashboard shows, read from Arkiv and Hedera's mirror node. */
-export async function GET() {
-  const [list, log] = await Promise.all([recentConsignments(), readLog()]);
+export async function GET(req: Request) {
+  if (!isOperator(req)) return denied("operator");
+  const since = Number(process.env.DATA_SINCE ?? 0);
+  const [all, log] = await Promise.all([recentConsignments(), readLog()]);
+  const list = all.filter((c) => c.createdAt >= since);
   const rows = await Promise.all(
     list.map(async (c) => {
       // Who got what: the cash-out and Bachat entries on the public log, matched to each leg's driver.
