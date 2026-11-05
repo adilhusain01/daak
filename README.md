@@ -8,7 +8,7 @@ Daak makes every handoff provable with a tap and a photo, has a sealed AI check 
 
 ## How it works
 
-1. **Booking (x402 on Hedera).** The shop taps a new parcel. The shop's ordering agent books the delivery on `/api/book`, gets `402 Payment Required`, pays from its own Hedera account through the official x402 facilitator, and retries. Its spending controls allow HBAR only, at most 2 HBAR a booking, and only to Daak.
+1. **Booking (x402 on Hedera).** Each shop has its own agent: a Hedera account holding the shop's prepaid rupees as dINR, topped up when the shop pays Daak by UPI (the operator enters the UTR, which goes on the public log). When the shop taps a new parcel, the agent reads Daak's catalogue at `/.well-known/x402`, calls `/api/book`, gets `402 Payment Required` quoting the exact booking (meter plus booking fee for that distance and weight), pays it in dINR through the official x402 facilitator, and retries. No person approves the payment. Its spending controls allow only dINR, at most Rs 2,000 a booking, and only to Daak.
 2. **The Daak meter.** The fee is Rs 5 + Rs 0.50 a km, so Kanpur to Gorakhpur (359 km by road: 87 to Lucknow, 272 on to Gorakhpur) is Rs 184.50 for a parcel up to 5 kg. Heavier parcels multiply the meter: x1.5 up to 15 kg, x2 up to 30 kg, x3 up to 50 kg; over 50 kg is not a bus parcel. Distances are the driving route on OpenStreetMap roads, the same line the network map draws. The rate is printed on every booking.
 3. **Escrow and the split payout (Hedera, no Solidity).** The fee is locked in escrow as dINR, an HTS token for rupee credits with a 2% fractional custom fee that pays Daak at the network level. Each driver's share, split by kilometre, is paid in two parts. The advance (50% for a new driver, 70% after 10 clean deliveries, 90% after 50 with 98% clean, fixed at booking from the public record) goes out when the next person confirms the handover. The holdback waits for delivery: all holdbacks go into one long-term scheduled transaction (`waitForExpiry`) that Hedera executes by itself after `HOLDBACK_HOURS` (24 by default), with no server watching. A claim in that window deletes the schedule, and the liable leg's holdback repays the shop.
 4. **The handoff (Android app).** At the bus stand, the driver taps the parcel's NFC sticker, taps the next driver's badge and photographs the lid. The phone adds its GPS fix. No signal? The handoff is signed and queued on the phone, and the payment waits.
@@ -16,6 +16,27 @@ Daak makes every handoff provable with a tap and a photo, has a sealed AI check 
 6. **The record (Hedera HCS, Arkiv, Swarm).** The lid photo is stored on Swarm encrypted, its reference sealed inside the Arkiv record. Every booking, handoff, payout, cash-out and Bachat deposit is a message on a public HCS topic. Consignments, handoffs and driver preferences are typed Arkiv entities; handoffs expire after a day. The retailer's tracking page and the operator dashboard read Arkiv.
 7. **Delivery and pay.** Each confirmed handover pays that driver's advance, which is redeemed and sent to their UPI ID at once. When the last hop passes, the holdback timer starts; once it releases, the driver's dINR goes to UPI the next time they open the app. Every advance, holdback, redemption and refund goes on the HCS log. A protection pool gets 1 point of the meter from Daak's booking fee on every booking, up to a cap of Rs 2,000, and tops a refund up to the parcel's declared value.
 8. **What drivers gain.** Bachat, an opt-in pot that keeps a share (5%) of every payout, recorded on chain. A work record computed only from the public HCS log (proven deliveries, km, clean rate) that unlocks a fuel advance (25% of the last 30 days' proven earnings, up to Rs 5,000). In production the pot and the advances sit with licensed partners.
+
+## Architecture and payment flow
+
+```
+Shop's phone ──tap parcel──> /api/pack ──> shop's agent (Hedera account, prepaid dINR)
+                                              │ GET /.well-known/x402   (finds the booking endpoint)
+                                              │ POST /api/book  ──> 402, price = meter + booking fee
+                                              │ pays in dINR via the x402 facilitator (fee payer 0.0.9185802)
+                                              ▼
+/api/book: record on Arkiv ──> meter locked in escrow (dINR) ──> 1 point to the protection pool ──> HCS "booked"
+
+Driver's phone ──tap parcel, tap badge, photo, GPS, P-256 signature──> /api/handoff
+   ├─ 0G sealed vision check (12 s budget; safe-stop "not checked by AI" if 0G cannot answer)
+   ├─ HCS message (hashes only) ── Arkiv handoff entity ── lid photo encrypted on Swarm
+   └─ green: escrow pays that driver's advance (2% to Daak via the token's custom fee) ──> redeemed ──> UPI
+
+Last hop green ──> one scheduled transfer of every holdback (waitForExpiry, executes itself after HOLDBACK_HOURS)
+Claim in the window ──> schedule deleted, liable stretch's share and the pool repay the shop
+```
+
+Hedera services used, all from the JavaScript SDK with no Solidity: HTS (the dINR token with a 2% fractional custom fee, escrow and payouts), HCS (the public log of every booking, handoff, payout and decision), scheduled transactions (holdbacks that release themselves; deleted on a claim), accounts with aliases for every shop agent and driver, and the mirror node REST API (balances, history, the drivers' records).
 
 ## Who does what
 
@@ -46,8 +67,10 @@ Daak makes every handoff provable with a tap and a photo, has a sealed AI check 
 | dINR token (2% custom fee) | [0.0.11327356](https://hashscan.io/testnet/token/0.0.11327356) |
 | Escrow account | [0.0.11327245](https://hashscan.io/testnet/account/0.0.11327245) |
 | Daak operator and treasury | [0.0.11325722](https://hashscan.io/testnet/account/0.0.11325722) |
-| Shop's sender agent | [0.0.11327358](https://hashscan.io/testnet/account/0.0.11327358) |
-| x402 settlement (agent to Daak, 1 HBAR, fee paid by the facilitator 0.0.9185802) | [0.0.9185802-1793901050-675202430](https://hashscan.io/testnet/transaction/0.0.9185802-1793901050-675202430) |
+| A shop's agent (Gupta Garments) | [0.0.11331484](https://hashscan.io/testnet/account/0.0.11331484) |
+| The shop's UPI top-up credited (Rs 500, UTR on the log) | [0.0.11325722-1793921478-044156522](https://hashscan.io/testnet/transaction/0.0.11325722-1793921478-044156522) |
+| x402 settlement in dINR: the shop's agent pays exactly Rs 206.64 (Rs 184.50 meter + Rs 22.14 booking fee) to Daak, network fee paid by the facilitator 0.0.9185802 | [0.0.9185802-1793921489-636560474](https://hashscan.io/testnet/transaction/0.0.9185802-1793921489-636560474) |
+| Earlier x402 settlement in HBAR (flat price mode) | [0.0.9185802-1793901050-675202430](https://hashscan.io/testnet/transaction/0.0.9185802-1793901050-675202430) |
 | Executed scheduled payout (older, all at delivery) | [schedule 0.0.11327387](https://hashscan.io/testnet/schedule/0.0.11327387) |
 | Holdback schedule that released itself at expiry | [schedule 0.0.11330730](https://hashscan.io/testnet/schedule/0.0.11330730) |
 | Protection pool | [0.0.11330722](https://hashscan.io/testnet/account/0.0.11330722) |
@@ -61,7 +84,8 @@ The network map draws India Post's 1,43,609 offices (All India Pincode Directory
 
 - `android/`: the Android app for shops, drivers and receivers. Kotlin, Jetpack Compose, NFC in reader mode, the system camera, GPS, Hindi text-to-speech, an offline outbox.
 - `web/`: Next.js. The API (`/api/book`, `/api/pack`, `/api/handoff`, `/api/review`, `/api/track/[code]`, `/api/driver/[uid]`, `/api/consignments`), the operator dashboard and the tracking page. All sponsor keys stay here.
-- `arkiv/`: how Daak uses Arkiv and Swarm, its schema and the friction we hit.
+- `arkiv/`: how Daak uses Arkiv and Swarm, its schema and the friction we hit. `web/scripts/arkiv-query.mts` is a query anyone can run without keys.
+- `docs/`: the business notes and `planning/` (decisions and the team's prompts).
 - `video/`: the explainer film (HyperFrames).
 
 ## Getting started
@@ -86,7 +110,11 @@ cd ../android
 ./gradlew :app:installDebug
 ```
 
-`.env.local` needs: `HEDERA_OPERATOR_ID`, `HEDERA_OPERATOR_KEY` (ECDSA), `ARKIV_PRIVATE_KEY`, `ARKIV_ACCESS_KEY`, `ZG_PRIVATE_KEY` (with mainnet 0G for the vision check), `DAAK_MASTER_SECRET`, `DAAK_APP_KEY`, `OPERATOR_PASSCODE`, and optionally `X402_ASSET`/`X402_AMOUNT` (USDC settlement), `BOOKINGS_PER_HOUR`, `DATA_SINCE`, `BOOKING_FEE_PERCENT`, `BOOKING_FEE_MIN_RUPEES`, `HOLDBACK_HOURS`, `POOL_POINTS`, `POOL_CAP_RUPEES`, `CRON_SECRET` and the RazorpayX keys. The Android build reads the app key from `android/local.properties` as `daakAppKey=`.
+`.env.local` needs: `HEDERA_OPERATOR_ID`, `HEDERA_OPERATOR_KEY` (ECDSA), `ARKIV_PRIVATE_KEY`, `ARKIV_ACCESS_KEY`, `ZG_PRIVATE_KEY` (with mainnet 0G for the vision check), `DAAK_MASTER_SECRET`, `DAAK_APP_KEY`, `OPERATOR_PASSCODE`, and optionally `X402_ASSET`/`X402_AMOUNT` (USDC settlement), `BOOKINGS_PER_HOUR`, `DATA_SINCE`, `BOOKING_FEE_PERCENT`, `BOOKING_FEE_MIN_RUPEES`, `HOLDBACK_HOURS`, `POOL_POINTS`, `POOL_CAP_RUPEES`, `CRON_SECRET`, `DAAK_UPI_ID` (where shops pay their top-ups) and the RazorpayX keys. `X402_ASSET` defaults to dINR (each shop's agent pays the exact booking); set it to `0.0.0` (HBAR) or `0.0.429274` (USDC) for a flat price paid by one shared agent. The Android build reads the app key from `android/local.properties` as `daakAppKey=`.
+
+## Licence
+
+MIT, see `LICENSE`.
 
 ## AI usage
 

@@ -43,6 +43,8 @@ fun badgeHash(uid: String): String =
 data class Booking(val code: String, val trackUrl: String, val shares: List<Double>)
 /** A shop's standing order, and today's booking of one that waits for its parcel. */
 data class Daily(val id: String, val receiver: String, val daysText: String, val active: Boolean, val lastRun: String?, val lastCode: String?)
+/** A shop's prepaid rupees, held by its agent on Hedera, and where to send a UPI top-up. */
+data class ShopBal(val rupees: Double, val upiId: String?)
 data class DailyList(val orders: List<Daily>, val waitingCode: String?, val waitingReceiver: String?)
 
 object Api {
@@ -119,6 +121,12 @@ object Api {
         if (code in 200..299) return null
         val e = j.optJSONArray("errors") ?: return listOf("Server ${code}")
         return List(e.length()) { e.getString(it) }
+    }
+
+    fun shopBalance(sender: String): ShopBal {
+        val (code, j) = get("/api/shop/${enc(sender)}")
+        if (code !in 200..299) error(j.optString("error", "server $code"))
+        return ShopBal(j.getDouble("rupees"), if (j.isNull("upiId")) null else j.getString("upiId"))
     }
 
     fun daily(sender: String): DailyList {

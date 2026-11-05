@@ -8,6 +8,7 @@ import { SiteNav, ProofButton } from "@/components/site-nav";
 import { UpiPay } from "@/components/upi-pay";
 import { KycReview } from "@/components/kyc-review";
 import { StandingPanel } from "@/components/standing-panel";
+import { ShopsPanel } from "@/components/shops-panel";
 import { useState } from "react";
 import { arkivEntity, hashscanTopic, verdictText, when, type HandoffView, type LegView } from "@/lib/ui";
 
@@ -113,6 +114,7 @@ export default function Dashboard() {
 
       <KycReview />
       <StandingPanel />
+      <ShopsPanel />
       {isLoading && <p className="text-muted-ink">Loading deliveries...</p>}
       {data && data.consignments.length === 0 && <p className="text-muted-ink">No deliveries booked yet.</p>}
 

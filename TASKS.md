@@ -8,22 +8,23 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] 0G credits from the 0G booth when it opens, then: the first real sealed check, the decision log on 0G Storage, "Recheck with 0G" on held handoffs, and the agent that pays for its own compute from a capped slice of each fee (Agents That Pay for Themselves). Wallet `0x575F8D53D5bE1d16d4c1eDb8D01C4B68A0D48901`.
 - [ ] Demo video: 2:30 to 2:55 (ETHGlobal 2 to 4 minutes, 0G under 3), at least 720p, not recorded on a phone, a real voice (no AI voice, no music over captions in place of speaking), intro under 20 seconds, at most 4 bullets a slide, a settled payment on HashScan, the Swarm moment with its timestamp noted in `arkiv/swarm.md`.
 - [ ] Team: each teammate commits their own real part (video, slides, field test, data) and can explain it to judges.
-- [ ] Planning artifacts and prompts committed (the rules require them for spec-driven work): `docs/planning/`.
+- [x] Planning artifacts and prompts committed (the rules require them for spec-driven work): `docs/planning/`.
 
 ## Sponsor paperwork
 
-- [ ] `LICENSE` (MIT) and a licence line in the README.
-- [ ] README: one Arkiv query judges can run, the writing wallet, Hedera transaction ids, architecture and payment flow.
-- [ ] `arkiv/schema.md` up to date (standing orders, KYC columns, weight, fee in paise).
-- [ ] `arkiv/swarm.md`: an example entity key with its sealed reference, the postage batch, upload and read code, reproduction steps, the demo timestamp.
-- [ ] `web/README.md`: replace the create-next-app text.
+- [x] `LICENSE` (MIT) and a licence line in the README.
+- [x] README: one Arkiv query judges can run, the writing wallet, Hedera transaction ids, architecture and payment flow.
+- [x] `arkiv/schema.md` up to date (standing orders, KYC columns, weight, fee in paise).
+- [x] `arkiv/swarm.md`: an example entity key with its sealed reference, the postage batch, upload and read code, reproduction steps. Demo timestamp and a fresh example after recording.
+- [x] `web/README.md`: replace the create-next-app text.
 - [ ] Submission form: per-partner "how we used it" and feedback for 0G, Hedera, Arkiv; select the Swarm bonus.
 
 ## Hedera
 
-- [ ] x402 price equals the booking (meter plus booking fee for the chosen weight), not a flat 1 HBAR.
-- [ ] Endpoint discovery: the agent reads a catalogue first, then books.
-- [ ] Each shop has its own agent account with a balance the shop tops up by UPI (operator confirms the UTR, like driver payouts); spend controls per shop.
+- [x] x402 price equals the booking (meter plus booking fee for the chosen weight), settled in dINR (KNP-5021, tx 0.0.9185802-1793921489-636560474).
+- [x] Endpoint discovery: the agent reads `/.well-known/x402` first, then books.
+- [x] Each shop has its own agent account with prepaid dINR, topped up by UPI (operator enters the UTR on the dashboard; the app opens the UPI app); spend controls per shop.
+- [ ] Set `DAAK_UPI_ID` in Vercel (the UPI ID shops pay top-ups to) and make sure `X402_ASSET` is not set (default is dINR).
 - [ ] Optional: dINR rebuilt on Stablecoin Studio (KYC, freeze, roles) for the Tokenize track.
 - [ ] Optional: agent identity on HCS-14 or ERC-8004.
 
@@ -37,7 +38,6 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## The team
 
-- [ ] Testnet USDC from faucet.circle.com (Hedera Testnet) to `0.0.11325722`, then switch `X402_ASSET` to `0.0.429274`.
 - [ ] Each teammate joins with their own badge and real UPI ID (the real ₹ UPI moment).
 - [ ] One real conversation or 20-second clip with a bus parcel booking office or a sender.
 - [ ] Real paid deliveries during the hackathon (see `docs/business.md`, "Traction before Saturday").

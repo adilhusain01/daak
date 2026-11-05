@@ -3,7 +3,7 @@ import { readLog, workHistory } from "@/lib/history";
 import { fundPool, legPay } from "@/lib/split";
 import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "@x402/next";
-import { x402Server, BOOKING_PRICE } from "@/lib/x402";
+import { x402Server, bookingPrice, routeKm } from "@/lib/x402";
 import { putConsignment, getBadge, type Leg } from "@/lib/arkiv";
 import { lockFee, hashscan } from "@/lib/payout";
 import { logHandoff } from "@/lib/hedera";
@@ -12,8 +12,9 @@ type Body = { parcel: string; label: string; feeRupees?: number; route: Leg[]; w
 
 
 /**
- * Books a delivery. Paid over x402 on Hedera before this runs: the sender's ordering software gets a 402,
- * pays, and retries. Then the consignment goes to Arkiv and the fee is locked in escrow with its payout scheduled.
+ * Books a delivery. Paid over x402 on Hedera before this runs: the shop's agent gets a 402 quoting the exact
+ * booking, pays it from the shop's rupee balance, and retries. Then the consignment goes to Arkiv and the
+ * drivers' meter is locked in escrow; the booking fee stays with Daak.
  */
 async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   const b = (await req.json()) as Body;
@@ -22,7 +23,9 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   }
   let weight;
   try { weight = band(b.weight ?? "s"); } catch { return NextResponse.json({ error: "Unknown weight band" }, { status: 400 }); }
-  b.feeRupees = meterFee(b.route.reduce((s, l) => s + (l.km ?? 0), 0), weight.id);
+  let km;
+  try { km = routeKm(b.route); } catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 400 }); }
+  b.feeRupees = meterFee(km, weight.id);
   // Only people who have joined Daak can be on a route: no accounts are created for made-up badges.
   const people = [...new Set(b.route.flatMap((l) => [l.from, l.to]))];
   const known = await Promise.all(people.map((u) => getBadge(u).catch(() => null)));
@@ -56,7 +59,8 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
 export const POST = withX402(
   handler,
   {
-    accepts: [{ scheme: "exact", price: BOOKING_PRICE, network: "hedera:testnet", payTo: process.env.HEDERA_OPERATOR_ID ?? "" }],
+    // The price is the booking itself: meter for the distance and weight plus the booking fee, in rupee credits.
+    accepts: [{ scheme: "exact", price: bookingPrice, network: "hedera:testnet", payTo: process.env.HEDERA_OPERATOR_ID ?? "" }],
     description: "Book a Daak relay delivery",
   },
   x402Server,

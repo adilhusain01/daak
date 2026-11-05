@@ -73,6 +73,7 @@ class MainActivity : ComponentActivity() {
     private var work by mutableStateOf<Work?>(null)
     private var todo by mutableStateOf<List<Todo>?>(null)
     private var daily by mutableStateOf<DailyList?>(null)
+    private var shopBal by mutableStateOf<ShopBal?>(null)
     private var savingBusy by mutableStateOf(false)
 
     private lateinit var nfc: Nfc
@@ -132,7 +133,10 @@ class MainActivity : ComponentActivity() {
         screen = Screen.Home
         val p = me ?: return
         if (p.role == "driver") loadWork()
-        if (p.role == "sender") thread { val d = runCatching { Api.daily(p.uid) }.getOrNull(); runOnUiThread { daily = d } }
+        if (p.role == "sender") {
+            thread { val d = runCatching { Api.daily(p.uid) }.getOrNull(); runOnUiThread { daily = d } }
+            loadBalance()
+        }
         thread { val t = runCatching { Api.todo(p.uid) }.getOrNull(); runOnUiThread { todo = t } }
     }
 
@@ -315,8 +319,22 @@ class MainActivity : ComponentActivity() {
 
     // ---------- shop: book a new parcel ----------
 
+    private fun loadBalance() {
+        val uid = me?.uid ?: return
+        thread { val b = runCatching { Api.shopBalance(uid) }.getOrNull(); runOnUiThread { shopBal = b } }
+    }
+
+    /** Opens the phone's UPI app (GPay, PhonePe, Paytm) to pay Daak; the operator credits it once the payment shows. */
+    private fun payByUpi(rupees: Int) {
+        val upi = shopBal?.upiId ?: run { note = "Ask Daak for its UPI ID to top up."; return }
+        val uri = Uri.parse("upi://pay?pa=${Uri.encode(upi)}&pn=Daak&am=$rupees&cu=INR&tn=${Uri.encode("Daak top-up ${me?.name ?: ""}".trim())}")
+        runCatching { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri)) }
+            .onFailure { note = "No UPI app found. Pay $upi by UPI and send the reference to Daak." }
+    }
+
     private fun startPack(tap: Tap) {
         screen = Screen.Pack(parcel = tap, loading = true)
+        loadBalance()
         thread {
             val known = runCatching { Api.parcel(tap.uid) }.getOrNull()
             val waiting = if (known?.registered == true) null else runCatching { Api.daily(me!!.uid) }.getOrNull()
@@ -359,6 +377,7 @@ class MainActivity : ComponentActivity() {
                 r.onSuccess { b ->
                     nfc.pendingWrite = b.trackUrl
                     screen = s.copy(paying = false, booking = b, drivers = drivers)
+                    loadBalance()
                     voice.buzz(); voice.say("बुकिंग हो गई। कोड ढक्कन पर लिखिए, फिर पार्सल दोबारा लगाइए।")
                 }.onFailure { screen = s.copy(paying = false, problem = "बुकिंग नहीं हुई: ${it.message}. Nothing was charged.") ; voice.buzz(false) }
             }
@@ -536,6 +555,13 @@ class MainActivity : ComponentActivity() {
                 Toggle("बचत · Bachat", if (on) "5% of every payout goes to your savings pot" else "Save 5% of every payout automatically", on, savingBusy) { toggleBachat() }
             }
             "sender" -> {
+                shopBal?.let { b ->
+                    Sheet {
+                        Heading("बैलेंस", "Balance")
+                        Line("Prepaid for bookings", "₹${"%.2f".format(b.rupees)}", if (b.rupees >= 250) Tokens.green else Tokens.red, big = true)
+                    }
+                    Secondary("UPI से पैसे जोड़ें · Top up by UPI") { payByUpi(500) }
+                }
                 Action("नया पार्सल बुक करें", "Book a new parcel, or just tap it") { screen = Screen.Pack() }
                 Secondary("ड्राइवर को सौंपें · Hand a booked parcel to the driver") { screen = Screen.Handoff() }
                 DailyCard()
@@ -668,9 +694,15 @@ class MainActivity : ComponentActivity() {
                 Line("Daak meter", "${plan.km} km")
                 Body(plan.meter, Tokens.muted, 14)
                 Line("किराया · Fee", "₹${"%.2f".format(fee)}", big = true)
+                shopBal?.let { Line("बैलेंस · Your balance", "₹${"%.2f".format(it.rupees)}", if (it.rupees >= fee) Tokens.green else Tokens.red) }
+            }
+            val short = shopBal?.let { fee - it.rupees } ?: 0.0
+            if (short > 0 && !s.paying) {
+                Verdict(Tokens.amber, "बैलेंस कम है", "Balance too low", "Top up at least ₹${kotlin.math.ceil(short).toInt()} by UPI. It shows here once Daak sees the payment.")
+                Action("UPI से ₹${maxOf(500, kotlin.math.ceil(short).toInt())} जोड़ें", "Top up ₹${maxOf(500, kotlin.math.ceil(short).toInt())} by UPI") { payByUpi(maxOf(500, kotlin.math.ceil(short).toInt())) }
             }
             if (s.paying) Bi("बुकिंग और भुगतान हो रहा है…", "Booking and paying from the shop's account. Usually 15 to 20 seconds.", Tokens.muted, 18)
-            else Action("₹${"%.2f".format(fee)} में बुक करें", "Book and pay ₹${"%.2f".format(fee)}") { pay(s) }
+            else if (short <= 0) Action("₹${"%.2f".format(fee)} में बुक करें", "Book and pay ₹${"%.2f".format(fee)} from your balance") { pay(s) }
         }
         s.booking?.let { b ->
             Sheet {

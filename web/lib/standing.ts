@@ -41,7 +41,7 @@ export async function runDue(origin: string, now = new Date()) {
     try {
       const built = await buildRoute(o.sender, o.receiver, o.drivers);
       if ("error" in built) throw new Error(built.error);
-      const booked = await agentBook(origin, { parcel: placeholder(o.id, today), label: `Daily: ${built.label.replace(/^Parcel from /, "")}`, route: built.route, weight: o.weight });
+      const booked = await agentBook(origin, { parcel: placeholder(o.id, today), label: `Daily: ${built.label.replace(/^Parcel from /, "")}`, route: built.route, weight: o.weight }, o.sender);
       await patchStanding(o.key, { lastRun: today, lastCode: booked.code });
       await logHandoff({ t: "daak.standing.booked", id: o.id, code: booked.code, date: today });
       out.push({ id: o.id, code: booked.code });

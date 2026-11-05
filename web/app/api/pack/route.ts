@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     label = demo.label;
   }
   try {
-    const booked = await agentBook(origin, { parcel: body.parcel, label, route, weight: body.weight });
+    const booked = await agentBook(origin, { parcel: body.parcel, label, route, weight: body.weight }, body.sender);
     return NextResponse.json({ ...booked, trackUrl: `${origin}/track/${booked.code}` });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });
