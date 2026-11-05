@@ -2,18 +2,37 @@ import { NextResponse } from "next/server";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { agentBook } from "@/lib/agent";
+import { getBadge, type Leg } from "@/lib/arkiv";
+import { pathBetween, stopName } from "@/lib/network";
 
 /**
- * The shop taps a new parcel. The shop's agent books and pays for the delivery over x402,
- * and the phone gets back the tracking link to write onto the parcel's tag.
+ * The shop books a parcel: from its own bus stand to the receiver's, with one chosen driver per stretch.
+ * The first handoff is the pickup at the shop's stand (shop to the first driver, 0 km); each later handoff
+ * pays its giver for the stretch they carried. The shop's agent then pays for the booking over x402.
  */
 export async function POST(req: Request) {
-  const { parcel } = (await req.json()) as { parcel: string };
-  if (!parcel) return NextResponse.json({ error: "Tap a parcel first" }, { status: 400 });
-  const demo = JSON.parse(readFileSync(path.join(process.cwd(), "data", "demo-route.json"), "utf8"));
+  const body = (await req.json()) as { parcel: string; sender?: string; receiver?: string; drivers?: string[] };
+  if (!body.parcel) return NextResponse.json({ error: "Tap a parcel first" }, { status: 400 });
   const origin = new URL(req.url).origin;
+
+  let route: Leg[];
+  let label: string;
+  if (body.sender && body.receiver && body.drivers?.length) {
+    const [s, r] = await Promise.all([getBadge(body.sender), getBadge(body.receiver)]);
+    if (!s?.stop || !r?.stop) return NextResponse.json({ error: "Shop or receiver has no bus stand" }, { status: 400 });
+    const legs = pathBetween(s.stop, r.stop);
+    if (legs.length !== body.drivers.length) return NextResponse.json({ error: "Choose one driver for each stretch" }, { status: 400 });
+    route = [{ hop: 1, from: body.sender, to: body.drivers[0], place: stopName(s.stop), km: 0 }];
+    legs.forEach((l, i) => route.push({ hop: i + 2, from: body.drivers![i], to: i + 1 < legs.length ? body.drivers![i + 1] : body.receiver!, place: i + 1 < legs.length ? stopName(l.to) : `${r.name}, ${stopName(l.to)}`, km: l.km }));
+    label = `Parcel from ${s.name.split(",")[0]} to ${r.name.split(",")[0]}`;
+  } else {
+    // The fixed demo route, kept for the scripts and for shops booking before receivers have joined.
+    const demo = JSON.parse(readFileSync(path.join(process.cwd(), "data", "demo-route.json"), "utf8"));
+    route = demo.route;
+    label = demo.label;
+  }
   try {
-    const booked = await agentBook(origin, { parcel, ...demo });
+    const booked = await agentBook(origin, { parcel: body.parcel, label, route });
     return NextResponse.json({ ...booked, trackUrl: `${origin}/track/${booked.code}` });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });

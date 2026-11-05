@@ -1,7 +1,8 @@
 import { accountFor, keyFor } from "./payout";
 import { TransferTransaction } from "@hiero-ledger/sdk";
 import { chain, hedera, logHandoff } from "./hedera";
-import { getPrefs } from "./arkiv";
+import { getPrefs, getBadge } from "./arkiv";
+import { unseal } from "./swarm";
 import { env } from "./env";
 import { cashOut } from "./upi";
 import type { Leg } from "./arkiv";
@@ -20,7 +21,7 @@ async function balanceUnits(accountId: string, tokenId: string) {
 /** After a delivery's payout runs, every driver's dINR (their share less the network's 2%) is redeemed and sent to UPI. */
 export async function cashOutAll(c: { code: string; route: Leg[] }) {
   const { feeTokenId } = chain();
-  const drivers = [...new Set(c.route.map((l) => l.from))];
+  const drivers = [...new Set(c.route.filter((l) => (l.km ?? 0) > 0).map((l) => l.from))];
   const out = [];
   for (const badge of drivers) {
     const driverId = await accountFor(badge);
@@ -48,7 +49,11 @@ export async function cashOutAll(c: { code: string; route: Leg[] }) {
       const hcs = await logHandoff({ t: "daak.bachat", code: c.code, driver: driverId, pot: potId, saved: save / 100, potRupees: potUnits / 100, tx: res.transactionId.toString() });
       bachat = { potId, savedRupees: save / 100, potRupees: potUnits / 100, hcs };
     }
-    out.push({ ...(await cashOut(c.code, badge, `Daak driver ${badge.slice(-5)}`, units - save)), bachat });
+    // Pay to the UPI ID the driver gave when they joined (sealed on Arkiv); Razorpay's test ID otherwise.
+    const who = await getBadge(badge).catch(() => null);
+    let vpa = "success@razorpay";
+    try { if (who?.private) vpa = JSON.parse(unseal(who.private, "person")).upi || vpa; } catch { /* keep the test ID */ }
+    out.push({ ...(await cashOut(c.code, badge, who?.name ?? `Daak driver ${badge.slice(-5)}`, units - save, vpa)), bachat });
   }
   return out;
 }

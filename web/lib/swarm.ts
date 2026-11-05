@@ -18,7 +18,23 @@ export async function uploadPhoto(photo: Buffer): Promise<string> {
   return (await r.json()).reference as string;
 }
 
-const key = () => createHash("sha256").update(`${env.masterSecret()}:swarm-ref`).digest();
+const keyFor = (purpose: string) => createHash("sha256").update(`${env.masterSecret()}:${purpose}`).digest();
+const key = () => keyFor("swarm-ref");
+
+/** AES-GCM seal for anything private that must sit in a public record (photo references, phone, UPI ID). */
+export function seal(text: string, purpose: string): string {
+  const iv = randomBytes(12);
+  const c = createCipheriv("aes-256-gcm", keyFor(purpose), iv);
+  const body = Buffer.concat([c.update(text, "utf8"), c.final()]);
+  return Buffer.concat([iv, c.getAuthTag(), body]).toString("base64");
+}
+
+export function unseal(sealed: string, purpose: string): string {
+  const b = Buffer.from(sealed, "base64");
+  const d = createDecipheriv("aes-256-gcm", keyFor(purpose), b.subarray(0, 12));
+  d.setAuthTag(b.subarray(12, 28));
+  return Buffer.concat([d.update(b.subarray(28)), d.final()]).toString("utf8");
+}
 
 export function sealRef(ref: string): string {
   const iv = randomBytes(12);

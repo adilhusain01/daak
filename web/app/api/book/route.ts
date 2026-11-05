@@ -22,7 +22,7 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   }
   b.feeRupees = Math.round(meterFee(b.route) * 100) / 100;
   const code = `KNP-${String(Date.now()).slice(-4)}`;
-  const money = await lockFee(code, b.feeRupees, b.route.map((l) => ({ badge: l.from, km: l.km ?? 1 })));
+  const money = await lockFee(code, b.feeRupees, b.route.filter((l) => (l.km ?? 0) > 0).map((l) => ({ badge: l.from, km: l.km! })));
   const arkiv = await putConsignment({ code, parcel: b.parcel, label: b.label ?? "", route: b.route, feeRupees: b.feeRupees, schedule: money.scheduleId });
   const hcs = await logHandoff({ t: "daak.booked", code, legs: b.route.length, feeRupees: b.feeRupees, schedule: money.scheduleId });
   return NextResponse.json({

@@ -13,7 +13,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
   const hs = await handoffsFor(c.code);
   const done = new Set(hs.filter((h) => h.verdict !== "held").map((h) => h.hop));
   const leg = c.route.find((l) => !done.has(l.hop));
-  const to = leg ? await getBadge(leg.to).catch(() => null) : null;
+  const [to, from] = leg ? await Promise.all([getBadge(leg.to).catch(() => null), getBadge(leg.from).catch(() => null)]) : [null, null];
   return NextResponse.json({
     registered: true,
     code: c.code,
@@ -28,6 +28,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
       toHash: badgeHash(leg.to),
       toName: to?.name?.split(",")[0] ?? "the next carrier",
       toRole: to?.role ?? "driver",
+      fromName: from?.name?.split(",")[0] ?? "the giver",
+      fromRole: from?.role ?? "driver",
     },
   });
 }

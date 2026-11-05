@@ -40,7 +40,8 @@ export async function workHistory(uid: string, preloaded?: LogMsg[]): Promise<Wo
   const acct = await accountFor(uid);
   const log = preloaded ?? (await readLog());
   const reviewed = new Set(log.filter((m) => m.t === "daak.reviewed").map((m) => m.code));
-  const mine = log.filter((m) => m.t === "daak.handoff" && m.from === me);
+  // A driver's record counts the stretches they carried; the 0 km pickup is the shop handing over.
+  const mine = log.filter((m) => m.t === "daak.handoff" && m.from === me && m.km !== 0);
   const kmCache = new Map<string, number[]>();
   let km = 0, proven = 0, held = 0;
   for (const h of mine) {
