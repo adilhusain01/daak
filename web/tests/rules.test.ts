@@ -54,3 +54,29 @@ test("Daak's booking fee is 12% of the meter, at least Rs 5", async () => {
   assert.equal(bookingFee(80), 9.6);
   assert.equal(bookingFee(20), 5);
 });
+
+test("a new driver gets 50% at handover, a proven one 70%, a trusted one 90%", async () => {
+  const { tierFor } = await import("../lib/rules.ts");
+  assert.equal(tierFor({ proven: 2, cleanRate: 1, heldRecently: false }).advancePct, 50);
+  assert.equal(tierFor({ proven: 12, cleanRate: 0.9, heldRecently: false }).advancePct, 70);
+  assert.equal(tierFor({ proven: 60, cleanRate: 0.99, heldRecently: false }).advancePct, 90);
+});
+
+test("a recent held handoff drops a driver back to 50% at handover", async () => {
+  const { tierFor } = await import("../lib/rules.ts");
+  assert.equal(tierFor({ proven: 60, cleanRate: 0.99, heldRecently: true }).advancePct, 50);
+});
+
+test("the advance and the holdback add up to the leg's pay exactly", async () => {
+  const { splitAdvance } = await import("../lib/rules.ts");
+  const s = splitAdvance(4114, 50);
+  assert.equal(s.advance + s.holdback, 4114);
+  assert.deepEqual(splitAdvance(13886, 70), { advance: 9720, holdback: 4166 });
+});
+
+test("the pool tops up a refund to the declared value, capped, after the liable driver's holdback", async () => {
+  const { poolPayout } = await import("../lib/rules.ts");
+  assert.equal(poolPayout(1500, 69.43, 2000), 1430.57);
+  assert.equal(poolPayout(5000, 100, 2000), 1900);
+  assert.equal(poolPayout(0, 100, 2000), 0);
+});

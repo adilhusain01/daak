@@ -9,8 +9,8 @@ import { bachatUnits } from "./rules";
 import type { Leg } from "./arkiv";
 
 /** The driver's dINR on chain right now, from the mirror node (waits briefly for the payout to show). */
-async function balanceUnits(accountId: string, tokenId: string) {
-  for (let i = 0; i < 8; i++) {
+async function balanceUnits(accountId: string, tokenId: string, tries = 8) {
+  for (let i = 0; i < tries; i++) {
     const r = await fetch(`https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/tokens?token.id=${tokenId}`, { cache: "no-store" });
     const units = Number((await r.json()).tokens?.[0]?.balance ?? 0);
     if (units > 0) return units;
@@ -19,10 +19,13 @@ async function balanceUnits(accountId: string, tokenId: string) {
   return 0;
 }
 
-/** After a delivery's payout runs, every driver's dINR (their share less the network's 2%) is redeemed and sent to UPI. */
-export async function cashOutAll(c: { code: string; route: Leg[] }) {
+/**
+ * After a payout lands, each driver's dINR (their share less the network's 2%) is redeemed and sent to UPI.
+ * `only` limits it to the drivers just paid (an advance pays one driver, not the whole route).
+ */
+export async function cashOutAll(c: { code: string; route: Leg[] }, only?: string[]) {
   const { feeTokenId } = chain();
-  const drivers = [...new Set(c.route.filter((l) => (l.km ?? 0) > 0).map((l) => l.from))];
+  const drivers = [...new Set(c.route.filter((l) => (l.km ?? 0) > 0).map((l) => l.from))].filter((b) => !only || only.includes(b));
   const out = [];
   for (const badge of drivers) {
     const driverId = await accountFor(badge);
@@ -57,4 +60,14 @@ export async function cashOutAll(c: { code: string; route: Leg[] }) {
     out.push({ ...(await cashOut(c.code, badge, who?.name ?? `Daak driver ${badge.slice(-5)}`, units - save, vpa)), bachat });
   }
   return out;
+}
+
+/**
+ * Holdbacks release on chain by themselves, with no server watching. When a driver next opens the app,
+ * whatever dINR is sitting in their account goes on to UPI (and Bachat) the same way as any payout.
+ */
+export async function sweep(badge: string) {
+  const { feeTokenId } = chain();
+  if ((await balanceUnits(await accountFor(badge), feeTokenId!, 1)) <= 0) return [];
+  return cashOutAll({ code: "holdback", route: [{ hop: 1, from: badge, to: "", place: "", km: 1 }] });
 }

@@ -4,6 +4,7 @@ import { recentConsignments, handoffsFor } from "@/lib/arkiv";
 import { chain } from "@/lib/hedera";
 import { readLog } from "@/lib/history";
 import { accountFor } from "@/lib/payout";
+import { holdbackStatus, isSplit } from "@/lib/split";
 
 const MIRROR = "https://testnet.mirrornode.hedera.com/api/v1";
 
@@ -28,8 +29,10 @@ export async function GET(req: Request) {
       const money = drivers.map((d) => {
         const cash = log.filter((m) => m.t === "daak.cashout" && m.code === c.code && m.driver === d.account);
         const saved = log.filter((m) => m.t === "daak.bachat" && m.code === c.code && m.driver === d.account);
+        const adv = log.filter((m) => m.t === "daak.advance" && m.code === c.code && m.hop === d.hop).at(-1) as (typeof log)[number] & { pct?: number; heldRupees?: number } | undefined;
         return {
           hop: d.hop, account: d.account,
+          advanceRupees: adv?.rupees ?? 0, advancePct: adv?.pct ?? c.route.find((l) => l.hop === d.hop)?.advancePct ?? null, heldRupees: adv?.heldRupees ?? null,
           upiRupees: cash.reduce((s, m) => s + (m.rupees ?? 0), 0),
           upiStatus: cash.at(-1)?.status ?? null,
           utr: cash.at(-1)?.utr ?? null,
@@ -38,7 +41,13 @@ export async function GET(req: Request) {
       });
       const km = c.route.reduce((s, l) => s + (l.km ?? 0), 0);
       const handoffs = (await handoffsFor(c.code)).map(({ photo, fromBadge, toBadge, ...h }) => ({ ...h, hasPhoto: Boolean(photo) }));
-      return { ...c, km, meter: "Rs 5 + Rs 0.50 a km", handoffs, money, paidAt: await paidAt(c.schedule) };
+      if (isSplit(c)) {
+        // Split payout: delivered once the holdbacks are scheduled; they release on chain when the timer ends.
+        const holdback = await holdbackStatus(c.code, log);
+        const scheduledAt = log.find((m) => m.t === "daak.holdback" && m.code === c.code)?.ts ?? null;
+        return { ...c, km, meter: "Rs 5 + Rs 0.50 a km", handoffs, money, holdback, paidAt: holdback && !holdback.deleted ? scheduledAt : null };
+      }
+      return { ...c, km, meter: "Rs 5 + Rs 0.50 a km", handoffs, money, holdback: null, paidAt: await paidAt(c.schedule) };
     }),
   );
   return NextResponse.json({ chain: chain(), consignments: rows });

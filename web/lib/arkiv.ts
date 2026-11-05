@@ -19,9 +19,11 @@ export const Badges = defineSchema("daak.badge", {
   stop: str().optional(), // shops and receivers: their bus stand id
   private: bytes().optional(), // phone and UPI ID, sealed with AES-GCM; never readable from the public record
   devicePub: str().optional(), // the public key of the phone this person signs handoffs with (P-256, SPKI, base64)
+  kyc: bytes().optional(), // drivers: ID type, last 4 characters and the sealed Swarm reference of the ID photo, all sealed
+  kycStatus: str().optional(), // "pending", "verified" or "rejected"; public, so shops can see the ID was checked
 });
 
-export type BadgeRow = { uid: string; name: string; role: string; vehicle: string; legs: string[]; stop?: string; private?: string; devicePub?: string; key: string };
+export type BadgeRow = { uid: string; name: string; role: string; vehicle: string; legs: string[]; stop?: string; private?: string; devicePub?: string; kyc?: string; kycStatus?: string; key: string };
 
 export const Consignments = defineSchema("daak.consignment", {
   code: str().indexed(),
@@ -66,7 +68,11 @@ export async function getPrefs(uid: string) {
   return { savePercent: r.entities[0] ? Number(r.entities[0].savePercent.value) : 0 };
 }
 
-export type Leg = { hop: number; from: string; to: string; place: string; km?: number; lat?: number; lng?: number };
+export type Leg = {
+  hop: number; from: string; to: string; place: string; km?: number; lat?: number; lng?: number;
+  /** Share of this leg's pay released at the confirmed handover, fixed at booking from the driver's record. */
+  advancePct?: number;
+};
 
 const chainCfg = () => rabdi({ accessKey: env.arkivAccessKey() });
 export const arkivRead = () => createPublicClient({ chain: chainCfg(), transport: http() });
@@ -90,9 +96,20 @@ export async function setDevicePub(uid: string, devicePub: string, replace = fal
   return { entityKey: b.key, txHash: String(txHash) };
 }
 
+/** The operator's decision on a driver's ID. */
+export async function setKycStatus(uid: string, kycStatus: "verified" | "rejected") {
+  const b = await getBadge(uid);
+  if (!b?.kyc) throw new Error("No ID on file for this badge");
+  const { txHash } = await arkivWrite().patchEntity(Badges, b.key as `0x${string}`, { set: { kycStatus } });
+  return { entityKey: b.key, txHash: String(txHash) };
+}
+
 /** Creates the badge, or updates the existing one in place (re-joining, changing stretches or UPI ID). */
-export async function putBadge(b: { uid: string; name: string; role: string; vehicle?: string; legs?: string[]; stop?: string; private?: string }) {
-  const values = { uid: b.uid, name: b.name, role: b.role, vehicle: b.vehicle ?? "", legs: (b.legs ?? []).join(","), stop: b.stop ?? "", private: enc(b.private ?? "") };
+export async function putBadge(b: { uid: string; name: string; role: string; vehicle?: string; legs?: string[]; stop?: string; private?: string; kyc?: string }) {
+  const values = {
+    uid: b.uid, name: b.name, role: b.role, vehicle: b.vehicle ?? "", legs: (b.legs ?? []).join(","), stop: b.stop ?? "", private: enc(b.private ?? ""),
+    ...(b.kyc ? { kyc: enc(b.kyc), kycStatus: "pending" } : {}),
+  };
   const existing = await getBadge(b.uid).catch(() => null);
   if (existing) {
     const { txHash } = await arkivWrite().patchEntity(Badges, existing.key as `0x${string}`, { set: values });
@@ -101,22 +118,24 @@ export async function putBadge(b: { uid: string; name: string; role: string; veh
   return keyOf(await arkivWrite().createEntity(Badges, values, { expiration: ExpirationTime.fromDays(30) }));
 }
 
-type BadgeEntity = { $key: unknown; uid: { value: string }; name: { value: string }; role: { value: string }; vehicle: { value: string }; legs?: { value: string }; stop?: { value: string }; private?: { value: Uint8Array | `0x${string}` }; devicePub?: { value: string } };
+type BadgeEntity = { $key: unknown; uid: { value: string }; name: { value: string }; role: { value: string }; vehicle: { value: string }; legs?: { value: string }; stop?: { value: string }; private?: { value: Uint8Array | `0x${string}` }; devicePub?: { value: string }; kyc?: { value: Uint8Array | `0x${string}` }; kycStatus?: { value: string } };
 const toBadge = (b: BadgeEntity): BadgeRow => ({
   key: String(b.$key), uid: b.uid.value, name: b.name.value, role: b.role.value, vehicle: b.vehicle.value,
   legs: (b.legs?.value ?? "").split(",").filter(Boolean), stop: b.stop?.value || undefined,
   private: b.private ? dec(b.private.value) || undefined : undefined,
   devicePub: b.devicePub?.value || undefined,
+  kyc: b.kyc ? dec(b.kyc.value) || undefined : undefined,
+  kycStatus: b.kycStatus?.value || undefined,
 });
 
 export async function badgesByRole(role: string): Promise<BadgeRow[]> {
-  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true }).from(Badges)
+  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true, kyc: true, kycStatus: true }).from(Badges)
     .where(eq("role", role)).ownedBy(owner()).limit(100).fetch();
   return r.entities.map((b) => toBadge(b as BadgeEntity));
 }
 
 export async function getBadge(uid: string): Promise<BadgeRow | null> {
-  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true }).from(Badges)
+  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true, kyc: true, kycStatus: true }).from(Badges)
     .where(eq("uid", uid)).ownedBy(owner()).limit(1).fetch();
   const b = r.entities[0];
   return b ? toBadge(b as BadgeEntity) : null;

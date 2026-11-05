@@ -6,17 +6,22 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SiteNav, ProofButton } from "@/components/site-nav";
 import { UpiPay } from "@/components/upi-pay";
+import { KycReview } from "@/components/kyc-review";
 import { useState } from "react";
 import { arkivEntity, hashscanTopic, verdictText, when, type HandoffView, type LegView } from "@/lib/ui";
 
-type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number };
+type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number; advanceRupees: number; advancePct: number | null; heldRupees: number | null };
+type Holdback = { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean };
 type Row = {
-  code: string; label: string; feeRupees: number; createdAt: number; schedule?: string; paidAt: number | null; km: number; meter: string; money: Money[];
-  route: (LegView & { from: string; to: string })[]; handoffs: HandoffView[];
+  code: string; label: string; feeRupees: number; createdAt: number; schedule?: string; paidAt: number | null; km: number; meter: string; money: Money[]; holdback: Holdback | null;
+  route: (LegView & { from: string; to: string; advancePct?: number })[]; handoffs: HandoffView[];
 };
 type Data = { chain: { topicId?: string; feeTokenId?: string; escrowId?: string }; consignments: Row[] };
 
 function status(r: Row) {
+  if (r.holdback?.deleted) return { text: "Claim settled, shop refunded", tone: "text-held" };
+  if (r.holdback?.executedAt) return { text: "Delivered, drivers paid in full", tone: "text-ok" };
+  if (r.holdback) return { text: `Delivered, holdbacks release ${when(r.holdback.releasesAt ?? 0)}`, tone: "text-ok" };
   if (r.paidAt) return { text: "Delivered, drivers paid", tone: "text-ok" };
   if (r.handoffs.some((h) => h.verdict === "held")) return { text: "Payment held", tone: "text-held" };
   const done = new Set(r.handoffs.map((h) => h.hop)).size;
@@ -31,6 +36,7 @@ function needsAttention(r: Row) {
   if (r.paidAt) return false;
   const latest = new Map([...r.handoffs].sort((a, b) => a.at - b.at).map((h) => [h.hop, h.verdict]));
   if ([...latest.values()].some((v) => v === "held")) return true;
+  if (!r.schedule) return [...latest.values()].some((v) => v === "unchecked");
   return latest.size === r.route.length && [...latest.values()].some((v) => v === "unchecked");
 }
 
@@ -104,6 +110,7 @@ export default function Dashboard() {
         );
       })()}
 
+      <KycReview />
       {isLoading && <p className="text-muted-ink">Loading deliveries...</p>}
       {data && data.consignments.length === 0 && <p className="text-muted-ink">No deliveries booked yet.</p>}
 
@@ -111,7 +118,11 @@ export default function Dashboard() {
         {data?.consignments.filter((r) => filter === "all" || (filter === "attention" ? needsAttention(r) : filter === "paid" ? Boolean(r.paidAt) : !r.paidAt && !needsAttention(r))).map((r) => {
           const s = status(r);
           const byHop = new Map([...r.handoffs].sort((a, b) => a.at - b.at).map((h) => [h.hop, h]));
-          const reviewable = !r.paidAt && byHop.size === r.route.length && !r.handoffs.some((h) => h.verdict === "held");
+          const split = !r.schedule;
+          const anyHeld = [...byHop.values()].some((h) => h.verdict === "held");
+          // Split payout: approve as hops come in (each pays its driver's advance). Older bookings: approve at the end.
+          const reviewable = !r.paidAt && !anyHeld && (split ? [...byHop.values()].some((h) => h.verdict === "unchecked") : byHop.size === r.route.length);
+          const claimOpen = Boolean(r.holdback && !r.holdback.executedAt && !r.holdback.deleted);
           const totalKm = r.route.reduce((a, l) => a + (l.km ?? 0), 0);
           return (
             <section key={r.code} className="rounded-xl border border-rule bg-card-paper p-4 sm:p-5">
@@ -135,7 +146,10 @@ export default function Dashboard() {
                     <li key={l.hop} className="rounded-lg border border-rule p-3">
                       <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                         <span className="font-medium">Stop {l.hop}: {l.place}</span>
-                        <span className="text-sm text-muted-ink">{l.km ?? "?"} km, driver share ₹{share}</span>
+                        <span className="text-sm text-muted-ink">
+                          {l.km ?? "?"} km, driver share ₹{share}
+                          {(l.km ?? 0) > 0 && l.advancePct != null && `: ${l.advancePct}% at handover, ${100 - l.advancePct}% after delivery`}
+                        </span>
                       </div>
                       {h ? (
                         <div className="mt-1 flex flex-col gap-1 text-sm">
@@ -157,19 +171,27 @@ export default function Dashboard() {
                 })}
               </ol>
 
-              {r.paidAt && (
+              {(r.paidAt || r.money.some((m) => m.advanceRupees > 0)) && (
                 <div className="mt-4 rounded-lg border border-rule p-3 text-sm">
                   <p className="font-medium">Where the money went</p>
-                  {r.money.map((m) => {
+                  {r.money.filter((m) => (r.route.find((l) => l.hop === m.hop)?.km ?? 0) > 0).map((m) => {
                     const leg = r.route.find((l) => l.hop === m.hop);
                     return (
                       <p key={m.hop} className="mt-1">
-                        Stop {m.hop} driver ({leg?.km ?? "?"} km): ₹{m.upiRupees.toFixed(2)} to UPI
+                        Stop {m.hop} driver ({leg?.km ?? "?"} km):
+                        {m.advanceRupees > 0 && <span> ₹{m.advanceRupees.toFixed(2)} at handover ({m.advancePct}%), ₹{(m.heldRupees ?? 0).toFixed(2)} held until delivery;</span>}
+                        {" "}₹{m.upiRupees.toFixed(2)} to UPI so far
                         <span className="text-muted-ink"> ({m.upiStatus === "not_connected" ? "redeemed on chain, UPI partner not connected" : m.upiStatus ?? "pending"}{m.utr ? `, UTR ${m.utr}` : ""})</span>
                         {m.bachatRupees > 0 && <span className="text-ok">, ₹{m.bachatRupees.toFixed(2)} to Bachat</span>}
                       </p>
                     );
                   })}
+                  {r.holdback && (
+                    <p className="mt-1">
+                      Holdbacks ₹{r.holdback.rupees.toFixed(2)}:{" "}
+                      {r.holdback.deleted ? "cancelled by a claim; the liable stop's share repaid the shop" : r.holdback.executedAt ? `released on chain ${when(r.holdback.executedAt)}` : `a Hedera scheduled transfer that releases itself ${when(r.holdback.releasesAt ?? 0)}, unless a claim stops it`}
+                    </p>
+                  )}
                   <p className="mt-1 text-muted-ink">Daak&apos;s 2% was taken by the dINR token&apos;s own fee rule on the way.</p>
                   {r.money.some((m) => m.upiStatus === "not_connected") && (
                     <details className="mt-2">
@@ -184,6 +206,7 @@ export default function Dashboard() {
                 <div className="flex flex-wrap gap-2">
                   <ProofButton href={`/track/${r.code}`}>Open customer tracking</ProofButton>
                   {r.schedule && <ProofButton href={`https://hashscan.io/testnet/schedule/${r.schedule}`}>Open scheduled payout</ProofButton>}
+                  {r.holdback && <ProofButton href={`https://hashscan.io/testnet/schedule/${r.holdback.schedule}`}>Open holdback schedule</ProofButton>}
                 </div>
                 {!r.paidAt && [...byHop.values()].some((h) => h.verdict === "unchecked") && (
                   <Button variant="outline" className="rounded-lg border-ink shadow-sm active:translate-y-px" disabled={recheck.isPending} onClick={() => recheck.mutate(r.code)}>
@@ -206,8 +229,15 @@ export default function Dashboard() {
                 )}
                 {reviewable && (
                   <Button className="rounded-lg bg-ink text-paper shadow-sm active:translate-y-px" disabled={approve.isPending} onClick={() => approve.mutate(r.code)}>
-                    {approve.isPending && approve.variables === r.code ? "Paying..." : "Approve and pay drivers"}
+                    {approve.isPending && approve.variables === r.code ? "Paying..." : split ? "Approve and pay handed-over stops" : "Approve and pay drivers"}
                   </Button>
+                )}
+                {claimOpen && (
+                  confirming === `${r.code}:claim` ? (
+                    <Button className="rounded-lg bg-held text-paper shadow-sm active:translate-y-px" disabled={resolve.isPending} onClick={() => resolve.mutate({ code: r.code, action: "refund" })}>Confirm: last stop is liable, refund the shop</Button>
+                  ) : (
+                    <Button variant="outline" className="rounded-lg border-held text-held shadow-sm active:translate-y-px" onClick={() => setConfirming(`${r.code}:claim`)}>Shop reports damage</Button>
+                  )
                 )}
               </div>
             </section>

@@ -75,8 +75,8 @@ export function splitByKm(feeRupees: number, legs: { badge: string; km: number }
 }
 
 /**
- * At booking: move the fee from treasury into escrow, and schedule the payout from escrow to every
- * driver by km. The schedule runs only once escrow signs it at delivery.
+ * At booking: move the fee from treasury into escrow. Escrow pays each driver in two parts later
+ * (see split.ts): the advance at their confirmed handover, the holdback after delivery.
  */
 export async function lockFee(code: string, feeRupees: number, legs: { badge: string; km: number }[]) {
   const { feeTokenId, escrowId } = await setupMoney();
@@ -88,21 +88,10 @@ export async function lockFee(code: string, feeRupees: number, legs: { badge: st
     .execute(hedera());
   const lockId = lock.transactionId.toString();
   await lock.getReceipt(hedera());
-
-  const shares = splitByKm(feeRupees, legs);
-  const payout = new TransferTransaction().setTransactionMemo(`Daak ${code} payout by km`);
-  payout.addTokenTransfer(feeTokenId!, escrowId!, -units);
-  for (const s of shares) payout.addTokenTransfer(feeTokenId!, await accountFor(s.badge), s.units);
-  const sched = await new ScheduleCreateTransaction()
-    .setScheduledTransaction(payout)
-    .setScheduleMemo(`Daak ${code} payout`)
-    .setAdminKey(operatorKey().publicKey)
-    .execute(hedera());
-  const scheduleId = (await sched.getReceipt(hedera())).scheduleId!.toString();
-  return { lockTx: lockId, scheduleId, shares };
+  return { lockTx: lockId, shares: splitByKm(feeRupees, legs) };
 }
 
-/** At delivery: escrow signs, the scheduled payout executes, and the network takes Daak's 2% on the way. */
+/** Older bookings only: escrow signs the booking-time schedule and the whole payout executes at once. */
 export async function releaseFee(scheduleId: string) {
   const tx = await new ScheduleSignTransaction()
     .setScheduleId(ScheduleId.fromString(scheduleId))

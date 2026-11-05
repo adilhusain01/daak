@@ -7,6 +7,7 @@ import { downloadPhoto, openRef } from "@/lib/swarm";
 import { logDecision } from "@/lib/zgstore";
 import { releaseFee, hashscan } from "@/lib/payout";
 import { cashOutAll } from "@/lib/settle";
+import { isSplit, payAdvance, settleDelivered } from "@/lib/split";
 
 /**
  * The safe-stop resolving itself: handoffs recorded as "not checked by AI" (0G was down) are sent to the
@@ -46,7 +47,12 @@ export async function POST(req: Request) {
   for (const h of [...after].sort((a, b) => a.at - b.at)) latest.set(h.hop, h.verdict);
   const allGreen = c.route.every((l) => latest.get(l.hop) === "green");
   let payout: string | undefined;
-  if (allGreen && c.schedule && results.some((r) => r.verdict === "green")) {
+  if (isSplit(c)) {
+    try {
+      if (allGreen) { const h = await settleDelivered(c); payout = h ? hashscan("schedule", h.schedule) : "already scheduled"; }
+      else for (const r of results) if (r.verdict === "green") await payAdvance(c, r.hop);
+    } catch (e) { payout = `not released: ${(e as Error).message.slice(0, 120)}`; }
+  } else if (allGreen && c.schedule && results.some((r) => r.verdict === "green")) {
     try {
       const r = await releaseFee(c.schedule);
       await cashOutAll(c);

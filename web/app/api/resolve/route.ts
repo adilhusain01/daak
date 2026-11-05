@@ -6,6 +6,8 @@ import { releaseFee, keyFor, hashscan, toUnits } from "@/lib/payout";
 import { cashOutAll } from "@/lib/settle";
 import { chain, hedera, submitLog } from "@/lib/hedera";
 import { env } from "@/lib/env";
+import { isSplit, refundLiable, settleDelivered } from "@/lib/split";
+import { handoffsFor } from "@/lib/arkiv";
 
 /**
  * The operator settles a disputed delivery. "pay": the drivers are paid anyway (the photo shows it was fine).
@@ -14,9 +16,25 @@ import { env } from "@/lib/env";
  */
 export async function POST(req: Request) {
   if (!isOperator(req)) return denied("operator");
-  const { code, action, reviewer, note } = (await req.json()) as { code: string; action: "pay" | "refund"; reviewer?: string; note?: string };
+  const { code, action, reviewer, note, hop, valueRupees } = (await req.json()) as { code: string; action: "pay" | "refund"; reviewer?: string; note?: string; hop?: number; valueRupees?: number };
   const c = await consignmentByCode(code);
-  if (!c?.schedule) return NextResponse.json({ error: "Unknown consignment" }, { status: 404 });
+  if (!c) return NextResponse.json({ error: "Unknown consignment" }, { status: 404 });
+  if (isSplit(c)) {
+    if (action === "pay") {
+      const holdback = await settleDelivered(c);
+      const log = await submitLog({ t: "daak.resolved", code, action, reviewer: reviewer ?? "operator", note: note ?? null });
+      return NextResponse.json({ ok: true, action, holdback: holdback && hashscan("schedule", holdback.schedule), hcs: log.txId });
+    }
+    // The liable leg: the one the reviewer names, else the first held handover, else the last carrying leg.
+    const hs = await handoffsFor(code);
+    const held = hs.filter((h) => h.verdict === "held").sort((a, b) => a.hop - b.hop)[0]?.hop;
+    const lastCarry = [...c.route].filter((l) => (l.km ?? 0) > 0).at(-1)?.hop ?? c.route.at(-1)!.hop;
+    const liable = hop ?? held ?? lastCarry;
+    const r = await refundLiable(c, liable, Number(valueRupees ?? 0));
+    const log = await submitLog({ t: "daak.refunded", code, reviewer: reviewer ?? "operator", note: note ?? null, liableHop: liable, rupees: r.refundRupees, poolRupees: r.poolRupees, tx: r.refundTx ?? null });
+    return NextResponse.json({ ok: true, action, ...r, refund: r.refundTx && hashscan("transaction", r.refundTx), hcs: log.txId });
+  }
+  if (!c.schedule) return NextResponse.json({ error: "No scheduled payout" }, { status: 404 });
   if (action === "pay") {
     const r = await releaseFee(c.schedule);
     await cashOutAll(c).catch(() => null);

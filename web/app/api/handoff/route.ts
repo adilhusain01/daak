@@ -6,6 +6,7 @@ import { submitLog } from "@/lib/hedera";
 import { consignmentByParcel, handoffsFor, writeHandoff } from "@/lib/arkiv";
 import { releaseFee, hashscan } from "@/lib/payout";
 import { cashOutAll } from "@/lib/settle";
+import { isSplit, payAdvance, settleDelivered } from "@/lib/split";
 import { sealRef, uploadPhoto } from "@/lib/swarm";
 import { logDecision } from "@/lib/zgstore";
 import { getBadge } from "@/lib/arkiv";
@@ -108,7 +109,11 @@ export async function POST(req: Request) {
   }
 
   const lastLeg = leg.hop === Math.max(...consignment.route.map((l) => l.hop));
-  const willPay = lastLeg && verdict === "green" && past.every((h) => h.verdict === "green") && Boolean(consignment.schedule);
+  const allGreen = lastLeg && verdict === "green" && past.every((h) => h.verdict === "green");
+  const split = isSplit(consignment);
+  const willPay = allGreen && (split || Boolean(consignment.schedule));
+  // Split payout: a confirmed handover pays that driver's advance at once; delivery starts the holdback timer.
+  const paysAdvance = split && verdict === "green" && (leg.km ?? 0) > 0;
 
   // Everything below runs after the driver already has the answer.
   after(async () => {
@@ -131,13 +136,20 @@ export async function POST(req: Request) {
         zgRequestId: check?.requestId ?? "", hcs: log && sequence ? `${log.topicId}#${sequence}` : "", photoSha256, reason, geo, photo: photoRef, zgLog,
       });
     } catch (e) { console.error("arkiv", e); }
+    if (paysAdvance && !willPay) {
+      try { await payAdvance(consignment, leg.hop); } catch (e) { console.error("advance", e); }
+    }
     if (willPay) {
-      try { await releaseFee(consignment.schedule!); await cashOutAll(consignment); } catch (e) { console.error("payout", e); }
+      try {
+        if (split) await settleDelivered(consignment);
+        else { await releaseFee(consignment.schedule!); await cashOutAll(consignment); }
+      } catch (e) { console.error("payout", e); }
     }
   });
 
   const message =
     willPay ? "Delivery poori. Sab drivers ko payment ho raha hai."
+    : paysAdvance ? `Saunp diya. ${leg.place} tak. ${leg.advancePct ?? 50}% payment abhi, baaki delivery par.`
     : verdict === "green" ? `Saunp diya. ${leg.place} tak. Payment jaari.`
     : verdict === "held" ? `Payment roka gaya. ${reason}`
     : "AI jaanch nahi ho payi. Handoff save hai, payment jaanch tak ruka hai.";
@@ -146,7 +158,7 @@ export async function POST(req: Request) {
     proofs: {
       zg: check && { requestId: check.requestId, verified: check.verified, model: check.model },
       hcs: log && { topicId: log.topicId, tx: hashscan("transaction", log.txId) },
-      payout: willPay ? "releasing" : undefined,
+      payout: willPay ? "releasing" : paysAdvance ? "advance" : undefined,
     },
     errors,
   });

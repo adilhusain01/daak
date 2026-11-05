@@ -14,7 +14,7 @@ Notes from a conversation with a builder at ETHGlobal Mumbai (5 to 6 November 20
 6. **Show real money moving.** Ten parcels in ten cities with real payments beats any projection. Partner with courier franchises and bus operators to get there.
 7. **The network is mapped already.** India Post's office tree (branch office, sub office, head office, sorting hubs) is a relay network, and its data is public.
 
-Daak already does 1, 5, the proof in 4, and holds all pay until delivery. To add: the split release in 4 (part at handover, the holdback at delivery, the holdback repaying the customer on loss or damage), weight in the meter, standing orders, the map.
+Daak now does 1, 5 and all of 4: 50% at handover for a new driver, 70% after 10 clean deliveries, 90% after 50 with 98% clean; the holdback releases itself on chain 24 hours after delivery, and on loss or damage the liable leg's holdback repays the customer, topped up by a protection pool (1 point of the booking fee, capped at Rs 2,000). To add: weight in the meter, standing orders, the map.
 
 ## The starter (beachhead)
 

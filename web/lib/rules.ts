@@ -25,3 +25,28 @@ export function advanceFor(r: { proven: number; heldRecently: boolean; cleanRate
     ? { eligibleRupees: limit, reason: "25% of the last 30 days' proven earnings, up to Rs 5,000" }
     : { eligibleRupees: 0, reason: "No paid deliveries in the last 30 days" };
 }
+
+/**
+ * How much of a leg's pay a driver gets at the confirmed handover, by their public record.
+ * The rest is held until delivery is confirmed, and repays the customer if that driver's leg went wrong.
+ */
+export function tierFor(r: { proven: number; cleanRate: number; heldRecently: boolean }) {
+  if (r.proven >= 50 && r.cleanRate >= 0.98 && !r.heldRecently) return { name: "Trusted", advancePct: 90 };
+  if (r.proven >= 10 && !r.heldRecently) return { name: "Proven", advancePct: 70 };
+  return { name: "New", advancePct: 50 };
+}
+
+/** Splits one leg's pay into what is paid at handover and what is held until delivery. */
+export function splitAdvance(units: number, advancePct: number) {
+  const advance = Math.floor((units * advancePct) / 100);
+  return { advance, holdback: units - advance };
+}
+
+/** The protection pool gets this many points of the meter from every booking (out of Daak's booking fee). */
+export const POOL_POINTS = Number(process.env.POOL_POINTS ?? 1);
+export const poolUnits = (meterUnits: number) => Math.floor((meterUnits * POOL_POINTS) / 100);
+
+/** What the pool pays a shop for a lost or damaged parcel: its declared value, up to the cap, after the liable holdback. */
+export function poolPayout(declaredRupees: number, liableHoldbackRupees: number, capRupees = Number(process.env.POOL_CAP_RUPEES ?? 2000)) {
+  return Math.max(0, Math.min(capRupees, declaredRupees) - liableHoldbackRupees);
+}

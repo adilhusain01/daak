@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { chain } from "./hedera";
 import { accountFor } from "./payout";
 import { consignmentByCode } from "./arkiv";
-import { advanceFor } from "./rules";
+import { advanceFor, tierFor } from "./rules";
 
 /**
  * A driver's work history, read from the public Hedera log only: anyone can recompute it, which is
@@ -33,6 +33,9 @@ export async function readLog(): Promise<LogMsg[]> {
 export type WorkHistory = {
   handoffs: number; proven: number; held: number; km: number; earnedRupees: number; earned30dRupees: number;
   bachatRupees: number; cleanRate: number; advance: { eligibleRupees: number; reason: string };
+  heldRecently: boolean;
+  /** How much of each leg's pay arrives at the handover; the rest waits for delivery. */
+  tier: { name: string; advancePct: number; next: string | null };
 };
 
 /** Proven = checked green by 0G, or on a delivery a person reviewed and paid. Held never counts. */
@@ -69,6 +72,12 @@ export async function workHistory(uid: string, preloaded?: LogMsg[]): Promise<Wo
   const lastTen = mine.slice(-10);
 
   // The rule is public and simple on purpose: a lender (in production, a licensed partner) can audit it.
-  const advance = advanceFor({ proven, heldRecently: lastTen.some((h) => h.verdict === "held"), cleanRate, earned30dRupees });
-  return { handoffs: mine.length, proven, held, km, earnedRupees, earned30dRupees, bachatRupees, cleanRate: Math.round(cleanRate * 100) / 100, advance };
+  const heldRecently = lastTen.some((h) => h.verdict === "held");
+  const advance = advanceFor({ proven, heldRecently, cleanRate, earned30dRupees });
+  const t = tierFor({ proven, cleanRate, heldRecently });
+  const next = heldRecently ? "10 clean handovers in a row lift you back up"
+    : t.advancePct === 50 ? `${10 - proven} more clean deliveries to get 70% at handover`
+    : t.advancePct === 70 ? (proven < 50 ? `${50 - proven} more clean deliveries to get 90% at handover` : "Keep 98% of handovers clean to get 90%")
+    : null;
+  return { handoffs: mine.length, proven, held, km, earnedRupees, earned30dRupees, bachatRupees, cleanRate: Math.round(cleanRate * 100) / 100, advance, heldRecently, tier: { ...t, next } };
 }
