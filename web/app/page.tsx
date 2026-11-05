@@ -54,6 +54,17 @@ export default function Dashboard() {
     },
     onError: (e) => toast.error((e as Error).message),
   });
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const resolve = useMutation({
+    mutationFn: async ({ code, action }: { code: string; action: "pay" | "refund" }) => {
+      const r = await fetch("/api/resolve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, action, reviewer: "operator" }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Could not resolve");
+      return j;
+    },
+    onSuccess: (_j, v) => { setConfirming(null); toast.success(v.action === "pay" ? `${v.code}: drivers paid` : `${v.code}: payout cancelled, fee back for the shop's refund`); qc.invalidateQueries({ queryKey: ["consignments"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
   const approve = useMutation({
     mutationFn: async (code: string) => {
       const r = await fetch("/api/review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, reviewer: "operator" }) });
@@ -171,6 +182,20 @@ export default function Dashboard() {
                   <Button variant="outline" className="rounded-lg border-ink shadow-sm active:translate-y-px" disabled={recheck.isPending} onClick={() => recheck.mutate(r.code)}>
                     {recheck.isPending && recheck.variables === r.code ? "Asking 0G..." : "Recheck with 0G"}
                   </Button>
+                )}
+                {!r.paidAt && [...byHop.values()].some((h) => h.verdict === "held") && (
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    {confirming === `${r.code}:pay` ? (
+                      <Button className="rounded-lg bg-ok text-paper shadow-sm active:translate-y-px" disabled={resolve.isPending} onClick={() => resolve.mutate({ code: r.code, action: "pay" })}>Confirm: pay the drivers</Button>
+                    ) : (
+                      <Button className="rounded-lg bg-ink text-paper shadow-sm active:translate-y-px" onClick={() => setConfirming(`${r.code}:pay`)}>Pay the drivers anyway</Button>
+                    )}
+                    {confirming === `${r.code}:refund` ? (
+                      <Button className="rounded-lg bg-held text-paper shadow-sm active:translate-y-px" disabled={resolve.isPending} onClick={() => resolve.mutate({ code: r.code, action: "refund" })}>Confirm: refund the shop</Button>
+                    ) : (
+                      <Button variant="outline" className="rounded-lg border-held text-held shadow-sm active:translate-y-px" onClick={() => setConfirming(`${r.code}:refund`)}>Refund the shop</Button>
+                    )}
+                  </div>
                 )}
                 {reviewable && (
                   <Button className="rounded-lg bg-ink text-paper shadow-sm active:translate-y-px" disabled={approve.isPending} onClick={() => approve.mutate(r.code)}>
