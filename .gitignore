@@ -1,0 +1,28 @@
+# secrets
+.env
+.env.*
+!.env.example
+secrets.env
+*.keystore
+keystore/
+
+# node / next
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# android / gradle
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# os
+.DS_Store
