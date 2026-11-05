@@ -123,6 +123,12 @@ object Api {
         return List(e.length()) { e.getString(it) }
     }
 
+    /** A driver answers a job offer; the answer goes on the public log. */
+    fun job(code: String, uid: String, accept: Boolean) {
+        val (c, j) = post("/api/job", JSONObject().put("code", code).put("uid", uid).put("decision", if (accept) "accept" else "decline"))
+        if (c !in 200..299) error(j.optString("error", "server $c"))
+    }
+
     fun shopBalance(sender: String): ShopBal {
         val (code, j) = get("/api/shop/${enc(sender)}")
         if (code !in 200..299) error(j.optString("error", "server $code"))

@@ -5,7 +5,7 @@ import { SiteNav, ProofButton } from "@/components/site-nav";
 import { arkivEntity, hashscanTopic, verdictText, when } from "@/lib/ui";
 
 type H = { key: string; hop: number; verdict: string; place: string; at: number; reason: string; hcs: string; zgRequestId: string };
-type M = { hop: number; km: number; pct: number | null; advanceRupees: number; heldRupees: number | null; tx: string | null };
+type M = { hop: number; km: number; pct: number | null; advanceRupees: number; heldRupees: number | null; tx: string | null; answer: string | null };
 type D = {
   code: string; label: string; createdAt: number; feeRupees: number; weight: string; km: number;
   route: { hop: number; place: string; km: number }[]; handoffs: H[]; money: M[];
@@ -72,7 +72,10 @@ export default function Live() {
                     <li key={l.hop} className="rounded-lg border border-rule p-3 text-sm">
                       <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                         <span className="font-medium">Stop {l.hop}: {l.place}</span>
-                        <span className="text-muted-ink">{l.km ? `${l.km} km` : "pickup"}</span>
+                        <span className="text-muted-ink">
+                          {l.km ? `${l.km} km` : "pickup"}
+                          {m && <span className={m.answer === "accept" ? "text-ok" : m.answer === "decline" ? "text-held" : ""}> · {m.answer === "accept" ? "driver accepted" : m.answer === "decline" ? "driver declined" : "waiting for the driver"}</span>}
+                        </span>
                       </div>
                       {h ? <p className={`mt-1 ${v?.tone}`}>{v?.en}, {when(h.at)}</p> : <p className="mt-1 text-muted-ink">Not handed over yet</p>}
                       {h?.reason && <p className="text-muted-ink">{h.reason}</p>}

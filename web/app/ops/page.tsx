@@ -12,7 +12,7 @@ import { ShopsPanel } from "@/components/shops-panel";
 import { useState } from "react";
 import { arkivEntity, hashscanTopic, verdictText, when, type HandoffView, type LegView } from "@/lib/ui";
 
-type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number; advanceRupees: number; advancePct: number | null; heldRupees: number | null };
+type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number; advanceRupees: number; advancePct: number | null; heldRupees: number | null; answer: string | null };
 type Holdback = { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean };
 type Row = {
   code: string; label: string; feeRupees: number; createdAt: number; schedule?: string; paidAt: number | null; km: number; meter: string; money: Money[]; holdback: Holdback | null;
@@ -153,6 +153,7 @@ export default function Dashboard() {
                         <span className="text-sm text-muted-ink">
                           {l.km ?? "?"} km, driver share ₹{share}
                           {(l.km ?? 0) > 0 && l.advancePct != null && `: ${l.advancePct}% at handover, ${100 - l.advancePct}% after delivery`}
+                          {(l.km ?? 0) > 0 && (() => { const a = r.money.find((m) => m.hop === l.hop)?.answer; return <span className={a === "accept" ? "text-ok" : a === "decline" ? "text-held" : ""}> · {a === "accept" ? "driver accepted" : a === "decline" ? "driver declined" : "waiting for the driver"}</span>; })()}
                         </span>
                       </div>
                       {h ? (

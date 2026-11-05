@@ -18,7 +18,8 @@ export async function GET() {
     const handoffs = (await handoffsFor(c.code)).map((h) => ({ key: h.key, hop: h.hop, verdict: h.verdict, place: h.place, at: h.at, reason: h.reason, hcs: h.hcs, zgRequestId: h.zgRequestId, signed: undefined }));
     const money = c.route.filter((l) => (l.km ?? 0) > 0).map((l) => {
       const adv = log.filter((m) => m.t === "daak.advance" && m.code === c.code && m.hop === l.hop).at(-1) as ((typeof log)[number] & { pct?: number; heldRupees?: number; tx?: string }) | undefined;
-      return { hop: l.hop, km: l.km, pct: l.advancePct ?? null, advanceRupees: adv?.rupees ?? 0, heldRupees: adv?.heldRupees ?? null, tx: adv?.tx ?? null };
+      const answer = (log.filter((m) => m.t === "daak.job" && m.code === c.code && m.hop === l.hop).at(-1) as { decision?: string } | undefined)?.decision ?? null;
+      return { hop: l.hop, km: l.km, pct: l.advancePct ?? null, advanceRupees: adv?.rupees ?? 0, heldRupees: adv?.heldRupees ?? null, tx: adv?.tx ?? null, answer };
     });
     const booked = log.find((m) => m.t === "daak.booked" && m.code === c.code);
     return {

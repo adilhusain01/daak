@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
     private var todo by mutableStateOf<List<Todo>?>(null)
     private var daily by mutableStateOf<DailyList?>(null)
     private var shopBal by mutableStateOf<ShopBal?>(null)
+    private var answering by mutableStateOf<String?>(null)
     private var savingBusy by mutableStateOf(false)
 
     private lateinit var nfc: Nfc
@@ -432,6 +433,20 @@ class MainActivity : ComponentActivity() {
 
     // ---------- driver's own record ----------
 
+    private fun answerJob(t: Todo, accept: Boolean) {
+        val uid = me?.uid ?: return
+        answering = t.code
+        thread {
+            val r = runCatching { Api.job(t.code, uid, accept) }
+            val fresh = runCatching { Api.todo(uid) }.getOrNull()
+            runOnUiThread {
+                answering = null
+                r.onSuccess { if (fresh != null) todo = fresh; voice.buzz(); voice.say(if (accept) "काम स्वीकार किया।" else "काम मना किया।") }
+                    .onFailure { note = "जवाब नहीं गया। Could not send; try again." }
+            }
+        }
+    }
+
     private fun loadWork() {
         val uid = me?.uid ?: return
         thread { val w = runCatching { Api.work(uid) }.getOrNull(); runOnUiThread { work = w } }
@@ -590,8 +605,25 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
+    private fun OfferCard(offers: List<Todo>) {
+        offers.take(3).forEach { o ->
+            Sheet {
+                Heading("नया काम", "New job · ${o.code}")
+                Body(o.text, Tokens.ink, 17, FontWeight.Medium)
+                if (answering == o.code) Body("Sending…", Tokens.muted, 15)
+                else {
+                    Action("स्वीकार करें", "Accept this job", Tokens.green) { answerJob(o, true) }
+                    TextKey("मना करें · Decline") { answerJob(o, false) }
+                }
+            }
+        }
+    }
+
+    @Composable
     private fun TodoCard() {
-        val t = todo ?: return
+        val all = todo ?: return
+        OfferCard(all.filter { it.action == "offer" })
+        val t = all.filter { it.action != "offer" }
         if (t.isEmpty()) return
         Sheet {
             Heading("आगे क्या करना है", "Up next")

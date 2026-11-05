@@ -33,6 +33,7 @@ export async function GET(req: Request) {
         const adv = log.filter((m) => m.t === "daak.advance" && m.code === c.code && m.hop === d.hop).at(-1) as (typeof log)[number] & { pct?: number; heldRupees?: number } | undefined;
         return {
           hop: d.hop, account: d.account,
+          answer: (log.filter((m) => m.t === "daak.job" && m.code === c.code && m.hop === d.hop).at(-1) as { decision?: string } | undefined)?.decision ?? null,
           advanceRupees: adv?.rupees ?? 0, advancePct: adv?.pct ?? c.route.find((l) => l.hop === d.hop)?.advancePct ?? null, heldRupees: adv?.heldRupees ?? null,
           upiRupees: cash.reduce((s, m) => s + (m.rupees ?? 0), 0),
           upiStatus: cash.at(-1)?.status ?? null,
