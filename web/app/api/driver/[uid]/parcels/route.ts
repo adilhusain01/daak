@@ -6,7 +6,8 @@ import { recentConsignments, handoffsFor, getBadge } from "@/lib/arkiv";
 export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }> }) {
   if (!isApp(_req)) return denied("app");
   const uid = decodeURIComponent((await ctx.params).uid);
-  const list = await recentConsignments();
+  const since = Number(process.env.DATA_SINCE ?? 0);
+  const list = (await recentConsignments()).filter((c) => c.createdAt >= since);
   const out = [];
   for (const c of list) {
     if (!c.route.some((l) => l.from === uid || l.to === uid)) continue;

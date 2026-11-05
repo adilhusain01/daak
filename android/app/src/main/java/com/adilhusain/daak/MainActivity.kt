@@ -115,6 +115,7 @@ class MainActivity : ComponentActivity() {
     private fun restore() {
         val uid = prefs.getString("uid", null) ?: return
         me = Person(uid, prefs.getString("name", "") ?: "", prefs.getString("role", "driver") ?: "driver", prefs.getString("vehicle", "") ?: "")
+        thread { runCatching { Api.registerDevice(uid, DeviceKey.publicKey()) } } // idempotent: the first phone registers, the same phone is a no-op
         goHome()
     }
 
