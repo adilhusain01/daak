@@ -8,6 +8,7 @@ import { SiteNav } from "@/components/site-nav";
 type Driver = {
   id: string; name: string; vehicle: string; proven: number; held: number; km: number; earnedRupees: number;
   bachatRupees: number; cleanRate: number; advance: { eligibleRupees: number; reason: string };
+  idChecked: boolean; tier: { name: string; advancePct: number };
 };
 
 /** Shops find drivers by their proven record, not by luck. The record is read from the public Hedera log. */
@@ -28,7 +29,9 @@ export default function Drivers() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-lg font-semibold">{i + 1}. {d.name}</p>
-                <p className="text-sm text-muted-ink">{d.vehicle || "Bus driver"}</p>
+                <p className="text-sm text-muted-ink">
+                  {d.vehicle || "Bus driver"} · {d.idChecked ? <span className="text-ok">ID checked</span> : "ID not checked yet"} · {d.tier.name}, {d.tier.advancePct}% at handover
+                </p>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
                 <span><b className="text-base">{d.proven}</b> proven</span>

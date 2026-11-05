@@ -15,11 +15,13 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30.
 - [ ] One real conversation or 20-second clip with a bus parcel booking office or a sender.
 - [ ] Real paid deliveries during the hackathon (see `docs/business.md`, "Traction before Saturday").
 - [ ] Set `DATA_SINCE` in Vercel when the clean demo run starts.
+- [ ] Set `HOLDBACK_HOURS=0.25` in Vercel for the demo, so judges see a holdback release itself within 15 minutes.
 
 ## Build (order agreed: split payout, map, standing orders, weight)
 
 - [ ] When 0G works: the decision log on 0G Storage lands for real; the scanner pays for its own AI from a capped slice of each fee (0G "Agents That Pay for Themselves").
-- [ ] Split payout with a holdback: about half of each driver's share releases when the next person confirms receipt; the rest releases only when the parcel is delivered and confirmed; on loss or damage, the liable leg's holdback repays the customer.
+- [x] Split payout with a holdback: 50, 70 or 90% at the confirmed handover by record; holdbacks in one Hedera schedule that releases itself after `HOLDBACK_HOURS`; the liable leg repays the shop; protection pool from 1 point of the booking fee. Tested on testnet.
+- [x] Bus number checked against the plate format, bus operator, and driver KYC (ID type, last 4, encrypted ID photo, operator verifies, decision on HCS).
 - [ ] Weight in the meter: km and weight band.
 - [ ] Standing orders: a sender's daily repeat booking on a fixed route.
 - [x] Booking fee: 12% of the meter, at least ₹5, on top of the meter (configurable).
@@ -39,4 +41,4 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30.
 - [x] App: join, roles, booking with receiver and drivers, handoffs from either phone, signed on the phone, offline queue, Hindi first, My work, Bachat, fuel advance.
 - [x] Web: landing page, operator dashboard behind a passcode, drivers marketplace, tracking page, disputes, UPI QR with UTR on chain.
 - [x] Chain: x402 booking on Hedera, dINR with a 2% custom fee, escrow, scheduled payouts, refunds, HCS log, Arkiv as the database, encrypted photos on Swarm, 0G check with safe-stop and recheck.
-- [x] Security: operator and app keys, joined-only routes, booking cap. Tests: 14 passing.
+- [x] Security: operator and app keys, joined-only routes, booking cap. Tests: 19 passing.

@@ -17,6 +17,8 @@ data class Handoff(val parcel: String, val from: String, val to: String, val pho
 data class Work(
     val name: String?, val proven: Int, val km: Int, val earned: Double, val bachat: Double,
     val cleanPercent: Int, val advance: Int, val advanceReason: String, val savePercent: Int,
+    /** Share of each leg's pay at the handover (50, 70 or 90), and what lifts it. */
+    val atHandover: Int = 50, val nextTier: String? = null,
 )
 
 data class Me(val known: Boolean, val name: String?, val role: String?, val vehicle: String?)
@@ -96,9 +98,18 @@ object Api {
     }
 
     /** Returns null on success, or the list of problems to show next to the form. */
-    fun join(uid: String, role: String, name: String, phone: String, upi: String, vehicle: String, legs: List<String>, stop: String?): List<String>? {
+    fun join(
+        uid: String, role: String, name: String, phone: String, upi: String, vehicle: String, legs: List<String>, stop: String?,
+        busOperator: String? = null, idType: String? = null, idLast4: String = "", idPhoto: java.io.File? = null,
+    ): List<String>? {
         val body = JSONObject().put("uid", uid).put("role", role).put("name", name).put("phone", phone).put("upi", upi).put("vehicle", vehicle)
-            .put("legs", org.json.JSONArray(legs)).apply { if (stop != null) put("stop", stop) }
+            .put("legs", org.json.JSONArray(legs)).apply {
+                if (stop != null) put("stop", stop)
+                if (busOperator != null) put("busOperator", busOperator)
+                if (idType != null) put("idType", idType)
+                if (idLast4.isNotEmpty()) put("idLast4", idLast4)
+                if (idPhoto != null) put("idPhoto", android.util.Base64.encodeToString(idPhoto.readBytes(), android.util.Base64.NO_WRAP))
+            }
         val (code, j) = post("/api/join", body, 60000)
         if (code in 200..299) return null
         val e = j.optJSONArray("errors") ?: return listOf("Server ${code}")
@@ -155,6 +166,8 @@ object Api {
             j.optString("name").ifEmpty { null }, j.getInt("proven"), j.getInt("km"), j.getDouble("earnedRupees"),
             j.getDouble("bachatRupees"), (j.getDouble("cleanRate") * 100).toInt(), adv.getInt("eligibleRupees"),
             adv.getString("reason"), j.getInt("savePercent"),
+            j.optJSONObject("tier")?.optInt("advancePct", 50) ?: 50,
+            j.optJSONObject("tier")?.let { if (it.isNull("next")) null else it.optString("next") },
         )
     }
 

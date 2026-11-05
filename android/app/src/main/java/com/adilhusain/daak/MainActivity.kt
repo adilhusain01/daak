@@ -37,6 +37,8 @@ data class Person(val uid: String, val name: String, val role: String, val vehic
 data class JoinForm(
     val role: String? = null, val name: String = "", val phone: String = "", val upi: String = "", val vehicle: String = "",
     val legs: Set<String> = emptySet(), val stop: String? = null,
+    /** Drivers: who runs the bus, and a government ID for KYC (only its type, last 4 and a photo are sent). */
+    val busOperator: String? = null, val idType: String? = null, val idLast4: String = "", val idPhoto: File? = null,
 )
 
 /** Where the person is in the app. */
@@ -81,6 +83,7 @@ class MainActivity : ComponentActivity() {
     private val takePhoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val s = screen
         val file = photoFile
+        if (ok && file != null && s is Screen.Join) { screen = s.copy(form = s.form.copy(idPhoto = shrink(file)), errors = emptyList()); return@registerForActivityResult }
         if (ok && file != null && s is Screen.Handoff && s.parcel != null && s.other != null) send(s, shrink(file))
         else if (s is Screen.Handoff) note = "फोटो नहीं ली गई। The photo was not taken; press Take the photo."
     }
@@ -167,7 +170,7 @@ class MainActivity : ComponentActivity() {
         val f = s.form
         screen = s.copy(sending = true, errors = emptyList())
         thread {
-            val r = runCatching { Api.join(s.uid, f.role ?: "", f.name, f.phone, f.upi, f.vehicle, f.legs.toList(), f.stop) }
+            val r = runCatching { Api.join(s.uid, f.role ?: "", f.name, f.phone, f.upi, f.vehicle, f.legs.toList(), f.stop, f.busOperator, f.idType, f.idLast4, f.idPhoto) }
             runOnUiThread {
                 r.onSuccess { errs ->
                     if (errs == null) {
@@ -452,7 +455,23 @@ class MainActivity : ComponentActivity() {
             Field("मोबाइल · Mobile number", f.phone, { set(f.copy(phone = it.filter(Char::isDigit).take(10))) }, "98765 43210", number = true)
             if (f.role == "driver") {
                 Field("UPI ID · where your pay goes", f.upi, { set(f.copy(upi = it.trim())) }, "ramesh@okaxis")
-                Field("बस नंबर · Bus number", f.vehicle, { set(f.copy(vehicle = it)) }, "UP-78-AT-1123")
+                Field("बस नंबर · Bus number (number plate)", f.vehicle, { set(f.copy(vehicle = it.uppercase())) }, "UP-78-AT-1123")
+                Body("बस किसकी है? · Who runs the bus?", Tokens.muted, 15)
+                listOf("UPSRTC" to "UP state bus", "BSRTC" to "Bihar state bus", "Private" to "Private operator").forEach { (id, sub) ->
+                    Choice(id, sub, f.busOperator == id) { set(f.copy(busOperator = id)) }
+                }
+                Body("पहचान पत्र · Government ID (checked once by Daak, kept sealed)", Tokens.muted, 15)
+                listOf(
+                    Triple("dl", "ड्राइविंग लाइसेंस · Driving licence", "Best: it also shows you can drive the bus"),
+                    Triple("voter", "वोटर आईडी · Voter ID", null),
+                    Triple("aadhaar_masked", "आधार (छुपा हुआ) · Masked Aadhaar", "Cover the first 8 digits before the photo"),
+                ).forEach { (id, title, sub) -> Choice(title, sub, f.idType == id) { set(f.copy(idType = id)) } }
+                if (f.idType != null) {
+                    Field("ID के आखिरी 4 अंक · Last 4 characters of the ID", f.idLast4, { set(f.copy(idLast4 = it.filter(Char::isLetterOrDigit).take(4).uppercase())) }, "4821")
+                    if (f.idPhoto == null) Secondary("ID की फोटो लीजिए · Take a photo of the ID") { openCamera() }
+                    else Body("ID की फोटो ली गई · ID photo taken.", Tokens.green, 16, FontWeight.SemiBold)
+                    if (f.idPhoto != null) Secondary("दोबारा लें · Retake the photo") { openCamera() }
+                }
                 Body("आप कौन सा रास्ता चलाते हैं? · Which stretches do you drive?", Tokens.muted, 15)
                 s.net?.legs?.forEach { l ->
                     Choice(l.label, "${l.km} km", l.id in f.legs) { set(f.copy(legs = if (l.id in f.legs) f.legs - l.id else f.legs + l.id)) }
@@ -513,6 +532,8 @@ class MainActivity : ComponentActivity() {
             if (w == null) { Body("Loading your record…", Tokens.muted, 16); return@Sheet }
             Body("${w.proven} deliveries proven · ${w.km} km · ${w.cleanPercent}% clean", size = 19, weight = FontWeight.SemiBold)
             Body("कमाई · Earned ₹${"%.2f".format(w.earned)}", Tokens.green, 19, FontWeight.SemiBold)
+            Body("सौंपते ही ${w.atHandover}% · You get ${w.atHandover}% at handover, the rest when the parcel is delivered", size = 17, weight = FontWeight.SemiBold)
+            w.nextTier?.let { Body(it, Tokens.muted, 15) }
             Body("बचत · Bachat ₹${"%.2f".format(w.bachat)}", size = 17)
             if (w.advance > 0) Body("ईंधन एडवांस उपलब्ध · Fuel advance ₹${w.advance}", Tokens.green, 17, FontWeight.SemiBold)
             else Body("Fuel advance: ${w.advanceReason}", Tokens.muted, 15)
@@ -542,7 +563,7 @@ class MainActivity : ComponentActivity() {
         val v = s.verdict
         when {
             s.offline -> Verdict(Tokens.amber, "फ़ोन में सेव", "Saved on the phone", "No signal. It sends by itself when the signal is back; the payment waits until it is checked.")
-            v.verdict == "green" -> Verdict(Tokens.green, "सौंप दिया", "Handed over", "Checked: right parcel, right stop, still sealed.${s.place?.let { " $it." } ?: ""}")
+            v.verdict == "green" -> Verdict(Tokens.green, "सौंप दिया", "Handed over", "Checked: right parcel, right stop, still sealed.${s.place?.let { " $it." } ?: ""}${if (v.message.contains("% payment abhi")) " Your pay for this stretch is on its way now; the rest comes when the parcel is delivered." else ""}")
             v.verdict == "held" -> Verdict(Tokens.red, "भुगतान रोका गया", "Payment held", v.message.substringAfter(". ").ifBlank { v.message })
             else -> Verdict(Tokens.amber, "दर्ज हुआ, जाँच बाकी", "Recorded, waiting for the check", "The AI check could not run just now. The handoff is recorded and the payment waits; it is checked again automatically.")
         }
