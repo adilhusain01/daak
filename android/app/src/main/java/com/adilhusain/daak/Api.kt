@@ -20,7 +20,15 @@ data class Work(
 )
 
 data class Me(val known: Boolean, val name: String?, val role: String?, val vehicle: String?)
-data class Next(val hop: Int, val place: String, val km: Int?, val fromHash: String, val toHash: String, val toName: String, val toRole: String)
+data class Next(val hop: Int, val place: String, val km: Int?, val fromHash: String, val toHash: String, val toName: String, val toRole: String, val fromName: String, val fromRole: String)
+data class StopOpt(val id: String, val name: String)
+data class LegOpt(val id: String, val label: String, val km: Int)
+data class Network(val stops: List<StopOpt>, val legs: List<LegOpt>)
+data class Receiver(val uid: String, val name: String, val stopName: String)
+data class DriverOpt(val uid: String, val name: String, val vehicle: String, val proven: Int, val km: Int, val cleanPercent: Int)
+data class Stretch(val id: String, val from: String, val to: String, val km: Int, val drivers: List<DriverOpt>)
+data class Plan(val from: String, val to: String, val km: Int, val fee: Double, val meter: String, val stretches: List<Stretch>)
+data class Todo(val code: String, val text: String, val action: String)
 data class ParcelInfo(val registered: Boolean, val code: String?, val label: String?, val delivered: Boolean, val next: Next?)
 data class RoutePlan(val label: String, val from: String, val to: String, val stops: List<Pair<String, Int>>, val km: Int, val fee: Double, val meter: String)
 
@@ -58,8 +66,65 @@ object Api {
         val n = j.optJSONObject("next")
         return ParcelInfo(
             true, j.optString("code"), j.optString("label"), j.optBoolean("delivered"),
-            n?.let { Next(it.getInt("hop"), it.getString("place"), if (it.isNull("km")) null else it.getInt("km"), it.getString("fromHash"), it.getString("toHash"), it.getString("toName"), it.getString("toRole")) },
+            n?.let { Next(it.getInt("hop"), it.getString("place"), if (it.isNull("km")) null else it.getInt("km"), it.getString("fromHash"), it.getString("toHash"), it.getString("toName"), it.getString("toRole"), it.optString("fromName", "the giver"), it.optString("fromRole", "driver")) },
         )
+    }
+
+    private fun post(path: String, body: JSONObject, readMs: Int = 30000): Pair<Int, JSONObject> {
+        val conn = URL("$base$path").openConnection() as HttpURLConnection
+        conn.requestMethod = "POST"
+        conn.connectTimeout = 8000
+        conn.readTimeout = readMs
+        conn.doOutput = true
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.outputStream.use { it.write(body.toString().toByteArray()) }
+        val code = conn.responseCode
+        val text = (if (code in 200..299) conn.inputStream else conn.errorStream).bufferedReader().readText()
+        return code to JSONObject(text)
+    }
+
+    fun network(): Network {
+        val (_, j) = get("/api/network")
+        val s = j.getJSONArray("stops"); val l = j.getJSONArray("legs")
+        val names = List(s.length()) { s.getJSONObject(it).let { o -> o.getString("id") to o.getString("name") } }.toMap()
+        return Network(
+            List(s.length()) { s.getJSONObject(it).let { o -> StopOpt(o.getString("id"), o.getString("name")) } },
+            List(l.length()) { l.getJSONObject(it).let { o -> LegOpt(o.getString("id"), "${names[o.getString("from")]?.substringBefore(",")} › ${names[o.getString("to")]?.substringBefore(",")}", o.getInt("km")) } },
+        )
+    }
+
+    /** Returns null on success, or the list of problems to show next to the form. */
+    fun join(uid: String, role: String, name: String, phone: String, upi: String, vehicle: String, legs: List<String>, stop: String?): List<String>? {
+        val body = JSONObject().put("uid", uid).put("role", role).put("name", name).put("phone", phone).put("upi", upi).put("vehicle", vehicle)
+            .put("legs", org.json.JSONArray(legs)).apply { if (stop != null) put("stop", stop) }
+        val (code, j) = post("/api/join", body, 60000)
+        if (code in 200..299) return null
+        val e = j.optJSONArray("errors") ?: return listOf("Server ${code}")
+        return List(e.length()) { e.getString(it) }
+    }
+
+    fun receivers(): List<Receiver> {
+        val (_, j) = get("/api/receivers")
+        val a = j.getJSONArray("receivers")
+        return List(a.length()) { a.getJSONObject(it).let { o -> Receiver(o.getString("uid"), o.getString("name"), o.getString("stopName")) } }
+    }
+
+    fun plan(sender: String, receiver: String): Plan {
+        val (code, j) = post("/api/plan", JSONObject().put("sender", sender).put("receiver", receiver), 60000)
+        if (code !in 200..299) error(j.optString("error", "server $code"))
+        val st = j.getJSONArray("stretches")
+        return Plan(j.getString("from"), j.getString("to"), j.getInt("km"), j.getDouble("feeRupees"), j.getString("meter"),
+            List(st.length()) { i -> st.getJSONObject(i).let { o ->
+                val d = o.getJSONArray("drivers")
+                Stretch(o.getString("id"), o.getString("from"), o.getString("to"), o.getInt("km"),
+                    List(d.length()) { k -> d.getJSONObject(k).let { x -> DriverOpt(x.getString("uid"), x.getString("name"), x.optString("vehicle"), x.getInt("proven"), x.getInt("km"), (x.getDouble("cleanRate") * 100).toInt()) } })
+            } })
+    }
+
+    fun todo(uid: String): List<Todo> {
+        val (_, j) = get("/api/driver/${enc(uid)}/parcels")
+        val a = j.getJSONArray("parcels")
+        return List(a.length()) { a.getJSONObject(it).let { o -> Todo(o.getString("code"), o.getString("text"), o.getString("action")) } }
     }
 
     fun route(): RoutePlan {
@@ -98,14 +163,16 @@ object Api {
     }
 
     /** The shop's agent books and pays for this parcel's delivery; returns the link to write on its tag. */
-    fun pack(parcel: String): Booking {
+    fun pack(parcel: String, sender: String? = null, receiver: String? = null, drivers: List<String> = emptyList()): Booking {
         val conn = URL("$base/api/pack").openConnection() as HttpURLConnection
         conn.requestMethod = "POST"
         conn.connectTimeout = 8000
         conn.readTimeout = 90000
         conn.doOutput = true
         conn.setRequestProperty("Content-Type", "application/json")
-        conn.outputStream.use { it.write(JSONObject().put("parcel", parcel).toString().toByteArray()) }
+        val body = JSONObject().put("parcel", parcel)
+        if (sender != null && receiver != null && drivers.isNotEmpty()) body.put("sender", sender).put("receiver", receiver).put("drivers", org.json.JSONArray(drivers))
+        conn.outputStream.use { it.write(body.toString().toByteArray()) }
         val text = (if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream).bufferedReader().readText()
         val j = JSONObject(text)
         if (conn.responseCode !in 200..299) error(j.optString("error", "server ${conn.responseCode}"))

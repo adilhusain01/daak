@@ -139,3 +139,41 @@ fun Verdict(color: Color, hi: String, en: String, detail: String?) {
         if (!detail.isNullOrBlank()) BasicText(detail, style = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, color = Tokens.paper.copy(alpha = 0.85f)))
     }
 }
+
+/** A labelled text box for the join form: sits in (a tray), never pressed. */
+@Composable
+fun Field(label: String, value: String, onChange: (String) -> Unit, hint: String = "", number: Boolean = false) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Body(label, Tokens.muted, 15)
+        Box(Modifier.fillMaxWidth().background(Tokens.tray, RoundedCornerShape(Tokens.radius)).padding(6.dp)
+            .background(Tokens.sheet, RoundedCornerShape(Tokens.inner)).border(1.dp, Tokens.line, RoundedCornerShape(Tokens.inner)).padding(14.dp)) {
+            androidx.compose.foundation.text.BasicTextField(
+                value = value, onValueChange = onChange, singleLine = true,
+                textStyle = TextStyle(fontSize = 19.sp, color = Tokens.ink),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = if (number) androidx.compose.ui.text.input.KeyboardType.Phone else androidx.compose.ui.text.input.KeyboardType.Text),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { inner -> if (value.isEmpty()) BasicText(hint, style = TextStyle(fontSize = 19.sp, color = Tokens.muted)); inner() },
+            )
+        }
+    }
+}
+
+/** One choice in a list of equal choices: chosen ones sit in with a green edge, the rest can be pressed. */
+@Composable
+fun Choice(title: String, sub: String?, chosen: Boolean, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    Column(
+        Modifier.fillMaxWidth()
+            .graphicsLayer { val s = if (pressed) 0.97f else 1f; scaleX = s; scaleY = s }
+            .then(if (chosen) Modifier else Modifier.shadow(2.dp, RoundedCornerShape(Tokens.radius)))
+            .background(if (chosen) Tokens.tray else Tokens.sheet, RoundedCornerShape(Tokens.radius))
+            .border(if (chosen) 2.dp else 1.dp, if (chosen) Tokens.green else Tokens.line, RoundedCornerShape(Tokens.radius))
+            .clickable(interactionSource = source, indication = null, onClick = onClick)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Body((if (chosen) "✓ " else "") + title, Tokens.ink, 19, FontWeight.SemiBold)
+        if (sub != null) Body(sub, Tokens.muted, 15)
+    }
+}
