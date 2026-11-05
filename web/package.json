@@ -9,9 +9,18 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@0gfoundation/0g-compute-ts-sdk": "^0.9.0",
+    "@0gfoundation/0g-ts-sdk": "^1.2.8",
+    "@arkiv-network/sdk": "^1.0.1",
+    "@hiero-ledger/sdk": "^2.90.1",
+    "@x402/core": "^2.30.0",
+    "@x402/hedera": "^2.30.0",
+    "@x402/next": "^2.30.0",
+    "ethers": "^6.17.0",
     "next": "16.4.5",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "viem": "^2.57.16"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
