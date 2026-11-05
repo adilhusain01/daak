@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { checkParcel, type Check } from "@/lib/zg";
 import { logHandoff } from "@/lib/hedera";
 import { releaseFee, hashscan } from "@/lib/payout";
+import { cashOutAll } from "@/lib/settle";
 import { consignmentByParcel, handoffsFor, writeHandoff } from "@/lib/arkiv";
 
 /** Metres between two points on the earth. */
@@ -95,6 +96,7 @@ export async function POST(req: Request) {
     try {
       const r = await releaseFee(c.schedule);
       payout = { ...r, url: hashscan("transaction", r.releaseTx) };
+      await cashOutAll(c).catch((e) => errors.push(`UPI: ${(e as Error).message.slice(0, 160)}`));
     } catch (e) {
       errors.push(`Payout: ${(e as Error).message.slice(0, 160)}`);
     }

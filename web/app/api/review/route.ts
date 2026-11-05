@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { consignmentByCode, handoffsFor } from "@/lib/arkiv";
 import { releaseFee, hashscan } from "@/lib/payout";
+import { cashOutAll } from "@/lib/settle";
 import { logHandoff } from "@/lib/hedera";
 
 /**
@@ -17,5 +18,6 @@ export async function POST(req: Request) {
   if (hs.some((h) => h.verdict === "held")) return NextResponse.json({ error: "A hop is held; it needs a dispute, not an approval" }, { status: 409 });
   const r = await releaseFee(c.schedule);
   const hcs = await logHandoff({ t: "daak.reviewed", code, reviewer: reviewer ?? "operator", release: r.releaseTx });
-  return NextResponse.json({ released: true, payout: hashscan("transaction", r.releaseTx), hcs });
+  const upi = await cashOutAll(c).catch((e) => ({ error: (e as Error).message }));
+  return NextResponse.json({ released: true, payout: hashscan("transaction", r.releaseTx), hcs, upi });
 }
