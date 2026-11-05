@@ -1,0 +1,81 @@
+package com.adilhusain.daak
+
+import android.content.Context
+import org.json.JSONObject
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.UUID
+
+/** The server's answer to one handoff. verdict is "green", "held" or "unchecked". */
+data class Verdict(val verdict: String, val message: String, val code: String?, val hop: Int?)
+
+data class Handoff(val parcel: String, val from: String, val to: String, val photo: File, val at: Long = System.currentTimeMillis())
+
+object Api {
+    private val base = BuildConfig.API_BASE
+
+    /** Sends one handoff with its photo. Throws on any network failure so the caller can queue it. */
+    fun handoff(h: Handoff): Verdict {
+        val boundary = "daak" + UUID.randomUUID().toString().replace("-", "")
+        val body = ByteArrayOutputStream().apply {
+            fun field(name: String, value: String) {
+                write("--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray())
+            }
+            field("parcel", h.parcel)
+            field("from", h.from)
+            field("to", h.to)
+            field("at", h.at.toString())
+            write("--$boundary\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"lid.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n".toByteArray())
+            write(h.photo.readBytes())
+            write("\r\n--$boundary--\r\n".toByteArray())
+        }.toByteArray()
+
+        val conn = URL("$base/api/handoff").openConnection() as HttpURLConnection
+        conn.requestMethod = "POST"
+        conn.connectTimeout = 8000
+        conn.readTimeout = 60000
+        conn.doOutput = true
+        conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+        conn.outputStream.use { it.write(body) }
+        val text = (if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream).bufferedReader().readText()
+        if (conn.responseCode !in 200..299) error("server ${conn.responseCode}: $text")
+        val j = JSONObject(text)
+        return Verdict(
+            j.optString("verdict", "unchecked"),
+            j.optString("message", ""),
+            j.optString("code").ifEmpty { null },
+            if (j.has("hop")) j.getInt("hop") else null,
+        )
+    }
+}
+
+/** Handoffs that could not be sent yet (no signal on the highway). Saved to disk, sent later. */
+class Outbox(context: Context) {
+    private val dir = File(context.filesDir, "outbox").apply { mkdirs() }
+
+    fun add(h: Handoff) {
+        val id = h.at.toString()
+        h.photo.copyTo(File(dir, "$id.jpg"), overwrite = true)
+        File(dir, "$id.json").writeText(
+            JSONObject().put("parcel", h.parcel).put("from", h.from).put("to", h.to).put("at", h.at).toString(),
+        )
+    }
+
+    fun size() = dir.listFiles { f -> f.extension == "json" }?.size ?: 0
+
+    /** Tries every queued handoff once, oldest first; keeps the ones that still fail. */
+    fun flush(): Int {
+        var sent = 0
+        dir.listFiles { f -> f.extension == "json" }?.sortedBy { it.name }?.forEach { meta ->
+            val j = JSONObject(meta.readText())
+            val photo = File(dir, meta.nameWithoutExtension + ".jpg")
+            runCatching {
+                Api.handoff(Handoff(j.getString("parcel"), j.getString("from"), j.getString("to"), photo, j.getLong("at")))
+                meta.delete(); photo.delete(); sent++
+            }
+        }
+        return sent
+    }
+}

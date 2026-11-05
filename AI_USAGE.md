@@ -6,3 +6,4 @@ ETHGlobal asks every team to document how AI tools were used, file by file. This
 |---|---|---|
 | `README.md`, `AI_USAGE.md`, `.gitignore` | Drafted with an AI coding assistant from the team's plan | Team wrote the plan and reviewed the text |
 | `android/` build setup and `MainActivity.kt` shell | Scaffolded with an AI coding assistant, modelled on the team's earlier Kotlin app setup | Team chose native Kotlin over a web app after testing NFC on the phone, and reviewed the build |
+| `android/.../Nfc.kt`, `MainActivity.kt`, `Ui.kt`, `Voice.kt`, `Api.kt` | Written with an AI coding assistant from the team's flow (badge, parcel tap, receiver badge, lid photo, verdict) | Team designed the handoff flow and the Hindi prompts, tested NFC and the screens on a real phone |
