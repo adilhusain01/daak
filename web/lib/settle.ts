@@ -5,6 +5,7 @@ import { getPrefs, getBadge } from "./arkiv";
 import { unseal } from "./swarm";
 import { env } from "./env";
 import { cashOut } from "./upi";
+import { bachatUnits } from "./rules";
 import type { Leg } from "./arkiv";
 
 /** The driver's dINR on chain right now, from the mirror node (waits briefly for the payout to show). */
@@ -29,7 +30,7 @@ export async function cashOutAll(c: { code: string; route: Leg[] }) {
     if (units <= 0) continue;
     // Bachat: the share the driver chose goes to their locked pot first; the rest goes to UPI.
     const { savePercent } = await getPrefs(badge).catch(() => ({ savePercent: 0 }));
-    const save = Math.floor((units * savePercent) / 100);
+    const save = bachatUnits(units, savePercent);
     let bachat = null;
     if (save > 0) {
       const potId = await accountFor(`bachat:${badge}`);

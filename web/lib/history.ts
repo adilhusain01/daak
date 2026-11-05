@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { chain } from "./hedera";
 import { accountFor } from "./payout";
 import { consignmentByCode } from "./arkiv";
+import { advanceFor } from "./rules";
 
 /**
  * A driver's work history, read from the public Hedera log only: anyone can recompute it, which is
@@ -68,13 +69,6 @@ export async function workHistory(uid: string, preloaded?: LogMsg[]): Promise<Wo
   const lastTen = mine.slice(-10);
 
   // The rule is public and simple on purpose: a lender (in production, a licensed partner) can audit it.
-  let advance = { eligibleRupees: 0, reason: "" };
-  if (proven < 2) advance.reason = "Needs 2 proven deliveries";
-  else if (lastTen.some((h) => h.verdict === "held")) advance.reason = "A recent handoff was held";
-  else if (cleanRate < 0.9) advance.reason = "Clean record below 90%";
-  else {
-    const limit = Math.min(5000, Math.floor((earned30dRupees * 0.25) / 10) * 10);
-    advance = limit > 0 ? { eligibleRupees: limit, reason: "25% of the last 30 days' proven earnings, up to Rs 5,000" } : { eligibleRupees: 0, reason: "No paid deliveries in the last 30 days" };
-  }
+  const advance = advanceFor({ proven, heldRecently: lastTen.some((h) => h.verdict === "held"), cleanRate, earned30dRupees });
   return { handoffs: mine.length, proven, held, km, earnedRupees, earned30dRupees, bachatRupees, cleanRate: Math.round(cleanRate * 100) / 100, advance };
 }

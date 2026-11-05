@@ -5,6 +5,7 @@ import {
   TransferTransaction, ScheduleId,
 } from "@hiero-ledger/sdk";
 import { env } from "./env";
+import { splitByKm as splitUnits } from "./rules";
 import { chain, hedera, saveChain } from "./hedera";
 
 const MIRROR = "https://testnet.mirrornode.hedera.com/api/v1";
@@ -69,13 +70,8 @@ export async function setupMoney() {
   return c;
 }
 
-/** Splits a fee by kilometres; any rounding remainder goes to the last leg. */
 export function splitByKm(feeRupees: number, legs: { badge: string; km: number }[]) {
-  const total = legs.reduce((s, l) => s + l.km, 0) || 1;
-  const units = toUnits(feeRupees);
-  const shares = legs.map((l) => ({ badge: l.badge, km: l.km, units: Math.floor((units * l.km) / total) }));
-  shares[shares.length - 1].units += units - shares.reduce((s, x) => s + x.units, 0);
-  return shares;
+  return splitUnits(toUnits(feeRupees), legs);
 }
 
 /**
