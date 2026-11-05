@@ -17,6 +17,25 @@ Daak makes every handoff provable with a tap and a photo, has a sealed AI check 
 7. **Delivery and pay.** When the last hop passes the check, escrow signs, the scheduled payout runs, and each driver's dINR is redeemed and sent to their UPI ID. Both references go on the HCS log.
 8. **What drivers gain.** Bachat, an opt-in pot that keeps a share (5%) of every payout, recorded on chain. A work record computed only from the public HCS log (proven deliveries, km, clean rate) that unlocks a fuel advance (25% of the last 30 days' proven earnings, up to Rs 5,000). In production the pot and the advances sit with licensed partners.
 
+## Who does what
+
+- **Joining.** A new badge opens Join Daak in the app: role (driver, shop sending, shop receiving), name and mobile; drivers add their UPI ID, bus number and the stretches they drive; shops pick their bus stand. Phone and UPI are sealed (AES-GCM) before they reach the public Arkiv record.
+- **Booking.** The shop picks the receiver; Daak plans the stretches and suggests the best-proven driver for each (changeable), shows the meter fee, and the shop's agent pays over x402.
+- **Handoffs.** The first is the pickup at the shop's stand. Any handoff can be recorded from either person's phone: tap the parcel, tap the other person's badge (checked against the expected badge), photograph the lid.
+- **Signed on the phone.** Each handoff is signed with a P-256 key held in the phone's secure hardware. The public key is on the person's Arkiv record and the signature is on the Hedera log, so Daak cannot invent a handoff in someone's name.
+- **Disputes.** A held delivery is resolved by the operator: pay the drivers anyway, or refund the shop (the scheduled payout is cancelled and escrow returns the fee). Both go on the public log.
+- **Pay.** Drivers' dINR is redeemed and paid by UPI. Until a licensed payout partner is connected, the operator pays from the dashboard's UPI QR and records the bank reference (UTR) on the Hedera log next to the redemption.
+
+## Security
+
+- The operator dashboard (`/ops`) and every endpoint that moves money or reveals a photo or a person's details need the operator passcode (an httpOnly cookie). The phone app's endpoints need the app key built into the APK. The tracking page, the drivers page and the live counts are public.
+- Only people who have joined can be on a route, and bookings are capped per hour (`BOOKINGS_PER_HOUR`), so a leaked app key cannot make the agent spend without limit.
+- Server-held Hedera keys are derived from one master secret; the handoff signatures come from the phones, not the server.
+
+## Tests
+
+`cd web && npm test` runs the rules that decide money and privacy: the meter, the kilometre split, Bachat, the fuel advance, route finding, sealing, badge hashes and handoff signatures.
+
 ## Live on testnet
 
 | What | Id |
@@ -30,7 +49,7 @@ Daak makes every handoff provable with a tap and a photo, has a sealed AI check 
 | Executed scheduled payout | [schedule 0.0.11327387](https://hashscan.io/testnet/schedule/0.0.11327387) |
 | Arkiv owner wallet (Rabdi) | `0x610FdB41DA83138615C317c89fd9EB09271a46fe` |
 
-Deployed web app: https://web-ivory-delta-46.vercel.app (dashboard at `/`, tracking at `/track/<code>`).
+Deployed web app: https://web-ivory-delta-46.vercel.app (landing at `/`, operator dashboard at `/ops`, drivers at `/drivers`, tracking at `/track/<code>`).
 
 ## Layout
 
@@ -61,7 +80,7 @@ cd ../android
 ./gradlew :app:installDebug
 ```
 
-`.env.local` needs: `HEDERA_OPERATOR_ID`, `HEDERA_OPERATOR_KEY` (ECDSA), `ARKIV_PRIVATE_KEY`, `ARKIV_ACCESS_KEY`, `ZG_PRIVATE_KEY` (with mainnet 0G for the vision check), `DAAK_MASTER_SECRET`, and optionally the RazorpayX keys for UPI payouts.
+`.env.local` needs: `HEDERA_OPERATOR_ID`, `HEDERA_OPERATOR_KEY` (ECDSA), `ARKIV_PRIVATE_KEY`, `ARKIV_ACCESS_KEY`, `ZG_PRIVATE_KEY` (with mainnet 0G for the vision check), `DAAK_MASTER_SECRET`, `DAAK_APP_KEY`, `OPERATOR_PASSCODE`, and optionally `X402_ASSET`/`X402_AMOUNT` (USDC settlement), `BOOKINGS_PER_HOUR`, `DATA_SINCE` and the RazorpayX keys. The Android build reads the app key from `android/local.properties` as `daakAppKey=`.
 
 ## AI usage
 
