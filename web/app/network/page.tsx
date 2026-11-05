@@ -109,7 +109,8 @@ export default function NetworkMap() {
   return (
     <main className="w-full px-4 py-8 sm:px-6 lg:px-10">
       <SiteNav />
-      <header className="mb-6 flex flex-col gap-1">
+      <div className="mb-6 grid grid-cols-1 items-end gap-6 xl:grid-cols-12">
+      <header className="flex flex-col gap-1 xl:col-span-6">
         <h1 className="text-3xl font-semibold tracking-tight">The network is already built</h1>
         <p className="max-w-3xl text-muted-ink">
           India Post already runs a relay across the country, from head offices to sub offices to branch offices, and state buses link the towns between them.
@@ -117,7 +118,7 @@ export default function NetworkMap() {
         </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:col-span-6">
         {[
           [data ? data.counts.ho.toLocaleString("en-IN") : "...", "head post offices"],
           [data ? (data.counts.so + data.counts.bo).toLocaleString("en-IN") : "...", "sub and branch offices"],
@@ -129,6 +130,7 @@ export default function NetworkMap() {
             <p className="text-sm text-muted-ink">{label}</p>
           </div>
         ))}
+      </div>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-2">

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { use } from "react";
+import Link from "next/link";
 import { arkivEntity, when, type HandoffView, type LegView } from "@/lib/ui";
 import { ProofButton } from "@/components/site-nav";
 
@@ -55,20 +56,39 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
 
   return (
     <main className="w-full px-4 py-8 sm:px-6 lg:px-10">
-      <p className="text-sm text-muted-ink">Daak · पार्सल {data.code}</p>
-      <section className={`mt-3 rounded-2xl p-6 text-paper ${hero.tone}`}>
-        <p className="text-2xl font-semibold">{hero.hi}</p>
+      <nav className="mb-8 flex items-center justify-between gap-3">
+        <Link href="/" className="text-2xl font-semibold tracking-tight">Daak</Link>
+        <span className="text-sm text-muted-ink">पार्सल · Parcel {data.code}</span>
+      </nav>
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+      <div className="flex flex-col gap-4 lg:col-span-5">
+      <section className={`rounded-2xl p-6 text-paper sm:p-8 ${hero.tone}`}>
+        <p className="text-2xl font-semibold sm:text-3xl">{hero.hi}</p>
         <p className="text-lg opacity-90">{hero.en}</p>
         {hero.sub && <p className="mt-2 text-sm opacity-85">{hero.sub}</p>}
       </section>
-      <p className="mt-3 text-muted-ink">{data.label}</p>
+      {data.label && <p className="text-muted-ink">{data.label}</p>}
+      {data.handoffs.length > 0 && (
+        <details className="rounded-xl border border-rule bg-card-paper p-4 text-sm">
+          <summary className="cursor-pointer font-medium">हर हैंडऑफ़ का सबूत · Proof of every handoff</summary>
+          <p className="mt-2 text-muted-ink">Each handoff is recorded publicly and cannot be changed afterwards.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[...latest.values()].map((h) => (
+              <ProofButton key={h.key} href={arkivEntity(h.key)}>Open record for stop {h.hop}</ProofButton>
+            ))}
+          </div>
+        </details>
+      )}
+      </div>
 
-      <ol className="mt-8 flex flex-col">
+      <section className="rounded-2xl border border-rule bg-card-paper p-5 sm:p-7 lg:col-span-7">
+      <p className="mb-5 text-sm font-medium text-muted-ink">रास्ता · The route</p>
+      <ol className="flex flex-col">
         {data.route.map((l, i) => {
           const h = latest.get(l.hop);
           const isNext = !h && l.hop === next?.hop;
           return (
-            <li key={l.hop} className="relative flex gap-4 pb-6">
+            <li key={l.hop} className="relative flex gap-4 pb-6 last:pb-0">
               <div className="flex flex-col items-center">
                 <span className={`mt-1 size-3.5 rounded-[4px] ${h ? (h.verdict === "held" ? "bg-held" : "bg-ok") : isNext ? "bg-ink" : "bg-rule"}`} />
                 {i < data.route.length - 1 && <span className="mt-1 w-px flex-1 bg-rule" />}
@@ -88,17 +108,8 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
         })}
       </ol>
 
-      {data.handoffs.length > 0 && (
-        <details className="mt-4 rounded-xl border border-rule bg-card-paper p-4 text-sm">
-          <summary className="cursor-pointer font-medium">हर हैंडऑफ़ का सबूत · Proof of every handoff</summary>
-          <p className="mt-2 text-muted-ink">Each handoff is recorded publicly and cannot be changed afterwards.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {[...latest.values()].map((h) => (
-              <ProofButton key={h.key} href={arkivEntity(h.key)}>Open record for stop {h.hop}</ProofButton>
-            ))}
-          </div>
-        </details>
-      )}
+      </section>
+      </div>
     </main>
   );
 }
