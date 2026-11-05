@@ -34,6 +34,7 @@ export const Consignments = defineSchema("daak.consignment", {
   createdAt: u64().indexed(),
   schedule: str().optional(), // Hedera scheduled payout, signed at delivery
   feePaise: i32().optional(), // the meter fee in paise: Rs 5 + Rs 0.50 a km is often a half rupee
+  weight: str().optional(), // weight band id: s, m, l or xl
 });
 
 export const Handoffs = defineSchema("daak.handoff", {
@@ -142,35 +143,35 @@ export async function getBadge(uid: string): Promise<BadgeRow | null> {
   return b ? toBadge(b as BadgeEntity) : null;
 }
 
-export async function putConsignment(c: { code: string; parcel: string; label: string; route: Leg[]; feeRupees: number; schedule?: string }) {
+export async function putConsignment(c: { code: string; parcel: string; label: string; route: Leg[]; feeRupees: number; schedule?: string; weight?: string }) {
   return keyOf(await arkivWrite().createEntity(
     Consignments,
-    { ...c, route: enc(JSON.stringify(c.route)), feeRupees: i32(Math.floor(c.feeRupees)), feePaise: i32(Math.round(c.feeRupees * 100)), createdAt: u64(BigInt(Date.now())), schedule: c.schedule ?? "" },
+    { ...c, route: enc(JSON.stringify(c.route)), feeRupees: i32(Math.floor(c.feeRupees)), feePaise: i32(Math.round(c.feeRupees * 100)), createdAt: u64(BigInt(Date.now())), schedule: c.schedule ?? "", weight: c.weight ?? "s" },
     { expiration: ExpirationTime.fromDays(30) },
   ));
 }
 
-type ConsignmentRow = { code: string; parcel: string; label: string; route: Leg[]; feeRupees: number; createdAt: number; schedule?: string };
+type ConsignmentRow = { code: string; parcel: string; label: string; route: Leg[]; feeRupees: number; createdAt: number; schedule?: string; weight?: string };
 
-function toConsignment(e: { code: { value: string }; parcel: { value: string }; label: { value: string }; route: { value: Uint8Array | `0x${string}` }; feeRupees: { value: number }; createdAt: { value: bigint }; schedule?: { value: string }; feePaise?: { value: number } }): ConsignmentRow {
-  return { code: e.code.value, parcel: e.parcel.value, label: e.label.value, route: JSON.parse(dec(e.route.value)), feeRupees: e.feePaise?.value ? Number(e.feePaise.value) / 100 : Number(e.feeRupees.value), createdAt: Number(e.createdAt.value), schedule: e.schedule?.value || undefined };
+function toConsignment(e: { code: { value: string }; parcel: { value: string }; label: { value: string }; route: { value: Uint8Array | `0x${string}` }; feeRupees: { value: number }; createdAt: { value: bigint }; schedule?: { value: string }; feePaise?: { value: number }; weight?: { value: string } }): ConsignmentRow {
+  return { code: e.code.value, parcel: e.parcel.value, label: e.label.value, route: JSON.parse(dec(e.route.value)), feeRupees: e.feePaise?.value ? Number(e.feePaise.value) / 100 : Number(e.feeRupees.value), createdAt: Number(e.createdAt.value), schedule: e.schedule?.value || undefined, weight: e.weight?.value || undefined };
 }
 
 /** The newest consignment for a parcel tag (a tag can be reused for a later parcel). */
 export async function consignmentByParcel(parcel: string) {
-  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true })
+  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true, weight: true })
     .from(Consignments).where(eq("parcel", parcel)).ownedBy(owner()).orderBy(desc("createdAt")).limit(1).fetch();
   return r.entities[0] ? toConsignment(r.entities[0]) : null;
 }
 
 export async function consignmentByCode(code: string) {
-  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true })
+  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true, weight: true })
     .from(Consignments).where(eq("code", code)).ownedBy(owner()).orderBy(desc("createdAt")).limit(1).fetch();
   return r.entities[0] ? toConsignment(r.entities[0]) : null;
 }
 
 export async function recentConsignments() {
-  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true })
+  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true, weight: true })
     .from(Consignments).ownedBy(owner()).orderBy(desc("createdAt")).limit(20).fetch();
   return r.entities.map(toConsignment);
 }
@@ -213,17 +214,18 @@ export const StandingOrders = defineSchema("daak.standing", {
   lastRun: str(), // the Indian date it last booked, YYYY-MM-DD
   lastCode: str(),
   createdAt: u64(),
+  weight: str().optional(), // weight band of the daily parcel
 });
 
-export type StandingRow = { key: string; id: string; sender: string; receiver: string; drivers: string[]; days: string; active: boolean; lastRun: string; lastCode: string; createdAt: number };
-const STANDING_COLS = { $key: true, id: true, sender: true, receiver: true, drivers: true, days: true, active: true, lastRun: true, lastCode: true, createdAt: true } as const;
-type StandingEntity = { $key: unknown; id: { value: string }; sender: { value: string }; receiver: { value: string }; drivers: { value: string }; days: { value: string }; active: { value: number }; lastRun: { value: string }; lastCode: { value: string }; createdAt: { value: bigint } };
+export type StandingRow = { key: string; id: string; sender: string; receiver: string; drivers: string[]; days: string; active: boolean; lastRun: string; lastCode: string; createdAt: number; weight: string };
+const STANDING_COLS = { $key: true, id: true, sender: true, receiver: true, drivers: true, days: true, active: true, lastRun: true, lastCode: true, createdAt: true, weight: true } as const;
+type StandingEntity = { $key: unknown; id: { value: string }; sender: { value: string }; receiver: { value: string }; drivers: { value: string }; days: { value: string }; active: { value: number }; lastRun: { value: string }; lastCode: { value: string }; createdAt: { value: bigint }; weight?: { value: string } };
 const toStanding = (e: StandingEntity): StandingRow => ({
   key: String(e.$key), id: e.id.value, sender: e.sender.value, receiver: e.receiver.value, drivers: e.drivers.value.split(",").filter(Boolean),
-  days: e.days.value, active: Number(e.active.value) === 1, lastRun: e.lastRun.value, lastCode: e.lastCode.value, createdAt: Number(e.createdAt.value),
+  days: e.days.value, active: Number(e.active.value) === 1, lastRun: e.lastRun.value, lastCode: e.lastCode.value, createdAt: Number(e.createdAt.value), weight: e.weight?.value || "s",
 });
 
-export async function putStanding(o: { id: string; sender: string; receiver: string; drivers: string[]; days: string }) {
+export async function putStanding(o: { id: string; sender: string; receiver: string; drivers: string[]; days: string; weight: string }) {
   return keyOf(await arkivWrite().createEntity(
     StandingOrders,
     { ...o, drivers: o.drivers.join(","), active: i32(1), lastRun: "", lastCode: "", createdAt: u64(BigInt(Date.now())) },

@@ -5,17 +5,19 @@ import { buildRoute } from "./booking";
 import { logHandoff } from "./hedera";
 import { badgeHash } from "./history";
 import { istDate, standingDue } from "./rules";
+import { band } from "./network";
 
 /** The tag a standing order's booking carries until the shop taps that day's real parcel. */
 export const placeholder = (id: string, date: string) => `daily:${id}:${date}`;
 export const isPlaceholder = (parcel: string) => parcel.startsWith("daily:");
 
-export async function createStanding(o: { sender: string; receiver: string; drivers: string[]; days: string }) {
+export async function createStanding(o: { sender: string; receiver: string; drivers: string[]; days: string; weight: string }) {
+  band(o.weight);
   if (!/^[01]{7}$/.test(o.days) || !o.days.includes("1")) throw new Error("Choose at least one weekday");
   const built = await buildRoute(o.sender, o.receiver, o.drivers);
   if ("error" in built) throw new Error(built.error);
   // The same shop, receiver and drivers already repeat: keep the one order rather than book twice a day.
-  const same = (await standingOrders(o.sender)).find((x) => x.active && x.receiver === o.receiver && x.drivers.join() === o.drivers.join());
+  const same = (await standingOrders(o.sender)).find((x) => x.active && x.receiver === o.receiver && x.drivers.join() === o.drivers.join() && x.weight === o.weight);
   if (same) {
     if (same.days !== o.days) await patchStanding(same.key, { days: o.days });
     return { id: same.id, existing: true, label: built.label };
@@ -39,7 +41,7 @@ export async function runDue(origin: string, now = new Date()) {
     try {
       const built = await buildRoute(o.sender, o.receiver, o.drivers);
       if ("error" in built) throw new Error(built.error);
-      const booked = await agentBook(origin, { parcel: placeholder(o.id, today), label: `Daily: ${built.label.replace(/^Parcel from /, "")}`, route: built.route });
+      const booked = await agentBook(origin, { parcel: placeholder(o.id, today), label: `Daily: ${built.label.replace(/^Parcel from /, "")}`, route: built.route, weight: o.weight });
       await patchStanding(o.key, { lastRun: today, lastCode: booked.code });
       await logHandoff({ t: "daak.standing.booked", id: o.id, code: booked.code, date: today });
       out.push({ id: o.id, code: booked.code });

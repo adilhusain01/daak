@@ -1,4 +1,4 @@
-import { METER, BOOKING_FEE, bookingFee } from "@/lib/network";
+import { METER, BOOKING_FEE, bookingFee, meterFee, WEIGHT_BANDS } from "@/lib/network";
 import { NextResponse } from "next/server";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -16,8 +16,9 @@ export async function GET() {
       to: demo.route.at(-1).place,
       stops: demo.route.map((l: { place: string; km?: number }) => ({ place: l.place, km: l.km ?? 0 })),
       km,
-      feeRupees: METER.baseRupees + METER.perKmRupees * km + bookingFee(METER.baseRupees + METER.perKmRupees * km),
-      meter: `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km, plus ${BOOKING_FEE.percent}% booking`,
+      feeRupees: Math.round((meterFee(km) + bookingFee(meterFee(km))) * 100) / 100,
+      bands: WEIGHT_BANDS.map((b) => ({ id: b.id, label: b.label, factor: b.factor, feeRupees: Math.round((meterFee(km, b.id) + bookingFee(meterFee(km, b.id))) * 100) / 100 })),
+      meter: `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km, times the weight band, plus ${BOOKING_FEE.percent}% booking`,
     }],
   });
 }

@@ -98,3 +98,23 @@ test("a standing order is due on its weekdays in India time, once a day", async 
   assert.equal(standingDue({ days: "1111100", lastRun: "2026-11-06" }, fri4am), false); // already booked today
   assert.equal(standingDue({ days: "0000011", lastRun: "" }, new Date("2026-11-07T03:00:00Z")), true); // Saturday
 });
+
+test("weight bands multiply the meter: x1 up to 5 kg, x1.5 to 15, x2 to 30, x3 to 50", async () => {
+  const { meterFee, bandFor } = await import("../lib/network.ts");
+  assert.equal(meterFee(359), 184.5); // no band given: the lightest
+  assert.equal(meterFee(359, "s"), 184.5);
+  assert.equal(meterFee(359, "m"), 276.75);
+  assert.equal(meterFee(359, "l"), 369);
+  assert.equal(meterFee(359, "xl"), 553.5);
+  assert.equal(bandFor(4)?.id, "s");
+  assert.equal(bandFor(5)?.id, "s");
+  assert.equal(bandFor(12)?.id, "m");
+  assert.equal(bandFor(30)?.id, "l");
+  assert.equal(bandFor(50)?.id, "xl");
+  assert.equal(bandFor(51), null); // too heavy for a bus parcel
+});
+
+test("an unknown weight band is refused, never priced as the lightest", async () => {
+  const { meterFee } = await import("../lib/network.ts");
+  assert.throws(() => meterFee(100, "huge"));
+});

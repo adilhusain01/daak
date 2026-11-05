@@ -25,9 +25,9 @@ export async function GET(req: Request) {
 /** The shop makes a booking repeat on chosen weekdays. */
 export async function POST(req: Request) {
   if (!isApp(req)) return denied("app");
-  const b = (await req.json()) as { sender: string; receiver: string; drivers: string[]; days?: string };
+  const b = (await req.json()) as { sender: string; receiver: string; drivers: string[]; days?: string; weight?: string };
   try {
-    return NextResponse.json({ ok: true, ...(await createStanding({ sender: b.sender, receiver: b.receiver, drivers: b.drivers ?? [], days: b.days ?? "1111110" })) });
+    return NextResponse.json({ ok: true, ...(await createStanding({ sender: b.sender, receiver: b.receiver, drivers: b.drivers ?? [], days: b.days ?? "1111110", weight: b.weight ?? "s" })) });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }

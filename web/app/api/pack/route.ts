@@ -5,6 +5,7 @@ import path from "node:path";
 import { agentBook } from "@/lib/agent";
 import { recentConsignments, type Leg } from "@/lib/arkiv";
 import { buildRoute } from "@/lib/booking";
+import { band } from "@/lib/network";
 
 /**
  * The shop books a parcel: from its own bus stand to the receiver's, with one chosen driver per stretch.
@@ -13,8 +14,9 @@ import { buildRoute } from "@/lib/booking";
  */
 export async function POST(req: Request) {
   if (!isApp(req)) return denied("app");
-  const body = (await req.json()) as { parcel: string; sender?: string; receiver?: string; drivers?: string[] };
+  const body = (await req.json()) as { parcel: string; sender?: string; receiver?: string; drivers?: string[]; weight?: string };
   if (!body.parcel) return NextResponse.json({ error: "Tap a parcel first" }, { status: 400 });
+  try { band(body.weight ?? "s"); } catch { return NextResponse.json({ error: "Choose a weight band" }, { status: 400 }); }
   // A cap so a leaked app key cannot make Daak's agent spend without limit.
   const cap = Number(process.env.BOOKINGS_PER_HOUR ?? 12);
   const lastHour = (await recentConsignments()).filter((c) => c.createdAt > Date.now() - 3600_000).length;
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
     label = demo.label;
   }
   try {
-    const booked = await agentBook(origin, { parcel: body.parcel, label, route });
+    const booked = await agentBook(origin, { parcel: body.parcel, label, route, weight: body.weight });
     return NextResponse.json({ ...booked, trackUrl: `${origin}/track/${booked.code}` });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });

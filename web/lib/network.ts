@@ -33,4 +33,23 @@ export function pathBetween(fromStop: string, toStop: string): NetLeg[] {
   return at === toStop ? out : [];
 }
 
-export const meterFee = (km: number) => Math.round((METER.baseRupees + METER.perKmRupees * km) * 100) / 100;
+/**
+ * Weight bands: the whole meter is multiplied by the band's factor. Published with the meter, so a fee always
+ * matches its distance and weight. Over 50 kg is not a bus parcel.
+ */
+export const WEIGHT_BANDS = [
+  { id: "s", maxKg: 5, factor: 1, label: "Up to 5 kg" },
+  { id: "m", maxKg: 15, factor: 1.5, label: "5 to 15 kg" },
+  { id: "l", maxKg: 30, factor: 2, label: "15 to 30 kg" },
+  { id: "xl", maxKg: 50, factor: 3, label: "30 to 50 kg" },
+] as const;
+export type BandId = (typeof WEIGHT_BANDS)[number]["id"];
+export const bandFor = (kg: number) => WEIGHT_BANDS.find((b) => kg <= b.maxKg) ?? null;
+export const band = (id: string = "s") => {
+  const b = WEIGHT_BANDS.find((x) => x.id === id);
+  if (!b) throw new Error(`Unknown weight band ${id}`);
+  return b;
+};
+
+export const meterFee = (km: number, bandId: string = "s") =>
+  Math.round((METER.baseRupees + METER.perKmRupees * km) * band(bandId).factor * 100) / 100;

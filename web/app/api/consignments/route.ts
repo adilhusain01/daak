@@ -4,6 +4,7 @@ import { recentConsignments, handoffsFor } from "@/lib/arkiv";
 import { chain } from "@/lib/hedera";
 import { readLog } from "@/lib/history";
 import { accountFor } from "@/lib/payout";
+import { band } from "@/lib/network";
 import { holdbackStatus, isSplit } from "@/lib/split";
 
 const MIRROR = "https://testnet.mirrornode.hedera.com/api/v1";
@@ -45,9 +46,9 @@ export async function GET(req: Request) {
         // Split payout: delivered once the holdbacks are scheduled; they release on chain when the timer ends.
         const holdback = await holdbackStatus(c.code, log);
         const scheduledAt = log.find((m) => m.t === "daak.holdback" && m.code === c.code)?.ts ?? null;
-        return { ...c, km, meter: "Rs 5 + Rs 0.50 a km", handoffs, money, holdback, paidAt: holdback && !holdback.deleted ? scheduledAt : null };
+        return { ...c, km, meter: `Rs 5 + Rs 0.50 a km, ${band(c.weight ?? "s").label}`, handoffs, money, holdback, paidAt: holdback && !holdback.deleted ? scheduledAt : null };
       }
-      return { ...c, km, meter: "Rs 5 + Rs 0.50 a km", handoffs, money, holdback: null, paidAt: await paidAt(c.schedule) };
+      return { ...c, km, meter: `Rs 5 + Rs 0.50 a km, ${band(c.weight ?? "s").label}`, handoffs, money, holdback: null, paidAt: await paidAt(c.schedule) };
     }),
   );
   return NextResponse.json({ chain: chain(), consignments: rows });

@@ -59,6 +59,8 @@ sealed interface Screen {
         /** Today's daily order waiting for this parcel (code and receiver), and whether this booking now repeats daily. */
         val dailyCode: String? = null, val dailyTo: String? = null, val drivers: List<String> = emptyList(),
         val dailySaved: Boolean = false, val dailyBusy: Boolean = false,
+        /** Weight band chosen before paying: s up to 5 kg, m to 15, l to 30, xl to 50. */
+        val weight: String = "s",
     ) : Screen
     data class Look(val parcel: Tap? = null, val info: ParcelInfo? = null, val loading: Boolean = false) : Screen
 }
@@ -352,7 +354,7 @@ class MainActivity : ComponentActivity() {
         voice.say("बुकिंग हो रही है।")
         thread {
             val drivers = plan.stretches.mapIndexed { i, st -> st.drivers[s.picks[i]].uid }
-            val r = runCatching { Api.pack(s.parcel!!.uid, me!!.uid, s.receiver!!.uid, drivers) }
+            val r = runCatching { Api.pack(s.parcel!!.uid, me!!.uid, s.receiver!!.uid, drivers, s.weight) }
             runOnUiThread {
                 r.onSuccess { b ->
                     nfc.pendingWrite = b.trackUrl
@@ -382,7 +384,7 @@ class MainActivity : ComponentActivity() {
     private fun makeDaily(s: Screen.Pack) {
         screen = s.copy(dailyBusy = true)
         thread {
-            val r = runCatching { Api.makeDaily(me!!.uid, s.receiver!!.uid, s.drivers) }
+            val r = runCatching { Api.makeDaily(me!!.uid, s.receiver!!.uid, s.drivers, s.weight) }
             runOnUiThread {
                 val now = screen as? Screen.Pack ?: return@runOnUiThread
                 r.onSuccess { screen = now.copy(dailyBusy = false, dailySaved = true); voice.buzz(); voice.say("हर दिन सुबह चार बजे बुक होगा।") }
@@ -657,13 +659,18 @@ class MainActivity : ComponentActivity() {
                     if (st.drivers.size > 1 && !s.paying) screen = s.copy(picks = s.picks.toMutableList().also { it[i] = (it[i] + 1) % st.drivers.size })
                 }
             }
+            val fee = plan.bands.firstOrNull { it.id == s.weight }?.fee ?: plan.fee
+            if (plan.bands.isNotEmpty()) {
+                Heading("वज़न", "Weight")
+                plan.bands.forEach { b -> Choice(b.label, "₹${"%.2f".format(b.fee)}", s.weight == b.id) { if (!s.paying) screen = s.copy(weight = b.id) } }
+            }
             Sheet {
                 Line("Daak meter", "${plan.km} km")
                 Body(plan.meter, Tokens.muted, 14)
-                Line("किराया · Fee", "₹${"%.2f".format(plan.fee)}", big = true)
+                Line("किराया · Fee", "₹${"%.2f".format(fee)}", big = true)
             }
             if (s.paying) Bi("बुकिंग और भुगतान हो रहा है…", "Booking and paying from the shop's account. Usually 15 to 20 seconds.", Tokens.muted, 18)
-            else Action("₹${"%.2f".format(plan.fee)} में बुक करें", "Book and pay ₹${"%.2f".format(plan.fee)}") { pay(s) }
+            else Action("₹${"%.2f".format(fee)} में बुक करें", "Book and pay ₹${"%.2f".format(fee)}") { pay(s) }
         }
         s.booking?.let { b ->
             Sheet {

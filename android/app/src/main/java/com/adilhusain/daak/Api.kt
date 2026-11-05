@@ -29,7 +29,9 @@ data class Network(val stops: List<StopOpt>, val legs: List<LegOpt>)
 data class Receiver(val uid: String, val name: String, val stopName: String)
 data class DriverOpt(val uid: String, val name: String, val vehicle: String, val proven: Int, val km: Int, val cleanPercent: Int)
 data class Stretch(val id: String, val from: String, val to: String, val km: Int, val drivers: List<DriverOpt>)
-data class Plan(val from: String, val to: String, val km: Int, val fee: Double, val meter: String, val stretches: List<Stretch>)
+data class Plan(val from: String, val to: String, val km: Int, val fee: Double, val meter: String, val stretches: List<Stretch>, val bands: List<Band> = emptyList())
+/** A weight band and what the whole booking costs in it. */
+data class Band(val id: String, val label: String, val fee: Double)
 data class Todo(val code: String, val text: String, val action: String)
 data class ParcelInfo(val registered: Boolean, val code: String?, val label: String?, val delivered: Boolean, val next: Next?)
 data class RoutePlan(val label: String, val from: String, val to: String, val stops: List<Pair<String, Int>>, val km: Int, val fee: Double, val meter: String)
@@ -134,8 +136,8 @@ object Api {
     }
 
     /** Makes a booking repeat Monday to Saturday; Daak's agent books and pays it each morning. */
-    fun makeDaily(sender: String, receiver: String, drivers: List<String>) {
-        val (code, j) = post("/api/standing", JSONObject().put("sender", sender).put("receiver", receiver).put("drivers", org.json.JSONArray(drivers)).put("days", "1111110"), 60000)
+    fun makeDaily(sender: String, receiver: String, drivers: List<String>, weight: String = "s") {
+        val (code, j) = post("/api/standing", JSONObject().put("sender", sender).put("receiver", receiver).put("drivers", org.json.JSONArray(drivers)).put("days", "1111110").put("weight", weight), 60000)
         if (code !in 200..299) error(j.optString("error", "server $code"))
     }
 
@@ -166,7 +168,8 @@ object Api {
                 val d = o.getJSONArray("drivers")
                 Stretch(o.getString("id"), o.getString("from"), o.getString("to"), o.getInt("km"),
                     List(d.length()) { k -> d.getJSONObject(k).let { x -> DriverOpt(x.getString("uid"), x.getString("name"), x.optString("vehicle"), x.getInt("proven"), x.getInt("km"), (x.getDouble("cleanRate") * 100).toInt()) } })
-            } })
+            } },
+            j.optJSONArray("bands")?.let { b -> List(b.length()) { b.getJSONObject(it).let { o -> Band(o.getString("id"), o.getString("label"), o.getDouble("feeRupees")) } } } ?: emptyList())
     }
 
     fun todo(uid: String): List<Todo> {
@@ -215,7 +218,7 @@ object Api {
     }
 
     /** The shop's agent books and pays for this parcel's delivery; returns the link to write on its tag. */
-    fun pack(parcel: String, sender: String? = null, receiver: String? = null, drivers: List<String> = emptyList()): Booking {
+    fun pack(parcel: String, sender: String? = null, receiver: String? = null, drivers: List<String> = emptyList(), weight: String = "s"): Booking {
         val conn = URL("$base/api/pack").openConnection() as HttpURLConnection
         conn.setRequestProperty("x-daak-app", BuildConfig.APP_KEY)
         conn.requestMethod = "POST"
@@ -223,7 +226,7 @@ object Api {
         conn.readTimeout = 90000
         conn.doOutput = true
         conn.setRequestProperty("Content-Type", "application/json")
-        val body = JSONObject().put("parcel", parcel)
+        val body = JSONObject().put("parcel", parcel).put("weight", weight)
         if (sender != null && receiver != null && drivers.isNotEmpty()) body.put("sender", sender).put("receiver", receiver).put("drivers", org.json.JSONArray(drivers))
         conn.outputStream.use { it.write(body.toString().toByteArray()) }
         val text = (if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream).bufferedReader().readText()

@@ -11,7 +11,7 @@ import type { Leg } from "./arkiv";
  * The sender's ordering agent. It has its own Hedera account and pays for bookings over x402,
  * within spending controls: HBAR only, at most 2 HBAR a booking, and only ever to Daak.
  */
-export async function agentBook(baseUrl: string, body: { parcel: string; label: string; feeRupees?: number; route: Leg[] }) {
+export async function agentBook(baseUrl: string, body: { parcel: string; label: string; feeRupees?: number; route: Leg[]; weight?: string }) {
   const agentId = await accountFor("sender-agent");
   const bal = await (await fetch(`https://testnet.mirrornode.hedera.com/api/v1/accounts/${agentId}`, { cache: "no-store" })).json();
   // The agent keeps a small float: HBAR for network fees, and testnet USDC when bookings settle in USDC.
