@@ -33,6 +33,8 @@ sealed interface Screen {
     data object Home : Screen
     data class Handoff(val parcel: Tap? = null, val receiver: Tap? = null, val sending: Boolean = false) : Screen
     data class Result(val verdict: Verdict, val offline: Boolean = false) : Screen
+    /** Shop packing a parcel: tap it, the shop's agent pays for the booking, then tap again to write the link. */
+    data class Pack(val parcel: Tap? = null, val booking: Booking? = null, val busy: Boolean = false, val written: Boolean = false, val error: String? = null) : Screen
 }
 
 class MainActivity : ComponentActivity() {
@@ -92,6 +94,30 @@ class MainActivity : ComponentActivity() {
                 me = tap
                 screen = Screen.Home
                 voice.buzz(); voice.say("Namaste. Badge pehchana gaya.")
+            }
+            is Screen.Pack -> when {
+                s.busy -> Unit
+                s.parcel == null -> {
+                    screen = s.copy(parcel = tap, busy = true); voice.buzz(); voice.say("Parcel mil gaya. Booking ho rahi hai.")
+                    thread {
+                        val r = runCatching { Api.pack(tap.uid) }
+                        runOnUiThread {
+                            r.onSuccess { b ->
+                                nfc.pendingWrite = b.trackUrl
+                                screen = s.copy(parcel = tap, booking = b, busy = false)
+                                voice.buzz(); voice.say("Booking ho gayi. Parcel ko dobara lagaiye.")
+                            }.onFailure { screen = s.copy(parcel = tap, busy = false, error = it.message); voice.buzz(false) }
+                        }
+                    }
+                }
+                s.booking != null && !s.written -> {
+                    if (tap.uid != s.parcel.uid) { note = "That is a different tag. Tap the same parcel."; voice.buzz(false); return }
+                    val ok = tap.text == s.booking.trackUrl
+                    nfc.pendingWrite = null
+                    screen = s.copy(written = true, error = if (ok) null else "This tag cannot be written. The parcel is booked; its link is on the dashboard.")
+                    voice.buzz(ok); voice.say(if (ok) "Parcel taiyaar hai." else "Tag likha nahi gaya, par booking ho gayi.")
+                }
+                else -> Unit
             }
             is Screen.Handoff -> when {
                 s.sending -> Unit
@@ -161,6 +187,7 @@ class MainActivity : ComponentActivity() {
                 Screen.Home -> {
                     Body("Badge ${me?.uid?.takeLast(8)}", Tokens.muted, 15)
                     Action("Hand over a parcel", "Parcel saunpiye") { screen = Screen.Handoff() }
+                    Action("Pack a new parcel (shop)", "Naya parcel book kijiye") { screen = Screen.Pack() }
                     if (queued > 0) Body("$queued handoff(s) waiting for signal", Tokens.amber)
                     Spacer(Modifier.height(8.dp))
                     Action("Sign out", color = Tokens.muted) { me = null; screen = Screen.SignIn }
@@ -171,6 +198,18 @@ class MainActivity : ComponentActivity() {
                     Step(3, "Photo of the lid", if (s.sending) "Checking..." else null, s.receiver != null)
                     if (s.receiver != null && !s.sending) Action("Take photo", "Photo lijiye") { openCamera() }
                     if (!s.sending) Action("Cancel", color = Tokens.muted) { screen = Screen.Home }
+                }
+                is Screen.Pack -> {
+                    Step(1, "Tap the new parcel", s.parcel?.let { "Parcel ${it.uid.takeLast(8)}" }, s.parcel == null)
+                    Step(2, "Shop's agent books and pays", when {
+                        s.busy -> "Paying for the delivery..."
+                        s.booking != null -> "Booked ${s.booking.code}: drivers get ₹${s.booking.shares.joinToString(" + ₹")}"
+                        else -> null
+                    }, s.parcel != null && s.booking == null)
+                    Step(3, "Tap the parcel again to write its link", if (s.written && s.error == null) "Link written" else null, s.booking != null && !s.written)
+                    s.error?.let { Body(it, Tokens.red) }
+                    if (s.written || s.error != null) Action("Pack another", "Agla parcel") { nfc.pendingWrite = null; screen = Screen.Pack() }
+                    if (!s.busy) Action("Home", color = Tokens.muted) { nfc.pendingWrite = null; screen = Screen.Home }
                 }
                 is Screen.Result -> {
                     val (color, head) = when (s.verdict.verdict) {

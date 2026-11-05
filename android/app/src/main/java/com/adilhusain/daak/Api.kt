@@ -13,8 +13,26 @@ data class Verdict(val verdict: String, val message: String, val code: String?, 
 
 data class Handoff(val parcel: String, val from: String, val to: String, val photo: File, val at: Long = System.currentTimeMillis(), val spot: Spot? = null)
 
+data class Booking(val code: String, val trackUrl: String, val shares: List<Double>)
+
 object Api {
     private val base = BuildConfig.API_BASE
+
+    /** The shop's agent books and pays for this parcel's delivery; returns the link to write on its tag. */
+    fun pack(parcel: String): Booking {
+        val conn = URL("$base/api/pack").openConnection() as HttpURLConnection
+        conn.requestMethod = "POST"
+        conn.connectTimeout = 8000
+        conn.readTimeout = 90000
+        conn.doOutput = true
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.outputStream.use { it.write(JSONObject().put("parcel", parcel).toString().toByteArray()) }
+        val text = (if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream).bufferedReader().readText()
+        val j = JSONObject(text)
+        if (conn.responseCode !in 200..299) error(j.optString("error", "server ${conn.responseCode}"))
+        val shares = j.getJSONArray("shares")
+        return Booking(j.getString("code"), j.getString("trackUrl"), List(shares.length()) { shares.getJSONObject(it).getDouble("rupees") })
+    }
 
     /** Sends one handoff with its photo. Throws on any network failure so the caller can queue it. */
     fun handoff(h: Handoff): Verdict {
