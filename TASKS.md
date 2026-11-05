@@ -15,6 +15,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30.
 - [ ] One real conversation or 20-second clip with a bus parcel booking office or a sender.
 - [ ] Real paid deliveries during the hackathon (see `docs/business.md`, "Traction before Saturday").
 - [ ] Set `DATA_SINCE` in Vercel when the clean demo run starts.
+- [ ] Set `CRON_SECRET` in Vercel (any long random string) so the 04:00 IST cron can book daily orders.
 - [ ] Set `HOLDBACK_HOURS=0.25` in Vercel for the demo, so judges see a holdback release itself within 15 minutes.
 
 ## Build (order agreed: split payout, map, standing orders, weight)
@@ -23,7 +24,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30.
 - [x] Split payout with a holdback: 50, 70 or 90% at the confirmed handover by record; holdbacks in one Hedera schedule that releases itself after `HOLDBACK_HOURS`; the liable leg repays the shop; protection pool from 1 point of the booking fee. Tested on testnet.
 - [x] Bus number checked against the plate format, bus operator, and driver KYC (ID type, last 4, encrypted ID photo, operator verifies, decision on HCS).
 - [ ] Weight in the meter: km and weight band.
-- [ ] Standing orders: a sender's daily repeat booking on a fixed route.
+- [x] Standing orders: a shop makes a booking daily from the app; Vercel Cron books and pays it at 04:00 IST; the shop taps the day's parcel to attach it; dashboard can pause or book today's now. Tested on testnet (KNP-3047).
 - [x] Booking fee: 12% of the meter, at least ₹5, on top of the meter (configurable).
 - [x] The network map page (`/network`): 1,43,609 India Post offices, 6,021 bus stations from OpenStreetMap, the live corridor drawn along the road, opening on North India.
 - [ ] Run and film a real three-hop delivery with the stickers.

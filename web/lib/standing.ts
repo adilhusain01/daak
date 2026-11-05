@@ -14,6 +14,12 @@ export async function createStanding(o: { sender: string; receiver: string; driv
   if (!/^[01]{7}$/.test(o.days) || !o.days.includes("1")) throw new Error("Choose at least one weekday");
   const built = await buildRoute(o.sender, o.receiver, o.drivers);
   if ("error" in built) throw new Error(built.error);
+  // The same shop, receiver and drivers already repeat: keep the one order rather than book twice a day.
+  const same = (await standingOrders(o.sender)).find((x) => x.active && x.receiver === o.receiver && x.drivers.join() === o.drivers.join());
+  if (same) {
+    if (same.days !== o.days) await patchStanding(same.key, { days: o.days });
+    return { id: same.id, existing: true, label: built.label };
+  }
   const id = randomUUID().slice(0, 8);
   const arkiv = await putStanding({ id, ...o });
   const km = built.route.reduce((s, l) => s + (l.km ?? 0), 0);

@@ -30,9 +30,10 @@ export const Consignments = defineSchema("daak.consignment", {
   parcel: str().indexed(),
   label: str(),
   route: bytes(), // JSON array of legs: { hop, from, to, place, km }; str columns stop at 128 bytes
-  feeRupees: i32(),
+  feeRupees: i32(), // whole rupees, kept for older records; feePaise is exact
   createdAt: u64().indexed(),
   schedule: str().optional(), // Hedera scheduled payout, signed at delivery
+  feePaise: i32().optional(), // the meter fee in paise: Rs 5 + Rs 0.50 a km is often a half rupee
 });
 
 export const Handoffs = defineSchema("daak.handoff", {
@@ -144,32 +145,32 @@ export async function getBadge(uid: string): Promise<BadgeRow | null> {
 export async function putConsignment(c: { code: string; parcel: string; label: string; route: Leg[]; feeRupees: number; schedule?: string }) {
   return keyOf(await arkivWrite().createEntity(
     Consignments,
-    { ...c, route: enc(JSON.stringify(c.route)), feeRupees: i32(c.feeRupees), createdAt: u64(BigInt(Date.now())), schedule: c.schedule ?? "" },
+    { ...c, route: enc(JSON.stringify(c.route)), feeRupees: i32(Math.floor(c.feeRupees)), feePaise: i32(Math.round(c.feeRupees * 100)), createdAt: u64(BigInt(Date.now())), schedule: c.schedule ?? "" },
     { expiration: ExpirationTime.fromDays(30) },
   ));
 }
 
 type ConsignmentRow = { code: string; parcel: string; label: string; route: Leg[]; feeRupees: number; createdAt: number; schedule?: string };
 
-function toConsignment(e: { code: { value: string }; parcel: { value: string }; label: { value: string }; route: { value: Uint8Array | `0x${string}` }; feeRupees: { value: number }; createdAt: { value: bigint }; schedule?: { value: string } }): ConsignmentRow {
-  return { code: e.code.value, parcel: e.parcel.value, label: e.label.value, route: JSON.parse(dec(e.route.value)), feeRupees: Number(e.feeRupees.value), createdAt: Number(e.createdAt.value), schedule: e.schedule?.value || undefined };
+function toConsignment(e: { code: { value: string }; parcel: { value: string }; label: { value: string }; route: { value: Uint8Array | `0x${string}` }; feeRupees: { value: number }; createdAt: { value: bigint }; schedule?: { value: string }; feePaise?: { value: number } }): ConsignmentRow {
+  return { code: e.code.value, parcel: e.parcel.value, label: e.label.value, route: JSON.parse(dec(e.route.value)), feeRupees: e.feePaise?.value ? Number(e.feePaise.value) / 100 : Number(e.feeRupees.value), createdAt: Number(e.createdAt.value), schedule: e.schedule?.value || undefined };
 }
 
 /** The newest consignment for a parcel tag (a tag can be reused for a later parcel). */
 export async function consignmentByParcel(parcel: string) {
-  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true })
+  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true })
     .from(Consignments).where(eq("parcel", parcel)).ownedBy(owner()).orderBy(desc("createdAt")).limit(1).fetch();
   return r.entities[0] ? toConsignment(r.entities[0]) : null;
 }
 
 export async function consignmentByCode(code: string) {
-  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true })
+  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true })
     .from(Consignments).where(eq("code", code)).ownedBy(owner()).orderBy(desc("createdAt")).limit(1).fetch();
   return r.entities[0] ? toConsignment(r.entities[0]) : null;
 }
 
 export async function recentConsignments() {
-  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true })
+  const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true })
     .from(Consignments).ownedBy(owner()).orderBy(desc("createdAt")).limit(20).fetch();
   return r.entities.map(toConsignment);
 }
@@ -232,12 +233,12 @@ export async function putStanding(o: { id: string; sender: string; receiver: str
 
 export async function standingOrders(sender?: string): Promise<StandingRow[]> {
   const q = arkivRead().select(STANDING_COLS).from(StandingOrders);
-  const r = await (sender ? q.where(eq("sender", sender)) : q).ownedBy(owner()).orderBy(desc("createdAt")).limit(100).fetch();
-  return r.entities.map((e) => toStanding(e as StandingEntity));
+  const r = await (sender ? q.where(eq("sender", sender)) : q).ownedBy(owner()).limit(100).fetch();
+  return r.entities.map((e) => toStanding(e as StandingEntity)).sort((a, b) => b.createdAt - a.createdAt);
 }
 
-export async function patchStanding(key: string, set: { active?: boolean; lastRun?: string; lastCode?: string }) {
-  const values = { ...(set.active != null ? { active: i32(set.active ? 1 : 0) } : {}), ...(set.lastRun != null ? { lastRun: set.lastRun } : {}), ...(set.lastCode != null ? { lastCode: set.lastCode } : {}) };
+export async function patchStanding(key: string, set: { active?: boolean; lastRun?: string; lastCode?: string; days?: string }) {
+  const values = { ...(set.days != null ? { days: set.days } : {}), ...(set.active != null ? { active: i32(set.active ? 1 : 0) } : {}), ...(set.lastRun != null ? { lastRun: set.lastRun } : {}), ...(set.lastCode != null ? { lastCode: set.lastCode } : {}) };
   return keyOf(await arkivWrite().patchEntity(StandingOrders, key as `0x${string}`, { set: values }));
 }
 

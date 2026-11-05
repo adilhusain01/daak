@@ -31,9 +31,10 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   for (const l of b.route) {
     if ((l.km ?? 0) > 0) l.advancePct = (await workHistory(l.from, log).catch(() => null))?.tier.advancePct ?? 50;
   }
+  // The record goes first: if it fails, no money has moved yet.
+  const arkiv = await putConsignment({ code, parcel: b.parcel, label: b.label ?? "", route: b.route, feeRupees: b.feeRupees });
   const money = await lockFee(code, b.feeRupees, b.route.filter((l) => (l.km ?? 0) > 0).map((l) => ({ badge: l.from, km: l.km! })));
   const pool = await fundPool(code, b.feeRupees).catch((e) => { console.error("pool", e); return null; });
-  const arkiv = await putConsignment({ code, parcel: b.parcel, label: b.label ?? "", route: b.route, feeRupees: b.feeRupees });
   const shares = legPay({ code, feeRupees: b.feeRupees, route: b.route });
   const hcs = await logHandoff({
     t: "daak.booked", code, legs: b.route.length, feeRupees: b.feeRupees, bookingFeeRupees: bookingFee(b.feeRupees),

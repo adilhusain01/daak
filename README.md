@@ -24,6 +24,7 @@ Daak makes every handoff provable with a tap and a photo, has a sealed AI check 
 - **Booking.** The shop picks the receiver; Daak plans the stretches and suggests the best-proven driver for each (changeable), shows the meter fee, and the shop's agent pays over x402.
 - **Handoffs.** The first is the pickup at the shop's stand. Any handoff can be recorded from either person's phone: tap the parcel, tap the other person's badge (checked against the expected badge), photograph the lid.
 - **Signed on the phone.** Each handoff is signed with a P-256 key held in the phone's secure hardware. The public key is on the person's Arkiv record and the signature is on the Hedera log, so Daak cannot invent a handoff in someone's name.
+- **Daily orders.** After booking, a shop can make the same booking repeat Monday to Saturday. Vercel Cron runs at 04:00 IST (`web/vercel.json`, authorised by `CRON_SECRET`); the shop's agent books and pays each order that is due over x402, so the drivers see the parcel on their to-do list before it is packed. When the shop taps that day's parcel, the app attaches it to the paid booking. The operator can pause an order or book today's from the dashboard.
 - **Disputes.** A held delivery is resolved by the operator: pay the drivers anyway, or refund the shop. A refund names the liable leg (the held handover, or the last stop when the shop reports damage after delivery): that driver's unpaid pay goes back to the shop, drivers who handed over cleanly get their holdbacks at once, legs never carried are returned, and the pool tops up the rest. Both go on the public log.
 - **Pay.** Drivers' dINR is redeemed and paid by UPI. Until a licensed payout partner is connected, the operator pays from the dashboard's UPI QR and records the bank reference (UTR) on the Hedera log next to the redemption.
 
@@ -85,7 +86,7 @@ cd ../android
 ./gradlew :app:installDebug
 ```
 
-`.env.local` needs: `HEDERA_OPERATOR_ID`, `HEDERA_OPERATOR_KEY` (ECDSA), `ARKIV_PRIVATE_KEY`, `ARKIV_ACCESS_KEY`, `ZG_PRIVATE_KEY` (with mainnet 0G for the vision check), `DAAK_MASTER_SECRET`, `DAAK_APP_KEY`, `OPERATOR_PASSCODE`, and optionally `X402_ASSET`/`X402_AMOUNT` (USDC settlement), `BOOKINGS_PER_HOUR`, `DATA_SINCE`, `BOOKING_FEE_PERCENT`, `BOOKING_FEE_MIN_RUPEES`, `HOLDBACK_HOURS`, `POOL_POINTS`, `POOL_CAP_RUPEES` and the RazorpayX keys. The Android build reads the app key from `android/local.properties` as `daakAppKey=`.
+`.env.local` needs: `HEDERA_OPERATOR_ID`, `HEDERA_OPERATOR_KEY` (ECDSA), `ARKIV_PRIVATE_KEY`, `ARKIV_ACCESS_KEY`, `ZG_PRIVATE_KEY` (with mainnet 0G for the vision check), `DAAK_MASTER_SECRET`, `DAAK_APP_KEY`, `OPERATOR_PASSCODE`, and optionally `X402_ASSET`/`X402_AMOUNT` (USDC settlement), `BOOKINGS_PER_HOUR`, `DATA_SINCE`, `BOOKING_FEE_PERCENT`, `BOOKING_FEE_MIN_RUPEES`, `HOLDBACK_HOURS`, `POOL_POINTS`, `POOL_CAP_RUPEES`, `CRON_SECRET` and the RazorpayX keys. The Android build reads the app key from `android/local.properties` as `daakAppKey=`.
 
 ## AI usage
 
