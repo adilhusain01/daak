@@ -4,6 +4,14 @@ import { checkParcel, type Check } from "@/lib/zg";
 import { logHandoff } from "@/lib/hedera";
 import { consignmentByParcel, handoffsFor, writeHandoff } from "@/lib/arkiv";
 
+/** Metres between two points on the earth. */
+function metres(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 6371000, toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
 const short = (uid: string) => createHash("sha256").update(uid).digest("hex").slice(0, 12);
 
 /**
@@ -17,6 +25,8 @@ export async function POST(req: Request) {
   const to = String(form.get("to") ?? "");
   const at = Number(form.get("at") ?? Date.now());
   const photoFile = form.get("photo");
+  const lat = Number(form.get("lat")), lng = Number(form.get("lng")), acc = Number(form.get("acc") ?? 0);
+  const spot = Number.isFinite(lat) && Number.isFinite(lng) && form.get("lat") !== null ? { lat, lng, acc } : null;
   if (!parcel || !from || !to || !(photoFile instanceof File)) {
     return NextResponse.json({ verdict: "unchecked", message: "Missing parcel, badges or photo." }, { status: 400 });
   }
@@ -34,15 +44,20 @@ export async function POST(req: Request) {
 
   const errors: string[] = [];
   const rightPeople = leg.from === from && leg.to === to;
+  // If the booking named the stand's coordinates, a handoff far from it is held.
+  const away = spot && leg.lat != null && leg.lng != null ? metres(spot, { lat: leg.lat, lng: leg.lng }) - spot.acc : 0;
+  const rightPlace = away <= 500;
   let verdict: "green" | "held" | "unchecked" = "unchecked";
   let reason = "Tapped, not checked by AI. Payment waits for a review.";
   let check: Check | null = null;
 
   try {
     check = await checkParcel(photo, c.code, `hop ${leg.hop} at ${leg.place}`);
-    verdict = check.match && check.condition === "intact" && rightPeople ? "green" : "held";
+    verdict = check.match && check.condition === "intact" && rightPeople && rightPlace ? "green" : "held";
     reason = !rightPeople
       ? "These badges are not the drivers booked for this hop."
+      : !rightPlace
+        ? `Handoff happened ${Math.round(away)} m from ${leg.place}.`
       : check.match
         ? check.condition === "intact" ? "Code matches and the parcel looks intact." : `Parcel looks ${check.condition}: ${check.reason}`
         : `Code on the parcel reads "${check.codeRead}", expected ${c.code}.`;
@@ -54,7 +69,7 @@ export async function POST(req: Request) {
   try {
     hcs = await logHandoff({
       t: "daak.handoff", code: c.code, hop: leg.hop, from: short(from), to: short(to),
-      verdict, zg: check?.requestId ?? null, photo: photoSha256, at,
+      verdict, zg: check?.requestId ?? null, photo: photoSha256, at, geo: spot ? [Number(spot.lat.toFixed(4)), Number(spot.lng.toFixed(4))] : null,
     });
   } catch (e) {
     errors.push(`Hedera: ${(e as Error).message.slice(0, 160)}`);
@@ -65,6 +80,7 @@ export async function POST(req: Request) {
     arkiv = await writeHandoff({
       code: c.code, hop: leg.hop, verdict, place: leg.place, fromBadge: short(from), toBadge: short(to), at,
       zgRequestId: check?.requestId ?? "", hcs: hcs ? `${hcs.topicId}#${hcs.sequence}` : "", photoSha256, reason,
+      geo: spot ? `${spot.lat.toFixed(5)},${spot.lng.toFixed(5)},${Math.round(spot.acc)}` : undefined,
     });
   } catch (e) {
     errors.push(`Arkiv: ${(e as Error).message.slice(0, 160)}`);

@@ -11,7 +11,7 @@ import java.util.UUID
 /** The server's answer to one handoff. verdict is "green", "held" or "unchecked". */
 data class Verdict(val verdict: String, val message: String, val code: String?, val hop: Int?)
 
-data class Handoff(val parcel: String, val from: String, val to: String, val photo: File, val at: Long = System.currentTimeMillis())
+data class Handoff(val parcel: String, val from: String, val to: String, val photo: File, val at: Long = System.currentTimeMillis(), val spot: Spot? = null)
 
 object Api {
     private val base = BuildConfig.API_BASE
@@ -27,6 +27,7 @@ object Api {
             field("from", h.from)
             field("to", h.to)
             field("at", h.at.toString())
+            h.spot?.let { field("lat", it.lat.toString()); field("lng", it.lng.toString()); field("acc", it.accuracyM.toString()) }
             write("--$boundary\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"lid.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n".toByteArray())
             write(h.photo.readBytes())
             write("\r\n--$boundary--\r\n".toByteArray())
@@ -59,7 +60,8 @@ class Outbox(context: Context) {
         val id = h.at.toString()
         h.photo.copyTo(File(dir, "$id.jpg"), overwrite = true)
         File(dir, "$id.json").writeText(
-            JSONObject().put("parcel", h.parcel).put("from", h.from).put("to", h.to).put("at", h.at).toString(),
+            JSONObject().put("parcel", h.parcel).put("from", h.from).put("to", h.to).put("at", h.at)
+                .apply { h.spot?.let { put("lat", it.lat).put("lng", it.lng).put("acc", it.accuracyM.toDouble()) } }.toString(),
         )
     }
 
@@ -72,7 +74,8 @@ class Outbox(context: Context) {
             val j = JSONObject(meta.readText())
             val photo = File(dir, meta.nameWithoutExtension + ".jpg")
             runCatching {
-                Api.handoff(Handoff(j.getString("parcel"), j.getString("from"), j.getString("to"), photo, j.getLong("at")))
+                val spot = if (j.has("lat")) Spot(j.getDouble("lat"), j.getDouble("lng"), j.getDouble("acc").toFloat()) else null
+                Api.handoff(Handoff(j.getString("parcel"), j.getString("from"), j.getString("to"), photo, j.getLong("at"), spot))
                 meta.delete(); photo.delete(); sent++
             }
         }

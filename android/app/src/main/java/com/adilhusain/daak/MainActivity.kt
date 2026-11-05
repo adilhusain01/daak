@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var nfc: Nfc
     private lateinit var voice: Voice
     private lateinit var outbox: Outbox
+    private lateinit var where: Where
     private var photoFile: File? = null
 
     private val takePhoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -52,11 +53,17 @@ class MainActivity : ComponentActivity() {
         if (ok && file != null && s is Screen.Handoff && s.parcel != null && s.receiver != null) send(s, shrink(file))
     }
 
+    private val askLocation = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        if (granted.values.any { it }) where.refresh()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         voice = Voice(this)
         outbox = Outbox(this)
+        where = Where(this)
+        askLocation.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION))
         queued = outbox.size()
         nfc = Nfc(this, ::onTap)
         setContent { App() }
@@ -90,7 +97,7 @@ class MainActivity : ComponentActivity() {
                 s.sending -> Unit
                 s.parcel == null -> {
                     if (tap.uid == me?.uid) { note = "That is your own badge. Tap the parcel."; voice.buzz(false); return }
-                    screen = s.copy(parcel = tap); voice.buzz(); voice.say("Parcel mil gaya. Ab agle driver ka badge.")
+                    screen = s.copy(parcel = tap); where.refresh(); voice.buzz(); voice.say("Parcel mil gaya. Ab agle driver ka badge.")
                 }
                 s.receiver == null -> {
                     if (tap.uid == s.parcel.uid) { note = "Same parcel again. Tap the next driver's badge."; voice.buzz(false); return }
@@ -120,7 +127,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun send(s: Screen.Handoff, photo: File) {
-        val h = Handoff(s.parcel!!.uid, me!!.uid, s.receiver!!.uid, photo)
+        val h = Handoff(s.parcel!!.uid, me!!.uid, s.receiver!!.uid, photo, spot = where.last)
         screen = s.copy(sending = true)
         thread {
             val result = runCatching { Api.handoff(h) }

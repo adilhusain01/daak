@@ -38,9 +38,10 @@ export const Handoffs = defineSchema("daak.handoff", {
   hcs: str(),
   photoSha256: str(),
   reason: bytes(),
+  geo: str().optional(), // "lat,lng,accuracyM" where the handoff happened
 });
 
-export type Leg = { hop: number; from: string; to: string; place: string; km?: number };
+export type Leg = { hop: number; from: string; to: string; place: string; km?: number; lat?: number; lng?: number };
 
 const chainCfg = () => rabdi({ accessKey: env.arkivAccessKey() });
 export const arkivRead = () => createPublicClient({ chain: chainCfg(), transport: http() });
@@ -100,24 +101,24 @@ export async function recentConsignments() {
 
 export type HandoffRow = {
   key: string; code: string; hop: number; verdict: string; place: string; fromBadge: string; toBadge: string;
-  at: number; zgRequestId: string; hcs: string; photoSha256: string; reason: string;
+  at: number; zgRequestId: string; hcs: string; photoSha256: string; reason: string; geo?: string;
 };
 
 export async function writeHandoff(h: Omit<HandoffRow, "key">) {
   return keyOf(await arkivWrite().createEntity(
     Handoffs,
-    { ...h, reason: enc(h.reason), hop: i32(h.hop), at: u64(BigInt(h.at)) },
+    { ...h, reason: enc(h.reason), hop: i32(h.hop), at: u64(BigInt(h.at)), geo: h.geo ?? "" },
     { expiration: ExpirationTime.fromDays(1) },
   ));
 }
 
 export async function handoffsFor(code: string): Promise<HandoffRow[]> {
   const r = await arkivRead()
-    .select({ $key: true, code: true, hop: true, verdict: true, place: true, fromBadge: true, toBadge: true, at: true, zgRequestId: true, hcs: true, photoSha256: true, reason: true })
+    .select({ $key: true, code: true, hop: true, verdict: true, place: true, fromBadge: true, toBadge: true, at: true, zgRequestId: true, hcs: true, photoSha256: true, reason: true, geo: true })
     .from(Handoffs).where(and(eq("code", code))).ownedBy(owner()).orderBy(desc("at")).limit(50).fetch();
   return r.entities.map((e) => ({
     key: String(e.$key), code: e.code.value, hop: Number(e.hop.value), verdict: e.verdict.value, place: e.place.value,
     fromBadge: e.fromBadge.value, toBadge: e.toBadge.value, at: Number(e.at.value), zgRequestId: e.zgRequestId.value,
-    hcs: e.hcs.value, photoSha256: e.photoSha256.value, reason: dec(e.reason.value),
+    hcs: e.hcs.value, photoSha256: e.photoSha256.value, reason: dec(e.reason.value), geo: e.geo?.value || undefined,
   }));
 }
