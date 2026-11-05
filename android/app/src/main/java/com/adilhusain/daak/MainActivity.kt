@@ -573,7 +573,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             Sheet {
-                Body("Daak meter: ${plan.meter} × ${plan.km} km", Tokens.muted, 15)
+                Body("Daak meter: ${plan.meter} · ${plan.km} km", Tokens.muted, 15)
                 Body("किराया · Fee ₹${"%.0f".format(plan.fee)}", size = 26, weight = FontWeight.Bold)
             }
             if (s.paying) Bi("बुकिंग और भुगतान हो रहा है…", "Booking and paying from the shop's account. Usually 15 to 20 seconds.", Tokens.muted, 18)
