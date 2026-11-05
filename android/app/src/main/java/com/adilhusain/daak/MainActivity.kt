@@ -75,6 +75,14 @@ class MainActivity : ComponentActivity() {
     private var daily by mutableStateOf<DailyList?>(null)
     private var shopBal by mutableStateOf<ShopBal?>(null)
     private var answering by mutableStateOf<String?>(null)
+
+    // ---------- tabs ----------
+    /** The tab shown when the screen is Home; the other tabs are their own screens. */
+    private var homeTab by mutableStateOf("jobs")
+    /** Where the person was in each tab, so switching away and back keeps their place. */
+    private var savedHandoff: Screen? = null
+    private var savedPack: Screen.Pack? = null
+    private var savedLook: Screen.Look? = null
     private var savingBusy by mutableStateOf(false)
 
     private lateinit var nfc: Nfc
@@ -130,8 +138,59 @@ class MainActivity : ComponentActivity() {
         goHome()
     }
 
+    /** The role's first tab: a driver's jobs, a shop's booking, a receiver's handoff. */
     private fun goHome() {
-        screen = Screen.Home
+        val p = me ?: run { screen = Screen.SignIn; return }
+        savedHandoff = null; savedPack = null; savedLook = null
+        when (p.role) {
+            "driver" -> { homeTab = "jobs"; screen = Screen.Home }
+            "sender" -> screen = Screen.Pack()
+            else -> screen = Screen.Handoff()
+        }
+        refreshHome()
+    }
+
+    private fun tabsFor(role: String) = when (role) {
+        "driver" -> listOf(TabItem("jobs", "काम", "Jobs"), TabItem("hand", "सौंपें", "Hand over"), TabItem("earn", "कमाई", "Earnings"), TabItem("me", "मैं", "Me"))
+        "sender" -> listOf(TabItem("book", "बुक", "Book"), TabItem("parcels", "पार्सल", "Parcels"), TabItem("money", "बैलेंस", "Balance"), TabItem("me", "मैं", "Me"))
+        else -> listOf(TabItem("receive", "लें", "Receive"), TabItem("track", "स्थिति", "Track"), TabItem("me", "मैं", "Me"))
+    }
+
+    private fun currentTab(): String? {
+        val role = me?.role ?: return null
+        return when (screen) {
+            Screen.Home -> homeTab
+            is Screen.Handoff, is Screen.Result -> when (role) { "driver" -> "hand"; "sender" -> "parcels"; else -> "receive" }
+            is Screen.Pack -> "book"
+            is Screen.Look -> "track"
+            else -> null
+        }
+    }
+
+    /** Switch tab, keeping the place in the one left; choosing the current tab again starts it fresh. */
+    private fun selectTab(id: String) {
+        val again = id == currentTab()
+        when (val s = screen) {
+            is Screen.Handoff, is Screen.Result -> savedHandoff = s
+            is Screen.Pack -> { savedPack = s; nfc.pendingWrite = null }
+            is Screen.Look -> savedLook = s
+            else -> Unit
+        }
+        note = null
+        when (id) {
+            "hand", "receive" -> screen = if (again) Screen.Handoff() else savedHandoff ?: Screen.Handoff()
+            "book" -> {
+                val p = if (again) Screen.Pack() else savedPack ?: Screen.Pack()
+                screen = p
+                if (p.booking != null && !p.written) nfc.pendingWrite = p.booking.trackUrl
+                loadBalance()
+            }
+            "track" -> screen = if (again) Screen.Look() else savedLook ?: Screen.Look()
+            else -> { homeTab = id; screen = Screen.Home; refreshHome() }
+        }
+    }
+
+    private fun refreshHome() {
         val p = me ?: return
         if (p.role == "driver") loadWork()
         if (p.role == "sender") {
@@ -470,8 +529,15 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun App() {
+        val tabs = me?.let { tabsFor(it.role) }
+        val current = currentTab()
+        // Back goes to the first tab before it leaves the app.
+        androidx.activity.compose.BackHandler(enabled = tabs != null && current != null && current != tabs.first().id) { selectTab(tabs!!.first().id) }
+        val scroll = rememberScrollState()
+        androidx.compose.runtime.LaunchedEffect(current) { scroll.scrollTo(0) }
+        Column(Modifier.fillMaxSize().background(Tokens.paper).safeDrawingPadding()) {
         Column(
-            Modifier.fillMaxSize().background(Tokens.paper).safeDrawingPadding().verticalScroll(rememberScrollState()).padding(Tokens.pad),
+            Modifier.weight(1f).verticalScroll(scroll).padding(Tokens.pad),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Header()
@@ -486,6 +552,8 @@ class MainActivity : ComponentActivity() {
                 is Screen.Look -> LookScreen(s)
             }
             note?.let { Body(it, Tokens.red, 17) }
+        }
+        if (tabs != null && current != null) SegmentedTabs(tabs, current) { selectTab(it.id) }
         }
     }
 
@@ -561,32 +629,59 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun HomeScreen() {
         val p = me ?: return
-        TodoCard()
-        when (p.role) {
-            "driver" -> {
-                Action("पार्सल सौंपें या लें", "Hand over or take a parcel, or just tap it") { screen = Screen.Handoff() }
+        when (homeTab) {
+            "jobs" -> {
+                OfferCard((todo ?: emptyList()).filter { it.action == "offer" })
+                Action("पार्सल सौंपें या लें", "Hand over or take a parcel, or just tap it") { selectTab("hand") }
+                TodoCard("Nothing waiting. New jobs and handoffs show here.")
+                QueuedNote()
+            }
+            "earn" -> {
                 WorkCard(work)
                 val on = (work?.savePercent ?: 0) > 0
                 Toggle("बचत · Bachat", if (on) "5% of every payout goes to your savings pot" else "Save 5% of every payout automatically", on, savingBusy) { toggleBachat() }
             }
-            "sender" -> {
-                shopBal?.let { b ->
-                    Sheet {
-                        Heading("बैलेंस", "Balance")
-                        Line("Prepaid for bookings", "₹${"%.2f".format(b.rupees)}", if (b.rupees >= 250) Tokens.green else Tokens.red, big = true)
-                    }
-                    Secondary("UPI से पैसे जोड़ें · Top up by UPI") { payByUpi(500) }
-                }
-                Action("नया पार्सल बुक करें", "Book a new parcel, or just tap it") { screen = Screen.Pack() }
+            "parcels" -> {
+                TodoCard("No parcels waiting. Book one in the Book tab.")
                 Secondary("ड्राइवर को सौंपें · Hand a booked parcel to the driver") { screen = Screen.Handoff() }
                 DailyCard()
+                QueuedNote()
             }
-            else -> {
-                Action("पार्सल लें", "Receive a parcel, or just tap it") { screen = Screen.Handoff() }
-                Secondary("पार्सल की स्थिति · Check where a parcel is") { screen = Screen.Look() }
-            }
+            "money" -> BalanceScreen()
+            "me" -> MeScreen(p)
         }
+    }
+
+    @Composable
+    private fun QueuedNote() {
         if (queued > 0) Sheet { Bi("$queued हैंडऑफ़ सिग्नल का इंतज़ार कर रहे हैं", "$queued handoff(s) waiting for signal; they send by themselves", Tokens.amber, 18) }
+    }
+
+    @Composable
+    private fun BalanceScreen() {
+        val b = shopBal
+        Sheet {
+            Heading("बैलेंस", "Balance")
+            if (b == null) Body("Loading…", Tokens.muted, 16)
+            else Line("Prepaid for bookings", "₹${"%.2f".format(b.rupees)}", if (b.rupees >= 250) Tokens.green else Tokens.red, big = true)
+            Body("Your Daak agent pays every booking from this balance. Top up by UPI; it shows here once Daak sees the payment.", Tokens.muted, 14)
+        }
+        Heading("UPI से जोड़ें", "Top up by UPI")
+        listOf(500, 1000, 2000).forEach { amt -> Choice("₹$amt", "Opens your UPI app with Daak's ID and the amount", false) { payByUpi(amt) } }
+    }
+
+    @Composable
+    private fun MeScreen(p: Person) {
+        val role = when (p.role) { "driver" -> "Driver"; "sender" -> "Shop sending parcels"; else -> "Shop receiving parcels" }
+        Sheet {
+            Heading("मैं", "Me")
+            Line("नाम · Name", p.name.ifBlank { "Not set" })
+            Line("भूमिका · Role", role)
+            if (p.vehicle.isNotBlank()) Line("बस · Bus", p.vehicle)
+            Line("बैज · Badge", "…${p.uid.takeLast(8)}")
+            Body("Handoffs from this phone are signed with a key kept in its secure hardware, so nobody can record one in your name.", Tokens.muted, 14)
+        }
+        QueuedNote()
         TextKey("बैज बदलें · Switch badge") { signOut() }
     }
 
@@ -620,11 +715,10 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun TodoCard() {
+    private fun TodoCard(empty: String? = null) {
         val all = todo ?: return
-        OfferCard(all.filter { it.action == "offer" })
         val t = all.filter { it.action != "offer" }
-        if (t.isEmpty()) return
+        if (t.isEmpty()) { if (empty != null) Body(empty, Tokens.muted, 16); return }
         Sheet {
             Heading("आगे क्या करना है", "Up next")
             t.take(4).forEachIndexed { i, item ->
@@ -669,7 +763,6 @@ class MainActivity : ComponentActivity() {
         s.problem?.let { Verdict(Tokens.amber, "रुकिए", "Hold on", it) }
         if (s.other != null && !s.sending) Action("फोटो लीजिए", "Take the photo") { openCamera() }
         if (s.sending) Bi("जाँच हो रही है…", "Checking the photo. This takes a few seconds.", Tokens.muted, 18)
-        if (!s.sending) TextKey("वापस · Back") { goHome() }
     }
 
     @Composable
@@ -683,7 +776,6 @@ class MainActivity : ComponentActivity() {
         }
         v.code?.let { Body("$it${v.hop?.let { h -> " · handoff $h" } ?: ""}", Tokens.muted, 15) }
         Action("अगला पार्सल", "Next parcel") { screen = Screen.Handoff() }
-        TextKey("होम · Home") { goHome() }
     }
 
     @Composable
@@ -752,7 +844,6 @@ class MainActivity : ComponentActivity() {
         }
         s.problem?.let { Verdict(Tokens.amber, "ध्यान दें", "Please note", it) }
         if (s.written || (s.problem != null && s.booking != null)) Action("अगला पार्सल", "Book another parcel") { nfc.pendingWrite = null; screen = Screen.Pack() }
-        if (!s.paying) TextKey("होम · Home") { nfc.pendingWrite = null; goHome() }
     }
 
     @Composable
@@ -766,6 +857,5 @@ class MainActivity : ComponentActivity() {
             info.delivered -> Verdict(Tokens.green, "पहुँच गया", "Delivered", "${info.code} · ${info.label}")
             else -> Verdict(Tokens.ink, "रास्ते में", "On the way", "${info.code} · next: ${info.next?.fromName} to ${info.next?.toName} at ${info.next?.place}")
         }
-        TextKey("होम · Home") { goHome() }
     }
 }

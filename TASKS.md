@@ -4,7 +4,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Blockers: each one can cost a prize on its own
 
-- [ ] Repo public with an MIT licence (0G and Hedera require a public repo; Arkiv requires an open-source licence). History scanned: no keys were ever committed.
+- [x] Repo public with an MIT licence.
 - [ ] 0G credits from the 0G booth when it opens, then: the first real sealed check, the decision log on 0G Storage, "Recheck with 0G" on held handoffs, and the agent that pays for its own compute from a capped slice of each fee (Agents That Pay for Themselves). Wallet `0x575F8D53D5bE1d16d4c1eDb8D01C4B68A0D48901`.
 - [ ] Demo video: 2:30 to 2:55 (ETHGlobal 2 to 4 minutes, 0G under 3), at least 720p, not recorded on a phone, a real voice (no AI voice, no music over captions in place of speaking), intro under 20 seconds, at most 4 bullets a slide, a settled payment on HashScan, the Swarm moment with its timestamp noted in `arkiv/swarm.md`.
 - [ ] Team: each teammate commits their own real part (video, slides, field test, data) and can explain it to judges.
@@ -53,6 +53,8 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] Final README pass: 0G proof or the outage write-up, the business numbers.
 
 ## Done
+
+- [x] App tab bar: a segmented switch pinned at the bottom, tabs by role (driver: Jobs, Hand over, Earnings, Me; shop: Book, Parcels, Balance, Me; receiver: Receive, Track, Me), each tab keeps its place, Back returns to the first tab.
 
 - [x] Split payout with a holdback: 50, 70 or 90% at the confirmed handover by record; holdbacks in one Hedera schedule that releases itself after `HOLDBACK_HOURS`; the liable leg repays the shop; protection pool from 1 point of the booking fee.
 - [x] Bus number checked against the plate format, bus operator, and driver KYC (ID type, last 4, encrypted ID photo, operator verifies, decision on HCS).

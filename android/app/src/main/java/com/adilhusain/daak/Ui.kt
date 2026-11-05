@@ -12,6 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -261,3 +265,64 @@ fun TextKey(text: String, onClick: () -> Unit) {
 /** A hairline between items in a sheet. */
 @Composable
 fun Rule() = Box(Modifier.fillMaxWidth().height(1.dp).background(Tokens.line))
+
+/** One destination in the tab bar: a short Hindi word and its English under it. */
+data class TabItem(val id: String, val hi: String, val en: String)
+
+/**
+ * The tab bar: a segmented switch pinned above the system navigation bar. One tray, equal segments, the current one
+ * filled in ink (it sits in: you are here), the others plain and pressable. The fill slides to a new segment with a
+ * short ease-out and snaps when the phone has animations turned off. Labels are always shown; every segment is at
+ * least 56 dp tall; screen readers hear it as a set of tabs.
+ */
+@Composable
+fun SegmentedTabs(items: List<TabItem>, selected: String, onSelect: (TabItem) -> Unit) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    val reduced = remember {
+        android.provider.Settings.Global.getFloat(view.context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    }
+    val index = items.indexOfFirst { it.id == selected }.coerceAtLeast(0)
+    Box(
+        Modifier.fillMaxWidth().background(Tokens.paper)
+            .padding(start = Tokens.pad, end = Tokens.pad, top = 8.dp, bottom = 10.dp),
+    ) {
+        androidx.compose.foundation.layout.BoxWithConstraints(
+            Modifier.fillMaxWidth().background(Tokens.tray, RoundedCornerShape(Tokens.radius)).padding(6.dp),
+        ) {
+            val segment = maxWidth / items.size
+            val x by androidx.compose.animation.core.animateDpAsState(
+                targetValue = segment * index,
+                animationSpec = if (reduced) androidx.compose.animation.core.snap()
+                else androidx.compose.animation.core.tween(200, easing = androidx.compose.animation.core.CubicBezierEasing(0.2f, 0f, 0f, 1f)),
+                label = "tab",
+            )
+            Box(
+                Modifier.offset(x = x).width(segment).height(56.dp)
+                    .background(Tokens.ink, RoundedCornerShape(Tokens.inner)),
+            )
+            Row(Modifier.fillMaxWidth().selectableGroup()) {
+                items.forEachIndexed { i, item ->
+                    val on = i == index
+                    val source = remember { MutableInteractionSource() }
+                    val pressed by source.collectIsPressedAsState()
+                    Column(
+                        Modifier.weight(1f).height(56.dp)
+                            .graphicsLayer { val s = if (pressed && !on) 0.95f else 1f; scaleX = s; scaleY = s }
+                            .selectable(selected = on, interactionSource = source, indication = null, role = androidx.compose.ui.semantics.Role.Tab) {
+                                view.performHapticFeedback(
+                                    if (android.os.Build.VERSION.SDK_INT >= 34) android.view.HapticFeedbackConstants.SEGMENT_TICK
+                                    else android.view.HapticFeedbackConstants.CLOCK_TICK,
+                                )
+                                onSelect(item)
+                            },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        BasicText(item.hi, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (on) Tokens.paper else Tokens.ink))
+                        BasicText(item.en, style = TextStyle(fontSize = 11.sp, fontWeight = if (on) FontWeight.Medium else FontWeight.Normal, color = if (on) Tokens.paper.copy(alpha = 0.85f) else Tokens.muted))
+                    }
+                }
+            }
+        }
+    }
+}

@@ -37,3 +37,4 @@ ETHGlobal asks every team to document how AI tools were used, file by file. This
 | Public read-only deliveries: `web/app/live`, `web/app/api/live`, nav | Written with an AI coding assistant | Team agreed partner judges must see the deliveries without the operator passcode, with private data left out |
 | Job offers: `web/app/api/job`, offers in `web/app/api/driver/[uid]/parcels`, answers on `/live` and the dashboard, app offer card | Written with an AI coding assistant | Team agreed no driver is put on a route without saying yes |
 | `docs/submission.md`, `docs/demo.md` (drafts) | Drafted with an AI coding assistant | The team records the video and gives the pitch in its own words |
+| App tab bar: `SegmentedTabs` in `Ui.kt`, tabs by role, Balance and Me tabs in `MainActivity.kt` | Written with an AI coding assistant, to Android's navigation bar guidance (three to five equal destinations, labels always shown) | Team asked for a segmented switch at the bottom |
