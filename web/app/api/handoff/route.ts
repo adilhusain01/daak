@@ -8,6 +8,8 @@ import { releaseFee, hashscan } from "@/lib/payout";
 import { cashOutAll } from "@/lib/settle";
 import { sealRef, uploadPhoto } from "@/lib/swarm";
 import { logDecision } from "@/lib/zgstore";
+import { getBadge } from "@/lib/arkiv";
+import { handoffMessage, verifyHandoff } from "@/lib/signing";
 
 /** Metres between two points on the earth. */
 function metres(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
@@ -39,6 +41,20 @@ export async function POST(req: Request) {
   }
   const photo = Buffer.from(await photoFile.arrayBuffer());
   const photoSha256 = createHash("sha256").update(photo).digest("hex");
+
+  // The handoff must be signed by the phone of whoever recorded it (giver or taker), if they registered one.
+  const signer = String(form.get("signer") ?? "");
+  const sig = String(form.get("sig") ?? "");
+  let signed: "valid" | "unsigned" = "unsigned";
+  if (signer && (signer === from || signer === to)) {
+    const who = await getBadge(signer).catch(() => null);
+    if (who?.devicePub) {
+      if (!sig || !verifyHandoff(who.devicePub, handoffMessage({ parcel, from, to, at, photoSha256 }), sig)) {
+        return NextResponse.json({ verdict: "held", message: "Signature check failed. This handoff did not come from the registered phone." }, { status: 401 });
+      }
+      signed = "valid";
+    }
+  }
 
   // A booking written seconds ago can take a few seconds to show in Arkiv queries.
   let c = await consignmentByParcel(parcel);
@@ -85,6 +101,7 @@ export async function POST(req: Request) {
       t: "daak.handoff", code: consignment.code, hop: leg.hop, km: leg.km ?? null, from: short(from), to: short(to),
       verdict, zg: check?.requestId ?? null, photo: photoSha256, at,
       geo: spot ? [Number(spot.lat.toFixed(4)), Number(spot.lng.toFixed(4))] : null,
+      signer: signer ? short(signer) : null, sig: signed === "valid" ? sig : null,
     });
   } catch (e) {
     errors.push(`Hedera: ${(e as Error).message.slice(0, 160)}`);
@@ -125,7 +142,7 @@ export async function POST(req: Request) {
     : verdict === "held" ? `Payment roka gaya. ${reason}`
     : "AI jaanch nahi ho payi. Handoff save hai, payment jaanch tak ruka hai.";
   return NextResponse.json({
-    verdict, message, code: consignment.code, hop: leg.hop, reason,
+    verdict, message, code: consignment.code, hop: leg.hop, reason, signed,
     proofs: {
       zg: check && { requestId: check.requestId, verified: check.verified, model: check.model },
       hcs: log && { topicId: log.topicId, tx: hashscan("transaction", log.txId) },

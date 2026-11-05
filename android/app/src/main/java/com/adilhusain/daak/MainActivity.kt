@@ -142,6 +142,8 @@ class MainActivity : ComponentActivity() {
     private fun remember(p: Person) {
         me = p
         prefs.edit().putString("uid", p.uid).putString("name", p.name).putString("role", p.role).putString("vehicle", p.vehicle).apply()
+        // Register this phone's signing key for the person (first phone only; a new phone goes through the operator).
+        thread { runCatching { Api.registerDevice(p.uid, DeviceKey.publicKey()) } }
         goHome()
     }
 
@@ -271,7 +273,13 @@ class MainActivity : ComponentActivity() {
     private fun send(s: Screen.Handoff, photo: File) {
         val mine = me!!.uid
         val other = s.other!!.uid
-        val h = Handoff(s.parcel!!.uid, if (s.iGive) mine else other, if (s.iGive) other else mine, photo, spot = where.last)
+        val from = if (s.iGive) mine else other
+        val to = if (s.iGive) other else mine
+        val at = System.currentTimeMillis()
+        // Signed on this phone: the server and anyone reading the public log can check it came from here.
+        val message = "daak.handoff|${s.parcel!!.uid}|$from|$to|$at|${DeviceKey.sha256Hex(photo.readBytes())}"
+        val sig = runCatching { DeviceKey.sign(message) }.getOrNull()
+        val h = Handoff(s.parcel.uid, from, to, photo, at = at, spot = where.last, signer = mine, sig = sig)
         screen = s.copy(sending = true)
         thread {
             val result = runCatching { Api.handoff(h) }

@@ -18,9 +18,10 @@ export const Badges = defineSchema("daak.badge", {
   legs: str().optional(), // drivers: the stretches they run, e.g. "KNP-LKO,LKO-GKP"
   stop: str().optional(), // shops and receivers: their bus stand id
   private: bytes().optional(), // phone and UPI ID, sealed with AES-GCM; never readable from the public record
+  devicePub: str().optional(), // the public key of the phone this person signs handoffs with (P-256, SPKI, base64)
 });
 
-export type BadgeRow = { uid: string; name: string; role: string; vehicle: string; legs: string[]; stop?: string; private?: string; key: string };
+export type BadgeRow = { uid: string; name: string; role: string; vehicle: string; legs: string[]; stop?: string; private?: string; devicePub?: string; key: string };
 
 export const Consignments = defineSchema("daak.consignment", {
   code: str().indexed(),
@@ -79,6 +80,16 @@ const dec = (v: Uint8Array | `0x${string}`) =>
 
 const keyOf = (r: { entityKey: unknown; txHash: unknown }) => ({ entityKey: String(r.entityKey), txHash: String(r.txHash) });
 
+/** Registers the phone a person signs with. Only the first phone is accepted; a replacement needs the operator. */
+export async function setDevicePub(uid: string, devicePub: string, replace = false) {
+  const b = await getBadge(uid);
+  if (!b) throw new Error("Unknown badge");
+  if (b.devicePub && !replace && b.devicePub !== devicePub) throw new Error("This badge already has a phone registered");
+  if (b.devicePub === devicePub) return { entityKey: b.key, txHash: "" };
+  const { txHash } = await arkivWrite().patchEntity(Badges, b.key as `0x${string}`, { set: { devicePub } });
+  return { entityKey: b.key, txHash: String(txHash) };
+}
+
 /** Creates the badge, or updates the existing one in place (re-joining, changing stretches or UPI ID). */
 export async function putBadge(b: { uid: string; name: string; role: string; vehicle?: string; legs?: string[]; stop?: string; private?: string }) {
   const values = { uid: b.uid, name: b.name, role: b.role, vehicle: b.vehicle ?? "", legs: (b.legs ?? []).join(","), stop: b.stop ?? "", private: enc(b.private ?? "") };
@@ -90,21 +101,22 @@ export async function putBadge(b: { uid: string; name: string; role: string; veh
   return keyOf(await arkivWrite().createEntity(Badges, values, { expiration: ExpirationTime.fromDays(30) }));
 }
 
-type BadgeEntity = { $key: unknown; uid: { value: string }; name: { value: string }; role: { value: string }; vehicle: { value: string }; legs?: { value: string }; stop?: { value: string }; private?: { value: Uint8Array | `0x${string}` } };
+type BadgeEntity = { $key: unknown; uid: { value: string }; name: { value: string }; role: { value: string }; vehicle: { value: string }; legs?: { value: string }; stop?: { value: string }; private?: { value: Uint8Array | `0x${string}` }; devicePub?: { value: string } };
 const toBadge = (b: BadgeEntity): BadgeRow => ({
   key: String(b.$key), uid: b.uid.value, name: b.name.value, role: b.role.value, vehicle: b.vehicle.value,
   legs: (b.legs?.value ?? "").split(",").filter(Boolean), stop: b.stop?.value || undefined,
   private: b.private ? dec(b.private.value) || undefined : undefined,
+  devicePub: b.devicePub?.value || undefined,
 });
 
 export async function badgesByRole(role: string): Promise<BadgeRow[]> {
-  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true }).from(Badges)
+  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true }).from(Badges)
     .where(eq("role", role)).ownedBy(owner()).limit(100).fetch();
   return r.entities.map((b) => toBadge(b as BadgeEntity));
 }
 
 export async function getBadge(uid: string): Promise<BadgeRow | null> {
-  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true }).from(Badges)
+  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true }).from(Badges)
     .where(eq("uid", uid)).ownedBy(owner()).limit(1).fetch();
   const b = r.entities[0];
   return b ? toBadge(b as BadgeEntity) : null;
