@@ -1,9 +1,13 @@
 # Friction we hit with Arkiv
 
-Honest notes from building Daak in one night on SDK 1.0.1 and Rabdi.
+Honest notes from building Daak over the hackathon on SDK 1.0.1 and Rabdi.
 
 1. **`str` columns stop at 128 bytes.** Our consignment's route (JSON of the legs) failed with `InvalidValueError ... exceeds the 128-byte limit on a str`. The error message was excellent: it told us to use a `bytes` column, which we did for the route and for the human-readable reason. It would help to say the limit next to `str()` in the README's schema section.
 2. **A fresh write is not in queries for a few seconds.** A booking written and then queried by its parcel serial two seconds later came back empty, so the first handoff of a parcel failed. We added a retry (up to 10 s). A note in the docs on expected index lag, or a "read your own write" option, would save this.
 3. **An unscoped query errors.** `select().limit(1).fetch()` with no schema and no filter threw; adding `.ownedBy(...)` fixed it. A clearer message ("add a filter or a schema") would help a first-time user.
 4. **Optional columns are the way to evolve a schema.** Adding `geo` to handoffs worked because we made it `.optional()`; old rows still read. Worth a line in the docs, since a required new column silently skips old rows.
-5. **What was smooth:** typed schemas and the query builder caught our mistakes at compile time, the access key and faucet took two minutes, and expiry needed one line (`ExpirationTime.fromDays(1)`).
+5. **Ordering by a column that is not indexed returns nothing, silently.** Our daily-orders query had `.orderBy(desc("createdAt"))` on a schema where `createdAt` was a plain `u64()`. It returned an empty page with no error, so a feature looked broken while the data was there. We now sort in code. An error ("createdAt is not indexed, so it cannot be ordered by") would have saved an hour.
+6. **`i32` refuses a half rupee, at write time.** Our meter is Rs 5 + Rs 0.50 a km, so an odd number of km gives a fee like Rs 184.50, and `i32(184.5)` threw `Invalid i32 value 184.5: not an integer`. The message is clear and even suggests `dec()`; the trap was ours (we wrote the record after moving money, which stranded four test payments until we reordered). We now keep paise in an `i32` and write the record first. A `dec()` example in the schema docs next to money would help others.
+7. **The public endpoint needs an explicit empty key.** `rabdi({})` throws `MissingAccessKeyError`; `rabdi({ accessKey: "" })` uses the rate-limited public endpoint. It works, but for a "run this query" README a keyless default would be friendlier.
+8. **`patchEntity` made in-place updates easy.** Adding a phone's key, an ID decision, or swapping a placeholder parcel tag for the real one is a one-line patch; we did not have to re-create entities.
+9. **What was smooth:** typed schemas and the query builder caught our mistakes at compile time, the access key and faucet took two minutes, and expiry needed one line (`ExpirationTime.fromDays(1)`).

@@ -4,37 +4,31 @@ Every entity is written by the Daak operator wallet `0x610FdB41DA83138615C317c89
 
 | Schema | Columns (indexed in bold) | Lifetime | Written when | Read by |
 |---|---|---|---|---|
-| `daak.consignment` | **code**, **parcel**, label, route (bytes: JSON legs with km), feeRupees, **createdAt**, schedule (optional) | 30 days | a booking is paid over x402 | handoff API (find the parcel's booking), tracking page, dashboard |
-| `daak.handoff` | **code**, **hop**, **verdict**, place, fromBadge, toBadge, **at**, zgRequestId, hcs, photoSha256, reason (bytes), geo (optional) | 1 day | every handoff | tracking page, dashboard, the next handoff (which hops are done) |
-| `daak.badge` | **uid**, name, **role**, vehicle | 30 days | a driver, shop or retailer badge is registered | driver screen |
-| `daak.pref` | **uid**, savePercent, **at** | 30 days | a driver turns Bachat on or off | payout (how much goes to Bachat), driver screen |
+| `daak.badge` | **uid**, name, **role**, vehicle (plate and bus operator), legs (stretches a driver runs), stop (a shop's bus stand), private (bytes: phone and UPI ID, sealed), devicePub (the phone's P-256 public key), kyc (bytes: ID type, last 4, sealed Swarm reference of the ID photo, all sealed), kycStatus | 30 days | a person joins from the app; a phone registers its key; the operator verifies an ID | sign-in, route planning (which drivers run a stretch), the drivers page, handoff signature checks, payouts (the sealed UPI ID), the ID review on the dashboard |
+| `daak.consignment` | **code**, **parcel**, label, route (bytes: JSON legs with km and each driver's share at handover), feeRupees, feePaise, weight (band), **createdAt**, schedule (older bookings) | 30 days | a booking is paid over x402; a daily order's parcel is attached (the `parcel` column is patched) | the handoff API (find the parcel's booking), tracking page, dashboard, the driver's to-do list, payouts |
+| `daak.handoff` | **code**, **hop**, **verdict**, place, fromBadge, toBadge, **at**, zgRequestId, hcs, photoSha256, reason (bytes), geo, photo (bytes: sealed Swarm reference), zgLog | 1 day | every handoff, and every 0G recheck | tracking page, dashboard, the next handoff (which hops are done), the to-do list |
+| `daak.pref` | **uid**, savePercent, **at** | 30 days | a driver turns Bachat on or off | payouts (how much goes to Bachat), the driver's home |
+| `daak.standing` | **id**, **sender**, receiver, drivers, days (Monday first, e.g. `1111110`), active, lastRun, lastCode, createdAt, weight | 30 days | a shop makes a booking daily; the 04:00 IST run books it; the operator pauses it | the morning run, the shop's home in the app, the dashboard |
 
-Badges appear in handoffs only as a 12-character SHA-256 prefix, never as the raw NFC serial.
+Badges appear in handoffs and on the Hedera log only as a 12-character SHA-256 prefix, never as the raw NFC serial. Phone numbers, UPI IDs, ID details and Swarm references are sealed before they reach Arkiv.
 
-## A runnable query
+## A runnable query (no keys needed)
 
-```ts
-import { createPublicClient } from "@arkiv-network/sdk";
-import { rabdi } from "@arkiv-network/sdk/chains";
-import { defineSchema, i32, str, u64, bytes } from "@arkiv-network/sdk/schema";
-import { eq } from "@arkiv-network/sdk/query";
-import { http } from "viem";
-
-const Handoffs = defineSchema("daak.handoff", {
-  code: str().indexed(), hop: i32().indexed(), verdict: str().indexed(), place: str(),
-  fromBadge: str(), toBadge: str(), at: u64().indexed(), zgRequestId: str(), hcs: str(),
-  photoSha256: str(), reason: bytes(), geo: str().optional(),
-});
-
-const client = createPublicClient({ chain: rabdi({ accessKey: process.env.ARKIV_ACCESS_KEY! }), transport: http() });
-const page = await client
-  .select({ $key: true, hop: true, verdict: true, place: true, hcs: true })
-  .from(Handoffs)
-  .where(eq("code", "KNP-6377"))
-  .ownedBy("0x610FdB41DA83138615C317c89fd9EB09271a46fe")
-  .limit(10)
-  .fetch();
-console.log(page.entities.map((e) => [e.hop.value, e.verdict.value, e.place.value, e.hcs.value]));
+```bash
+cd web && npm install && npx tsx scripts/arkiv-query.mts
 ```
 
-Handoffs expire after a day, so query a consignment booked in the last 24 hours (the dashboard lists them).
+It reads Daak's drivers and its latest bookings from Rabdi through Arkiv's public endpoint (pass `ARKIV_ACCESS_KEY` for a faster one). The core of it:
+
+```ts
+const client = createPublicClient({ chain: rabdi({ accessKey: "" }), transport: http() });
+const latest = await client
+  .select({ $key: true, code: true, label: true, feePaise: true, weight: true, createdAt: true })
+  .from(Consignments)
+  .ownedBy("0x610FdB41DA83138615C317c89fd9EB09271a46fe")
+  .orderBy(desc("createdAt"))
+  .limit(5)
+  .fetch();
+```
+
+Handoffs expire after a day; badges, bookings and daily orders after 30 days.

@@ -1,44 +1,66 @@
 # Daak: tasks to submission
 
-Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30.
+Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requirements below are from the live prizes page and the rules page (ethglobal.com/events/mumbai/prizes and /info/details), read 6 November.
 
-## Blocked on others
+## Blockers: each one can cost a prize on its own
 
-- [ ] **0G credits and the 0G outage.** A poller watches the Daak 0G wallet (`0x575F8D53D5bE1d16d4c1eDb8D01C4B68A0D48901`). When credits land: open the compute account, run the first real sealed check, press "Recheck with 0G" on held handoffs.
-- [ ] **NFC stickers** (Amazon, Friday 8 am to 12 pm). Each new sticker joins from the app as a person: a shop, a second driver, the receiving shop.
+- [ ] Repo public with an MIT licence (0G and Hedera require a public repo; Arkiv requires an open-source licence). History scanned: no keys were ever committed.
+- [ ] 0G credits from the 0G booth when it opens, then: the first real sealed check, the decision log on 0G Storage, "Recheck with 0G" on held handoffs, and the agent that pays for its own compute from a capped slice of each fee (Agents That Pay for Themselves). Wallet `0x575F8D53D5bE1d16d4c1eDb8D01C4B68A0D48901`.
+- [ ] Demo video: 2:30 to 2:55 (ETHGlobal 2 to 4 minutes, 0G under 3), at least 720p, not recorded on a phone, a real voice (no AI voice, no music over captions in place of speaking), intro under 20 seconds, at most 4 bullets a slide, a settled payment on HashScan, the Swarm moment with its timestamp noted in `arkiv/swarm.md`.
+- [ ] Team: each teammate commits their own real part (video, slides, field test, data) and can explain it to judges.
+- [ ] Planning artifacts and prompts committed (the rules require them for spec-driven work): `docs/planning/`.
+
+## Sponsor paperwork
+
+- [ ] `LICENSE` (MIT) and a licence line in the README.
+- [ ] README: one Arkiv query judges can run, the writing wallet, Hedera transaction ids, architecture and payment flow.
+- [ ] `arkiv/schema.md` up to date (standing orders, KYC columns, weight, fee in paise).
+- [ ] `arkiv/swarm.md`: an example entity key with its sealed reference, the postage batch, upload and read code, reproduction steps, the demo timestamp.
+- [ ] `web/README.md`: replace the create-next-app text.
+- [ ] Submission form: per-partner "how we used it" and feedback for 0G, Hedera, Arkiv; select the Swarm bonus.
+
+## Hedera
+
+- [ ] x402 price equals the booking (meter plus booking fee for the chosen weight), not a flat 1 HBAR.
+- [ ] Endpoint discovery: the agent reads a catalogue first, then books.
+- [ ] Each shop has its own agent account with a balance the shop tops up by UPI (operator confirms the UTR, like driver payouts); spend controls per shop.
+- [ ] Optional: dINR rebuilt on Stablecoin Studio (KYC, freeze, roles) for the Tokenize track.
+- [ ] Optional: agent identity on HCS-14 or ERC-8004.
+
+## Product, from the people using it
+
+- [ ] Public read-only demo view of deliveries (no photos, no KYC), so partner judges see the dashboard without a passcode.
+- [ ] Drivers accept or decline a job before it is theirs.
+- [ ] Verify Ramesh's and Suresh's IDs before the demo (they show "ID not checked").
+- [ ] Optional: SMS or WhatsApp to the receiving shop when the parcel nears and arrives.
+- [ ] Optional: ETA from the bus departure time.
 
 ## The team
 
 - [ ] Testnet USDC from faucet.circle.com (Hedera Testnet) to `0.0.11325722`, then switch `X402_ASSET` to `0.0.429274`.
-- [ ] Each teammate commits their own part and can explain it to judges.
 - [ ] Each teammate joins with their own badge and real UPI ID (the real ₹ UPI moment).
 - [ ] One real conversation or 20-second clip with a bus parcel booking office or a sender.
 - [ ] Real paid deliveries during the hackathon (see `docs/business.md`, "Traction before Saturday").
-- [x] `CRON_SECRET` and `DATA_SINCE` set in Vercel.
 - [ ] Set `HOLDBACK_HOURS=0.25` in Vercel for the demo, so judges see a holdback release itself within 15 minutes.
-
-## Build (order agreed: split payout, map, standing orders, weight)
-
-- [ ] When 0G works: the decision log on 0G Storage lands for real; the scanner pays for its own AI from a capped slice of each fee (0G "Agents That Pay for Themselves").
-- [x] Split payout with a holdback: 50, 70 or 90% at the confirmed handover by record; holdbacks in one Hedera schedule that releases itself after `HOLDBACK_HOURS`; the liable leg repays the shop; protection pool from 1 point of the booking fee. Tested on testnet.
-- [x] Bus number checked against the plate format, bus operator, and driver KYC (ID type, last 4, encrypted ID photo, operator verifies, decision on HCS).
-- [x] Weight in the meter: four bands (x1 up to 5 kg, x1.5 to 15, x2 to 30, x3 to 50), every price shown before paying, carried into daily orders. Tested on testnet (KNP-8812).
-- [x] Standing orders: a shop makes a booking daily from the app; Vercel Cron books and pays it at 04:00 IST; the shop taps the day's parcel to attach it; dashboard can pause or book today's now. Tested on testnet (KNP-3047).
-- [x] Booking fee: 12% of the meter, at least ₹5, on top of the meter (configurable).
-- [x] The network map page (`/network`): 1,43,609 India Post offices, 6,021 bus stations from OpenStreetMap, the live corridor drawn along the road, opening on North India.
+- [x] `CRON_SECRET` and `DATA_SINCE` set in Vercel.
+- [ ] NFC stickers (Amazon, Friday 8 am to 12 pm). Each new sticker joins from the app as a person: a shop, a second driver, the receiving shop.
 - [ ] Run and film a real three-hop delivery with the stickers.
 
 ## Story and submission
 
-- [ ] The cinematic film (Friday afternoon), in the style of the reference short.
-- [ ] The submission demo video: 2 to 4 minutes, at least 720p, not recorded on a phone, no AI voiceover, HashScan shown.
-- [ ] The 4-minute live demo script and 3 to 4 slides (problem, demo, market and numbers, ask); rehearse with stickers and two phones.
-- [ ] Submission form: description, partners (0G, Hedera, Arkiv), links.
+- [ ] The 4-minute live demo script and 3 to 4 slides (problem, demo, market and numbers, ask); rehearse with stickers and two phones; prepared answers for VC questions (licences, bus operators' consent, margin, moat).
+- [ ] The cinematic film as a 15-second opener at most (it cannot be the submission video: no voice).
 - [ ] Final README pass: 0G proof or the outage write-up, the business numbers.
 
 ## Done
 
-- [x] App: join, roles, booking with receiver and drivers, handoffs from either phone, signed on the phone, offline queue, Hindi first, My work, Bachat, fuel advance.
-- [x] Web: landing page, operator dashboard behind a passcode, drivers marketplace, tracking page, disputes, UPI QR with UTR on chain.
-- [x] Chain: x402 booking on Hedera, dINR with a 2% custom fee, escrow, scheduled payouts, refunds, HCS log, Arkiv as the database, encrypted photos on Swarm, 0G check with safe-stop and recheck.
-- [x] Security: operator and app keys, joined-only routes, booking cap. Tests: 19 passing.
+- [x] Split payout with a holdback: 50, 70 or 90% at the confirmed handover by record; holdbacks in one Hedera schedule that releases itself after `HOLDBACK_HOURS`; the liable leg repays the shop; protection pool from 1 point of the booking fee.
+- [x] Bus number checked against the plate format, bus operator, and driver KYC (ID type, last 4, encrypted ID photo, operator verifies, decision on HCS).
+- [x] Weight in the meter: four bands, every price shown before paying, carried into daily orders (KNP-8812).
+- [x] Standing orders: daily repeat booking, booked and paid at 04:00 IST by Vercel Cron, the day's parcel attaches with a tap (KNP-3047).
+- [x] Booking fee: 12% of the meter, at least ₹5. Meter on road km (87 and 272).
+- [x] Network map (`/network`): India Post offices, OpenStreetMap bus stations, the corridor along the road.
+- [x] App: join, roles, booking with receiver, drivers and weight, handoffs from either phone, signed on the phone, offline queue, Hindi first, My work, Bachat, fuel advance, daily orders; tidied.
+- [x] Web: landing, operator dashboard, drivers, tracking, disputes, UPI QR with UTR on chain, full-width layout.
+- [x] Chain: x402 booking on Hedera, dINR with a 2% custom fee, escrow, split payout, self-releasing holdbacks, refunds, HCS log, Arkiv as the database, encrypted photos on Swarm, 0G check with safe-stop and recheck.
+- [x] Security: operator and app keys, joined-only routes, booking cap, signed handoffs. Tests: 23 passing.

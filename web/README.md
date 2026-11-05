@@ -1,36 +1,14 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Daak web
 
-## Getting Started
+The Next.js 16 app behind Daak: the API the phone app and the shop's agent call, the operator dashboard, the public tracking, drivers and network pages. The project README one folder up explains what Daak is and how to run it.
 
-First, run the development server:
+- `app/api/`: booking over x402 (`book`), the shop's booking request (`pack`), handoffs (`handoff`), payouts and disputes (`review`, `recheck`, `resolve`, `upi`), daily orders (`standing`), joining and ID checks (`join`, `kyc`), and the read endpoints for the app and the pages.
+- `lib/`: one module per partner (`hedera.ts`, `payout.ts`, `split.ts`, `x402.ts`, `agent.ts`, `zg.ts`, `zgstore.ts`, `arkiv.ts`, `swarm.ts`) and the pure rules in `rules.ts` and `network.ts`, which the tests cover.
+- `scripts/`: one-off setup (`setup-hedera.mts`, `setup-money.mts`, `setup-0g.mts`) and `arkiv-query.mts`, a query anyone can run without keys.
+- `tests/`: `npm test`.
 
 ```bash
+cp .env.example .env.local   # names only; fill in your own values
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
