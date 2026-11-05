@@ -30,13 +30,13 @@
       "id": "KNP-LKO",
       "from": "KNP",
       "to": "LKO",
-      "km": 80
+      "km": 87
     },
     {
       "id": "LKO-GKP",
       "from": "LKO",
       "to": "GKP",
-      "km": 270
+      "km": 272
     }
   ]
 }

@@ -80,3 +80,10 @@ test("the pool tops up a refund to the declared value, capped, after the liable 
   assert.equal(poolPayout(5000, 100, 2000), 1900);
   assert.equal(poolPayout(0, 100, 2000), 0);
 });
+
+test("the meter charges each stretch's road distance, the same one the map draws", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { network } = await import("../lib/network.ts");
+  const roads = JSON.parse(readFileSync("public/map/india.json", "utf8")).roads as Record<string, { km: number }>;
+  for (const l of network().legs) assert.equal(l.km, roads[l.id].km, `${l.id} charges ${l.km} km, road is ${roads[l.id].km} km`);
+});

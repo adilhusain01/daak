@@ -6,14 +6,14 @@
       "from": "04:23:9b:52:1d:1c:91",
       "to": "test-badge-b",
       "place": "Lucknow Charbagh bus stand",
-      "km": 80
+      "km": 87
     },
     {
       "hop": 2,
       "from": "test-badge-b",
       "to": "retailer-gkp",
       "place": "Gorakhpur, Ghosh Cloth House",
-      "km": 270
+      "km": 272
     }
   ]
 }
