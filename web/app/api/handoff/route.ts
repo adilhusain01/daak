@@ -6,6 +6,7 @@ import { consignmentByParcel, handoffsFor, writeHandoff } from "@/lib/arkiv";
 import { releaseFee, hashscan } from "@/lib/payout";
 import { cashOutAll } from "@/lib/settle";
 import { sealRef, uploadPhoto } from "@/lib/swarm";
+import { logDecision } from "@/lib/zgstore";
 
 /** Metres between two points on the earth. */
 function metres(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
@@ -93,12 +94,22 @@ export async function POST(req: Request) {
   // Everything below runs after the driver already has the answer.
   after(async () => {
     const sequence = log ? await log.sequence().catch(() => "") : "";
+    // 0G episode log: the decision at this checkpoint, whatever it was, with its request id.
+    let zgLog = "";
+    try {
+      const rec = await logDecision({
+        t: "daak.decision", code: consignment.code, hop: leg.hop, place: leg.place, verdict, reason,
+        model: check?.model ?? null, requestId: check?.requestId ?? null, teeVerified: check?.verified ?? null,
+        codeRead: check?.codeRead ?? null, condition: check?.condition ?? null, photoSha256, at, hcs: log?.txId ?? null,
+      });
+      zgLog = rec.rootHash;
+    } catch (e) { console.error("0g storage", e); }
     let photoRef = "";
     try { photoRef = sealRef(await uploadPhoto(photo)); } catch (e) { console.error("swarm", e); }
     try {
       await writeHandoff({
         code: consignment.code, hop: leg.hop, verdict, place: leg.place, fromBadge: short(from), toBadge: short(to), at,
-        zgRequestId: check?.requestId ?? "", hcs: log && sequence ? `${log.topicId}#${sequence}` : "", photoSha256, reason, geo, photo: photoRef,
+        zgRequestId: check?.requestId ?? "", hcs: log && sequence ? `${log.topicId}#${sequence}` : "", photoSha256, reason, geo, photo: photoRef, zgLog,
       });
     } catch (e) { console.error("arkiv", e); }
     if (willPay) {

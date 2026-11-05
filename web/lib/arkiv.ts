@@ -41,6 +41,7 @@ export const Handoffs = defineSchema("daak.handoff", {
   reason: bytes(),
   geo: str().optional(), // "lat,lng,accuracyM" where the handoff happened
   photo: bytes().optional(), // the Swarm reference of the lid photo, sealed with AES-GCM
+  zgLog: str().optional(), // root hash of the decision record on 0G Storage
 });
 
 /** A driver's own choices, newest wins. */
@@ -125,24 +126,24 @@ export async function recentConsignments() {
 
 export type HandoffRow = {
   key: string; code: string; hop: number; verdict: string; place: string; fromBadge: string; toBadge: string;
-  at: number; zgRequestId: string; hcs: string; photoSha256: string; reason: string; geo?: string; photo?: string;
+  at: number; zgRequestId: string; hcs: string; photoSha256: string; reason: string; geo?: string; photo?: string; zgLog?: string;
 };
 
 export async function writeHandoff(h: Omit<HandoffRow, "key">) {
   return keyOf(await arkivWrite().createEntity(
     Handoffs,
-    { ...h, reason: enc(h.reason), hop: i32(h.hop), at: u64(BigInt(h.at)), geo: h.geo ?? "", photo: enc(h.photo ?? "") },
+    { ...h, reason: enc(h.reason), hop: i32(h.hop), at: u64(BigInt(h.at)), geo: h.geo ?? "", photo: enc(h.photo ?? ""), zgLog: h.zgLog ?? "" },
     { expiration: ExpirationTime.fromDays(1) },
   ));
 }
 
 export async function handoffsFor(code: string): Promise<HandoffRow[]> {
   const r = await arkivRead()
-    .select({ $key: true, code: true, hop: true, verdict: true, place: true, fromBadge: true, toBadge: true, at: true, zgRequestId: true, hcs: true, photoSha256: true, reason: true, geo: true, photo: true })
+    .select({ $key: true, code: true, hop: true, verdict: true, place: true, fromBadge: true, toBadge: true, at: true, zgRequestId: true, hcs: true, photoSha256: true, reason: true, geo: true, photo: true, zgLog: true })
     .from(Handoffs).where(and(eq("code", code))).ownedBy(owner()).orderBy(desc("at")).limit(50).fetch();
   return r.entities.map((e) => ({
     key: String(e.$key), code: e.code.value, hop: Number(e.hop.value), verdict: e.verdict.value, place: e.place.value,
     fromBadge: e.fromBadge.value, toBadge: e.toBadge.value, at: Number(e.at.value), zgRequestId: e.zgRequestId.value,
-    hcs: e.hcs.value, photoSha256: e.photoSha256.value, reason: dec(e.reason.value), geo: e.geo?.value || undefined, photo: e.photo ? dec(e.photo.value) || undefined : undefined,
+    hcs: e.hcs.value, photoSha256: e.photoSha256.value, reason: dec(e.reason.value), geo: e.geo?.value || undefined, photo: e.photo ? dec(e.photo.value) || undefined : undefined, zgLog: e.zgLog?.value || undefined,
   }));
 }
