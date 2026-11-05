@@ -14,6 +14,16 @@ import type { Leg } from "./arkiv";
 export async function agentBook(baseUrl: string, body: { parcel: string; label: string; feeRupees?: number; route: Leg[] }) {
   const agentId = await accountFor("sender-agent");
   const bal = await (await fetch(`https://testnet.mirrornode.hedera.com/api/v1/accounts/${agentId}`, { cache: "no-store" })).json();
+  // The agent keeps a small float: HBAR for network fees, and testnet USDC when bookings settle in USDC.
+  if (process.env.X402_ASSET === "0.0.429274") {
+    const usdc = (bal.balance.tokens ?? []).find((t: { token_id: string }) => t.token_id === "0.0.429274")?.balance ?? 0;
+    if (usdc < 3_000_000) {
+      const top = await new TransferTransaction()
+        .addTokenTransfer("0.0.429274", env.hederaOperatorId(), -10_000_000).addTokenTransfer("0.0.429274", agentId, 10_000_000)
+        .setTransactionMemo("Daak: USDC float for the sender agent").execute(hedera());
+      await top.getReceipt(hedera());
+    }
+  }
   if (bal.balance.balance < 3e8) {
     const top = await new TransferTransaction()
       .addHbarTransfer(env.hederaOperatorId(), new Hbar(-5)).addHbarTransfer(agentId, new Hbar(5))
@@ -23,7 +33,14 @@ export async function agentBook(baseUrl: string, body: { parcel: string; label: 
   const signer = createClientHederaSigner(agentId, keyFor("sender-agent"), { network: "hedera:testnet" });
   const pay = wrapFetchWithPaymentFromConfig(fetch, {
     schemes: [{ network: "hedera:testnet", client: new ExactHederaScheme(signer) }],
-    spendControls: { allowedAssets: [{ network: "hedera:testnet", asset: "0.0.0", maxAmountPerPayment: String(2 * 100_000_000) }] },
+    // Spending controls: HBAR up to 2 HBAR, or testnet USDC up to USD 3, per booking, and only ever to Daak.
+    spendControls: {
+      maxAmountPerPayment: "$3",
+      allowedAssets: [
+        { network: "hedera:testnet", asset: "0.0.0", maxAmountPerPayment: String(2 * 100_000_000) },
+        { network: "hedera:testnet", asset: "0.0.429274", maxAmountPerPayment: "3000000" },
+      ],
+    },
     policies: [(_v, reqs) => reqs.filter((r) => r.payTo === env.hederaOperatorId())],
   });
   const res = await pay(`${baseUrl}/api/book`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });

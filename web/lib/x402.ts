@@ -10,5 +10,9 @@ export const x402Server = new x402ResourceServer(new HTTPFacilitatorClient({ url
   new ExactHederaScheme({ defaultAssets: { "hedera:testnet": { asset: "0.0.429274", decimals: 6 } } }),
 );
 
-/** A booking costs 1 HBAR on testnet; the sender's software pays it with no human in the loop. */
-export const BOOKING_PRICE = { asset: "0.0.0", amount: String(1 * 100_000_000) };
+/**
+ * What a booking costs over x402. Default: 1 HBAR (tinybars). Set X402_ASSET=0.0.429274 (Circle's testnet USDC)
+ * and X402_AMOUNT in micro-USDC (2150000 = USD 2.15, about the Rs 180 meter fee) to settle in a stablecoin.
+ */
+export const X402_ASSET = process.env.X402_ASSET ?? "0.0.0";
+export const BOOKING_PRICE = { asset: X402_ASSET, amount: process.env.X402_AMOUNT ?? (X402_ASSET === "0.0.0" ? String(1 * 100_000_000) : "2150000") };
