@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { checkParcel, type Check } from "@/lib/zg";
 import { logHandoff } from "@/lib/hedera";
+import { releaseFee, hashscan } from "@/lib/payout";
 import { consignmentByParcel, handoffsFor, writeHandoff } from "@/lib/arkiv";
 
 /** Metres between two points on the earth. */
@@ -86,13 +87,27 @@ export async function POST(req: Request) {
     errors.push(`Arkiv: ${(e as Error).message.slice(0, 160)}`);
   }
 
+  // The last hop passing the check is the delivery: escrow signs and the scheduled payout runs.
+  let payout: { releaseTx: string; url: string } | undefined;
+  const lastLeg = leg.hop === Math.max(...c.route.map((l) => l.hop));
+  const clean = past.every((h) => h.verdict === "green");
+  if (lastLeg && verdict === "green" && clean && c.schedule) {
+    try {
+      const r = await releaseFee(c.schedule);
+      payout = { ...r, url: hashscan("transaction", r.releaseTx) };
+    } catch (e) {
+      errors.push(`Payout: ${(e as Error).message.slice(0, 160)}`);
+    }
+  }
+
   const message =
-    verdict === "green" ? `Saunp diya. ${leg.place} tak. Payment jaari.`
+    payout ? `Delivery poori. Sab drivers ko payment ho gaya.`
+    : verdict === "green" ? `Saunp diya. ${leg.place} tak. Payment jaari.`
     : verdict === "held" ? `Payment roka gaya. ${reason}`
     : "AI jaanch nahi ho payi. Handoff save hai, payment jaanch tak ruka hai.";
   return NextResponse.json({
     verdict, message, code: c.code, hop: leg.hop, reason,
-    proofs: { zg: check && { requestId: check.requestId, verified: check.verified, model: check.model }, hcs, arkiv },
+    proofs: { zg: check && { requestId: check.requestId, verified: check.verified, model: check.model }, hcs, arkiv, payout },
     errors,
   });
 }
