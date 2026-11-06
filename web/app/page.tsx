@@ -10,6 +10,7 @@ import { JourneyCaption, JourneyRoad, JourneySteps, useJourney } from "@/compone
 import { MorphStory } from "@/components/landing/morph-story";
 import { Architecture } from "@/components/landing/architecture";
 import { PhoneFrame } from "@/components/phone-frame";
+import { Market } from "@/components/landing/market";
 
 // WebGL, so it only runs in the browser.
 const Dither = dynamic(() => import("@/components/dither"), { ssr: false });
@@ -165,6 +166,14 @@ export default function Landing() {
             <p className="text-lg text-soft-ink">KNP-1204, Kanpur to Gorakhpur, 359 km on two buses.</p>
           </div>
           <MoneyBar />
+        </section>
+
+        <section aria-labelledby="market" className="border-t border-rule py-24 sm:py-32">
+          <div className="mb-14 flex flex-col gap-3">
+            <h2 id="market" className="font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">State buses already carry parcels for money.</h2>
+            <p className="text-lg text-soft-ink">In the transport corporations' own numbers, with a link to each.</p>
+          </div>
+          <Market />
         </section>
 
         <section aria-labelledby="stack" className="border-t border-rule py-24 sm:py-32">

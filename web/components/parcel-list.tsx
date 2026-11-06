@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { when } from "@/lib/ui";
+import { Loader } from "@/components/loader";
 
 export type ParcelSummary = {
   code: string; label: string; createdAt: number; feeRupees: number; km: number; weight: string;
@@ -75,7 +76,7 @@ export function ParcelList({ endpoint, hrefFor, tabs, queryKey, refetchMs, onCha
         <div className="hidden grid-cols-[8rem_minmax(0,1fr)_20rem_4rem_6rem_9rem] gap-4 border-b border-rule px-2 py-2 text-xs font-semibold text-muted-ink lg:grid">
           <span>Code</span><span>Parcel</span><span>Status</span><span className="text-right">Stops</span><span className="text-right">Fee</span><span className="text-right">Booked</span>
         </div>
-        {isLoading && <p className="px-4 py-6 text-muted-ink">Reading Arkiv and the Hedera log...</p>}
+        {isLoading && <Loader label="Reading Arkiv and the Hedera log" className="min-h-[45svh]" />}
         {isError && <p className="px-4 py-6 text-held">Could not load the parcels. Refresh to try again.</p>}
         {data && !data.rows.length && <p className="px-4 py-6 text-muted-ink">{q ? `Nothing matches "${q}".` : "No parcels here."}</p>}
         <ul className={`divide-y divide-rule transition-opacity ${isFetching && !isLoading ? "opacity-60" : ""}`}>

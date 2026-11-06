@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DaakMark } from "@/components/daak-mark";
+import { Gather } from "loading-dev";
 
 type Proposal = { action: "approve" | "recheck" | "pay_anyway" | "refund"; code: string; why: string };
 type Reply = { answer: string; proposals: Proposal[]; toolsUsed: string[] };
@@ -127,7 +128,7 @@ export function AssistantChat() {
               )}
             </div>
           ))}
-          {askIt.isPending && <p className="self-start rounded-lg bg-paper px-3 py-2 text-muted-ink">Checking Daak&apos;s records and Hedera...</p>}
+          {askIt.isPending && <div role="status" className="self-start rounded-lg bg-paper px-4 py-3"><Gather size={18} className="text-gold" /><span className="sr-only">Checking Daak&apos;s records and Hedera</span></div>}
           <div ref={end} />
         </div>
 

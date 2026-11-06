@@ -7,6 +7,7 @@ import { arkivEntity, clock, isLate, when, type HandoffView, type LegView } from
 import { ProofButton } from "@/components/site-nav";
 import { DaakMark } from "@/components/daak-mark";
 import { RouteMap, type RouteMapData } from "@/components/route-map";
+import { Loader } from "@/components/loader";
 
 type Track = { code: string; label: string; feeRupees: number; route: (LegView & { etaAt?: number | null })[]; handoffs: HandoffView[]; map: RouteMapData | null };
 
@@ -30,7 +31,7 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
     },
   });
 
-  if (isLoading) return <main className="w-full px-5 py-10 sm:px-8 lg:px-16 xl:px-20 text-muted-ink">Loading parcel {code}...</main>;
+  if (isLoading) return <Loader label={`Loading parcel ${code}`} className="min-h-svh" />;
   if (isError || !data) {
     return (
       <main className="w-full px-5 py-10 sm:px-8 lg:px-16 xl:px-20">

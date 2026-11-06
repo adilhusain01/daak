@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Busy } from "@/components/loader";
 
 type O = { id: string; sender: string; receiver: string; drivers: string[]; daysText: string; active: boolean; lastRun: string | null; lastCode: string | null };
 
@@ -43,7 +44,7 @@ export function StandingPanel() {
           <p className="mt-1 text-sm text-soft-ink">Booked and paid by each shop&apos;s agent at 4 am. The shop taps that day&apos;s parcel to attach it.</p>
         </div>
         <Button className="rounded-lg bg-ink text-paper shadow-[var(--shadow-key)] active:translate-y-px" disabled={run.isPending} onClick={() => run.mutate()}>
-          {run.isPending ? "Booking..." : "Book today's now"}
+          <Busy busy={run.isPending}>Book today&apos;s now</Busy>
         </Button>
       </div>
       <ul className="mt-3 flex flex-col gap-2">

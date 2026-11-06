@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SiteNav, ProofButton, Page } from "@/components/site-nav";
 import { RouteSteps, PayBar, type StopState } from "@/components/route-steps";
 import { arkivEntity, clock, hashscanTopic, isLate, when } from "@/lib/ui";
+import { Loader } from "@/components/loader";
 
 type H = { key: string; hop: number; verdict: string; place: string; at: number; reason: string; hcs: string; zgRequestId: string };
 type M = { hop: number; km: number; pct: number | null; advanceRupees: number; heldRupees: number | null; tx: string | null; answer: string | null };
@@ -46,7 +47,7 @@ function LiveParcel() {
     <Page>
       <SiteNav />
       <Link href="/live" className="mb-8 inline-flex text-sm font-semibold text-soft-ink hover:text-ink">← All deliveries</Link>
-      {isLoading && <p className="text-muted-ink">Reading {code} from Arkiv and the Hedera log...</p>}
+      {isLoading && <Loader label={`Reading ${code} from Arkiv and the Hedera log`} />}
       {isError && <p className="text-held">No delivery with the code {code}.</p>}
       {d && s && (
         <div className="flex flex-col gap-14">

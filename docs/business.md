@@ -70,7 +70,13 @@ The consistency argument: standing orders make the daily count predictable, so e
 
 - Part truckload, the relay-shaped freight where goods change hands, about USD 23.3 billion in India in 2025, 9.7% a year (MarkNtel, Report Cubes).
 - Courier, express and parcel USD 8.6 to 16.9 billion in 2025 by source (Mordor, IMARC, Expert Market Research).
-- Nobody measures parcels carried on buses: that slice has no records, which is the point.
+- State buses already sell parcel space, in the corporations' own numbers (on the landing page, each with its link):
+  - Andhra Pradesh (APSRTC): 31,000 parcels and Rs 60 lakh of parcel revenue a day, over 8 lakh parcels a month, against a Rs 500 crore parcel target for 2024-25 (The Hans India, 21 Dec 2024). About Rs 219 crore a year at that daily rate (our arithmetic).
+  - Telangana (TSRTC Logistics): about Rs 90 crore in 2022 (Telangana Today); Rs 123 crore and 79.02 lakh bookings in its first two years, 455 parcel centres (The Hans India, 29 Jun 2022).
+  - Maharashtra (MSRTC): goods transport on ST buses Rs 47.38 crore (2020-21), Rs 43.95 crore (2021-22), Rs 31.16 crore (2022-23), from an RTI reply (The Hitavada, 31 Jul 2023).
+  - Uttar Pradesh (UPSRTC), its own tender for courier and parcel rights (notice 82, 6 Apr 2022): 12,000+ buses, about 60 crore passengers a year, 115 depots; a reserve price of Rs 3 crore a year plus a revenue share; 4,944 cubic metres of parcel space allotted across 11,310 buses, up to 150 kg on each ordinary bus; about 38 crore bus-km a quarter.
+  - All India: 1,47,032 buses on 58 state transport undertakings in 2021-22; 617 lakh passengers a day in 2019-20 (MoRTH, Review of the Performance of SRTUs 2019-20 to 2021-22).
+- Nobody measures the parcels drivers carry informally on these buses, or the handoffs between them: that slice has no records, which is the point.
 - Comparables in 2026: Porter about USD 1.2 billion; BlackBuck about ₹10,000 crore market cap, valued for owning the trucker relationship.
 
 ## The map

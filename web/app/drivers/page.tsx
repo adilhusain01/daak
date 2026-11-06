@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { SiteNav, Page, PageHead } from "@/components/site-nav";
+import { Loader } from "@/components/loader";
 
 type Driver = {
   id: string; name: string; vehicle: string; proven: number; held: number; km: number;
@@ -52,7 +53,7 @@ export default function Drivers() {
         <p className="text-sm text-muted-ink sm:col-span-3">Paid when the next person confirms the handover. The rest follows on delivery. A clean record also unlocks a fuel advance of 25% of the last 30 days, up to ₹5,000.</p>
       </section>
 
-      {isLoading && <p className="text-muted-ink">Reading the log...</p>}
+      {isLoading && <Loader label="Reading the log" className="min-h-[40svh]" />}
       <ol className="flex flex-col">
         {data?.drivers.map((d, i) => (
           <li key={d.id} className="border-b border-rule">

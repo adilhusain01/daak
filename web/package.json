@@ -27,6 +27,7 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.2",
     "ethers": "6.13.1",
+    "loading-dev": "^0.3.7",
     "lucide-react": "^1.69.0",
     "maplibre-gl": "^5.24.0",
     "next": "16.4.5",

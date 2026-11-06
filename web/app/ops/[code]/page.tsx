@@ -11,6 +11,7 @@ import { AssistantChat } from "@/components/assistant-panel";
 import { Suspense, useState } from "react";
 import { arkivEntity, clock, hashscanTopic, isLate, when, type HandoffView, type LegView } from "@/lib/ui";
 import { RouteSteps, PayBar, type StopState } from "@/components/route-steps";
+import { Busy, Loader } from "@/components/loader";
 
 type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number; advanceRupees: number; advancePct: number | null; heldRupees: number | null; answer: string | null };
 type Holdback = { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean };
@@ -92,7 +93,7 @@ function ParcelPage() {
     <main className="w-full px-5 py-8 sm:px-8 lg:px-16 xl:px-20">
       <SiteNav />
       <Link href="/ops" className="mb-8 inline-flex text-sm font-semibold text-soft-ink hover:text-ink">← All parcels</Link>
-      {isLoading && <p className="text-muted-ink">Reading {code} from Arkiv and the Hedera log...</p>}
+      {isLoading && <Loader label={`Reading ${code} from Arkiv and the Hedera log`} />}
       {isError && <p className="text-held">No parcel {code}, or the operator sign-in has expired.</p>}
       <div>
         {data && [data.parcel].map((r) => {
@@ -195,7 +196,7 @@ function ParcelPage() {
                 </div>
                 {!r.paidAt && [...byHop.values()].some((h) => h.verdict === "unchecked") && (
                   <Button variant="outline" className="rounded-lg border-ink shadow-[var(--shadow-key)] active:translate-y-px" disabled={recheck.isPending} onClick={() => recheck.mutate(r.code)}>
-                    {recheck.isPending && recheck.variables === r.code ? "Asking 0G..." : "Recheck with 0G"}
+                    <Busy busy={recheck.isPending && recheck.variables === r.code}>Recheck with 0G</Busy>
                   </Button>
                 )}
                 {!r.paidAt && [...byHop.values()].some((h) => h.verdict === "held") && (
@@ -223,7 +224,7 @@ function ParcelPage() {
                 )}
                 {reviewable && (
                   <Button className="rounded-lg bg-ink text-paper shadow-[var(--shadow-key)] active:translate-y-px" disabled={approve.isPending} onClick={() => approve.mutate(r.code)}>
-                    {approve.isPending && approve.variables === r.code ? "Paying..." : split ? "Approve and pay handed-over stops" : "Approve and pay drivers"}
+                    <Busy busy={approve.isPending && approve.variables === r.code}>{split ? "Approve and pay handed-over stops" : "Approve and pay drivers"}</Busy>
                   </Button>
                 )}
                 {claimOpen && (

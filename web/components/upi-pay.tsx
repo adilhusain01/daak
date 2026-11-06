@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/loader";
 
 type Target = { hop: number; account: string; name: string; vpa: string | null; rupees: number; utr: string | null };
 
@@ -29,7 +30,7 @@ export function UpiPay({ code }: { code: string }) {
     onSuccess: () => { toast.success("UTR recorded on the public log"); qc.invalidateQueries({ queryKey: ["upi", code] }); },
     onError: (e) => toast.error((e as Error).message),
   });
-  if (!data) return <p className="text-sm text-muted-ink">Loading drivers...</p>;
+  if (!data) return <Loader label="Loading drivers" className="min-h-32" />;
   return (
     <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
       {data.drivers.map((d) => (

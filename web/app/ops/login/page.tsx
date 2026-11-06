@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DaakMark } from "@/components/daak-mark";
+import { Busy } from "@/components/loader";
 
 /** The operator signs in once on this device; the passcode lives in the team's secrets, never in the page. */
 export default function Login() {
@@ -30,7 +31,7 @@ export default function Login() {
         <input id="passcode" type="password" autoComplete="current-password" value={code} onChange={(e) => setCode(e.target.value)}
           className="rounded-[10px] bg-card-paper px-4 py-3 text-lg shadow-[inset_0_0_0_1.5px_var(--color-rule)] outline-none focus-visible:shadow-[inset_0_0_0_1.5px_var(--color-ink)]" />
         {error && <p className="text-sm text-held" role="alert">{error}</p>}
-        <Button type="submit" disabled={busy || !code} className="h-12 rounded-[10px] bg-ink text-base font-bold text-paper shadow-[var(--shadow-key)] active:translate-y-px">{busy ? "Checking..." : "Sign in"}</Button>
+        <Button type="submit" disabled={busy || !code} className="h-12 rounded-[10px] bg-ink text-base font-bold text-paper shadow-[var(--shadow-key)] active:translate-y-px"><Busy busy={busy}>Sign in</Busy></Button>
       </form>
     </main>
   );

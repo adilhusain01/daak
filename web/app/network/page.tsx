@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as MlMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { SiteNav, PageHead } from "@/components/site-nav";
+import { Gather } from "loading-dev";
 
 type Data = {
   source: { postOffices: string; busStations: string };
@@ -119,7 +120,7 @@ export default function NetworkMap() {
           [net ? `${net.legs.reduce((s, l) => s + l.km, 0)} km` : "...", "of Daak corridor live"],
         ].map(([n, label]) => (
           <div key={label}>
-            <p className="font-display text-4xl font-medium tabular-nums leading-none sm:text-5xl">{n}</p>
+            <p className="font-display text-4xl font-medium tabular-nums leading-none sm:text-5xl">{n === "..." ? <span className="inline-grid h-[1em] place-items-center"><Gather size={28} className="text-gold" /><span className="sr-only">Loading</span></span> : n}</p>
             <p className="mt-2 text-soft-ink">{label}</p>
           </div>
         ))}

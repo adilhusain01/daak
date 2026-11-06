@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ProofButton } from "@/components/site-nav";
 import { when } from "@/lib/ui";
 import { useState } from "react";
+import { Busy } from "@/components/loader";
 
 type Reading = {
   read: { docType: string; name: string; last4: string; vehicleClasses: string };
@@ -58,7 +59,7 @@ export function KycReview() {
             <div className="flex flex-wrap gap-2">
               <ProofButton href={`/api/kyc/${encodeURIComponent(d.uid)}`}>View ID photo</ProofButton>
               <Button variant="outline" className="rounded-lg shadow-[var(--shadow-key)] active:translate-y-px" disabled={read.isPending} onClick={() => read.mutate(d.uid)}>
-                {read.isPending && read.variables === d.uid ? "Reading…" : "Ask 0G to read it"}
+                <Busy busy={read.isPending && read.variables === d.uid}>Ask 0G to read it</Busy>
               </Button>
               <Button className="rounded-lg bg-ok text-paper shadow-[var(--shadow-key)] active:translate-y-px" disabled={decide.isPending} onClick={() => decide.mutate({ uid: d.uid, status: "verified" })}>Verify</Button>
               <Button variant="outline" className="rounded-lg border-held text-held shadow-[var(--shadow-key)] active:translate-y-px" disabled={decide.isPending} onClick={() => decide.mutate({ uid: d.uid, status: "rejected" })}>Reject</Button>
