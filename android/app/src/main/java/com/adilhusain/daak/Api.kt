@@ -130,7 +130,7 @@ object Api {
     }
 
     /** Daak's Google web client id; Google issues the ID token for it and the server checks it. Public. */
-    const val GOOGLE_CLIENT_ID = "473227099187-dqh7tnrudf6fma4h03sqr5gpucj90obj.apps.googleusercontent.com"
+    const val GOOGLE_CLIENT_ID = "473227099187-pua5v04qh0huu4l7dgor7sgf2i9qrkm0.apps.googleusercontent.com"
 
     data class GoogleMe(val uid: String, val known: Boolean, val name: String, val role: String?, val vehicle: String?)
 
