@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +9,7 @@ import { SiteNav } from "@/components/site-nav";
 import { JourneyCaption, JourneyRoad, JourneySteps, useJourney } from "@/components/landing/journey-hero";
 import { MorphStory } from "@/components/landing/morph-story";
 import { Architecture } from "@/components/landing/architecture";
+import { PhoneFrame } from "@/components/phone-frame";
 
 // WebGL, so it only runs in the browser.
 const Dither = dynamic(() => import("@/components/dither"), { ssr: false });
@@ -28,10 +28,11 @@ const SPLIT = [
 const FEE = 22.14;
 const TOTAL = 206.64;
 
+/** Three screens from the driver's own phone (real captures from the app, 6 November). */
 const STEPS = [
-  { n: 1, title: "Tap the sticker", line: "The parcel's own NFC tag.", shot: { src: "/shots/jobs.webp", alt: "The Daak app's Jobs tab with the parcels a driver carries", w: 520, h: 617 } },
-  { n: 2, title: "Tap the badge", line: "The next person's card, or their code.", shot: { src: "/shots/handover.webp", alt: "The Hand over screen: tap the parcel, tap the other person's badge, photo of the lid", w: 520, h: 535 } },
-  { n: 3, title: "Photograph the lid", line: "Signed by the phone, checked by 0G.", shot: { src: "/shots/parcel.webp", alt: "KNP-1204 in the app: three stops checked and handed over, and the pay at each one", w: 520, h: 864 } },
+  { n: 1, title: "The job arrives", line: "Stretch, bus and pay, before it leaves.", shot: { src: "/shots/app-jobs.webp", alt: "Daak's Jobs tab: new jobs from Kanpur to Lucknow, 87 km, ₹44.71 with half at the handover, bus at 09:00, each with Accept and Decline" } },
+  { n: 2, title: "Tap, tap, photo", line: "Sticker, badge, lid. The phone signs it.", shot: { src: "/shots/app-handover.webp", alt: "Daak's Hand over screen: tap the parcel, scan the other person's code or tap their badge, photo of the lid" } },
+  { n: 3, title: "Proven, then paid", line: "0G checks the lid. Half the pay lands at once.", shot: { src: "/shots/app-paid.webp", alt: "KNP-1204 in the app: delivered, drivers paid in full, each stop checked by 0G, and ₹22.35 paid at the Lucknow handover" } },
 ];
 
 const RECEIPTS: [string, string, string][] = [
@@ -152,9 +153,7 @@ export default function Landing() {
                     <p className="text-soft-ink">{x.line}</p>
                   </div>
                 </div>
-                <div className="mx-auto w-full max-w-[260px] overflow-hidden rounded-[1.75rem] border-[8px] border-ink bg-paper">
-                  <Image src={x.shot.src} alt={x.shot.alt} width={x.shot.w} height={x.shot.h} className="h-auto w-full" />
-                </div>
+                <PhoneFrame src={x.shot.src} alt={x.shot.alt} className="mt-4" />
               </li>
             ))}
           </ol>

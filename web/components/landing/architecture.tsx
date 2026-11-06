@@ -55,7 +55,7 @@ const FLOWS: { id: string; label: string; who: string; steps: Step[] }[] = [
   },
 ];
 
-const W = 1200, HEAD = 96, ROW = 52, LEFT = 70;
+const W = 1200, HEAD = 96, ROW = 60, LEFT = 70;
 const laneX = (id: Lane) => LEFT + (LANES.findIndex((l) => l.id === id) + 0.5) * ((W - LEFT) / LANES.length);
 const STEP_MS = 1100;
 
@@ -143,8 +143,10 @@ export function Architecture() {
               <path d={`M${tipX} ${tipY} l${-8 * dir} -5 v10 z`} className={`${state === "now" ? "fill-gold" : state === "past" ? "fill-ink/70" : "fill-rule"} transition-colors duration-300`} />
               <circle cx={a} cy={self ? y - 6 : y} r={4} className={state === "next" ? "fill-rule" : "fill-ink"} />
               <text x={lx} y={y - 9} className={`font-sans font-semibold transition-colors duration-300 ${state === "next" ? "fill-muted-ink/70" : "fill-ink"}`} fontSize={14} paintOrder="stroke" stroke="var(--color-paper)" strokeWidth={5} strokeLinejoin="round">
-                {s.text} <tspan className="font-mono font-normal fill-muted-ink" fontSize={12}>{s.tech}</tspan>
+                {s.text}
               </text>
+              {/* The platform sits under the arrow, apart from the words above it. */}
+              <text x={lx} y={y + 19} className={`font-mono transition-colors duration-300 ${state === "now" ? "fill-gold-deep" : state === "past" ? "fill-soft-ink" : "fill-muted-ink/60"}`} fontSize={12} paintOrder="stroke" stroke="var(--color-paper)" strokeWidth={5} strokeLinejoin="round">{s.tech}</text>
               {state === "now" && !reduced && (
                 <circle r={5} className="fill-gold">
                   <animateMotion key={`${flow}-${i}-${at}`} dur={`${STEP_MS * 0.8}ms`} fill="freeze" path={d} />
