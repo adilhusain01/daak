@@ -31,7 +31,7 @@ Rules that shape it: 2 to 4 minutes (0G wants under 3), at least 720p, recorded 
 3. 2:45 to 3:30, the business, one slide: daily B2B on one corridor first (dairy, flowers, bakery), Rs 22.14 booking fee on a Rs 184.50 parcel plus 2% of every payout, the funnel through bus booking offices, then courier franchises.
 4. 3:30 to 4:00, the ask and the close: a pilot on one UP corridor with five senders; "Porter, but for the buses that already run".
 
-Slides, at most four bullets each: problem, how it works (one diagram), business, ask.
+Slides, at most four bullets each: problem, how it works (one diagram), business, ask. Built: https://daak-ethglobal.vercel.app/pitch (arrow keys or a click move on, F is full screen) and `docs/pitch.pdf` (1920 by 1080, one slide a page).
 
 ## Questions to prepare
 
