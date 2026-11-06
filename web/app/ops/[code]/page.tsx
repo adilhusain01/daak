@@ -141,7 +141,7 @@ function ParcelPage() {
                         {(l.km ?? 0) > 0 && <p className="font-mono text-soft-ink">₹{share}</p>}
                       </div>
                       {m && m.advanceRupees > 0 && <PayBar now={m.advanceRupees} held={m.heldRupees ?? 0} label={`${m.advancePct}% at handover`} />}
-                      {(l.km ?? 0) > 0 && <p className={m?.answer === "accept" ? "text-ok" : m?.answer === "decline" ? "text-held" : "text-muted-ink"}>{m?.answer === "accept" ? "Driver accepted the job" : m?.answer === "decline" ? "Driver declined the job" : "Waiting for the driver to accept"}</p>}
+                      {(l.km ?? 0) > 0 && (m?.answer || !h) && <p className={m?.answer === "accept" ? "text-ok" : m?.answer === "decline" ? "text-held" : "text-muted-ink"}>{m?.answer === "accept" ? "Driver accepted the job" : m?.answer === "decline" ? "Driver declined the job" : "Waiting for the driver to accept"}</p>}
                       {h?.reason && <p className="text-soft-ink">{h.reason}</p>}
                       {h && (
                         <span className="flex flex-wrap items-center gap-2">

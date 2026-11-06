@@ -26,7 +26,7 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
     queryKey: ["track", code],
     queryFn: async () => {
       const r = await fetch(`/api/track/${code}`);
-      if (!r.ok) throw new Error("not found");
+      if (!r.ok) throw new Error(String(r.status));
       return r.json();
     },
   });

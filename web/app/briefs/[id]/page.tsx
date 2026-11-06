@@ -71,11 +71,11 @@ function Setup() {
 
 export default async function BriefPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (id === "setup") return <main className="brief mx-auto w-full max-w-[820px] bg-paper px-10 py-10 text-ink"><Setup /><Print /></main>;
+  if (id === "setup") return <main className="brief mx-auto w-full max-w-[820px] bg-paper px-5 py-10 text-ink sm:px-10 [&_td]:[overflow-wrap:anywhere]"><Setup /><Print /></main>;
   const b = BRIEFS.find((x) => x.id === id);
   if (!b) notFound();
   return (
-    <main className="brief mx-auto w-full max-w-[820px] bg-paper px-10 py-10 text-ink">
+    <main className="brief mx-auto w-full max-w-[820px] bg-paper px-5 py-10 text-ink sm:px-10 [&_td]:[overflow-wrap:anywhere]">
       <Head kicker={`Daak and ${b.partner}: the tracks we enter, and what is built`} title={b.title} logo={b.logo} logoText={b.logoText} />
 
       <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-[1fr_15rem]">
