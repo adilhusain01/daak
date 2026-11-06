@@ -12,7 +12,7 @@ import { Loader } from "@/components/loader";
 type H = { key: string; hop: number; verdict: string; place: string; at: number; reason: string; hcs: string; zgRequestId: string };
 type M = { hop: number; km: number; pct: number | null; advanceRupees: number; heldRupees: number | null; tx: string | null; answer: string | null };
 type D = {
-  code: string; label: string; createdAt: number; feeRupees: number; weight: string; km: number;
+  code: string; label: string; createdAt: number; feeRupees: number; paidRupees: number; weight: string; km: number;
   route: { hop: number; place: string; km: number; departsAt: number | null; etaAt: number | null }[]; handoffs: H[]; money: M[];
   holdback: { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean } | null;
 };
@@ -58,7 +58,7 @@ function LiveParcel() {
             </div>
             <div className="flex flex-col gap-1 lg:items-end">
               <p className={`font-display text-2xl font-semibold ${s.tone}`}>{s.text}</p>
-              <p className="font-mono text-sm text-muted-ink">₹{d.feeRupees.toFixed(2)} · {d.km} km · {d.weight} · {when(d.createdAt)}</p>
+              <p className="font-mono text-sm text-muted-ink">₹{d.paidRupees.toFixed(2)} paid · {d.km} km · {d.weight} · {when(d.createdAt)}</p>
             </div>
           </header>
 

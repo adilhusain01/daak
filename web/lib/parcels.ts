@@ -105,9 +105,9 @@ export async function operatorDetail(c: ConsignmentRow, log?: LogMsg[]) {
   if (isSplit(c)) {
     const holdback = await holdbackStatus(c.code, log);
     const scheduledAt = log.find((m) => m.t === "daak.holdback" && m.code === c.code)?.ts ?? null;
-    return { ...c, km, meter, handoffs, money, holdback, paidAt: holdback && !holdback.deleted ? scheduledAt : null };
+    return { ...c, paidRupees: paidFor(c.feeRupees), km, meter, handoffs, money, holdback, paidAt: holdback && !holdback.deleted ? scheduledAt : null };
   }
-  return { ...c, km, meter, handoffs, money, holdback: null, paidAt: await paidAt(c.schedule) };
+  return { ...c, paidRupees: paidFor(c.feeRupees), km, meter, handoffs, money, holdback: null, paidAt: await paidAt(c.schedule) };
 }
 
 /** The public view of one parcel: no photos, badges, phone, UPI or bank details. */

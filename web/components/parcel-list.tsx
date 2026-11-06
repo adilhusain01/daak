@@ -8,7 +8,7 @@ import { when } from "@/lib/ui";
 import { Loader } from "@/components/loader";
 
 export type ParcelSummary = {
-  code: string; label: string; createdAt: number; feeRupees: number; km: number; weight: string;
+  code: string; label: string; createdAt: number; feeRupees: number; paidRupees: number; km: number; weight: string;
   stops: number; handed: number; status: { key: string; text: string }; needsYou?: boolean;
 };
 export type Chain = { topicId?: string; feeTokenId?: string; escrowId?: string };
@@ -94,7 +94,7 @@ export function ParcelList({ endpoint, hrefFor, tabs, queryKey, refetchMs, onCha
                 <span className="flex items-center justify-end gap-1" role="img" aria-label={`${r.handed} of ${r.stops} stops handed over`}>
                   {Array.from({ length: r.stops }, (_, i) => <span key={i} className={`size-2.5 rounded-[2px] ${i < r.handed ? (r.status.key === "held" ? "bg-held" : "bg-gold") : "bg-tray shadow-[inset_0_0_0_1px_var(--color-rule)]"}`} />)}
                 </span>
-                <span className="col-span-2 text-sm tabular-nums text-muted-ink lg:col-span-1 lg:text-right lg:text-ink">₹{r.feeRupees.toFixed(2)}<span className="lg:hidden"> · {r.km} km · {r.weight}</span></span>
+                <span className="col-span-2 text-sm tabular-nums text-muted-ink lg:col-span-1 lg:text-right lg:text-ink">₹{r.paidRupees.toFixed(2)}<span className="lg:hidden"> · {r.km} km · {r.weight}</span></span>
               </Link>
             </li>
           ))}

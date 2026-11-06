@@ -17,7 +17,7 @@ import { recheckable } from "@/lib/rules";
 type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number; advanceRupees: number; advancePct: number | null; heldRupees: number | null; answer: string | null };
 type Holdback = { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean };
 type Row = {
-  code: string; label: string; feeRupees: number; createdAt: number; schedule?: string; paidAt: number | null; km: number; meter: string; money: Money[]; holdback: Holdback | null;
+  code: string; label: string; feeRupees: number; paidRupees: number; createdAt: number; schedule?: string; paidAt: number | null; km: number; meter: string; money: Money[]; holdback: Holdback | null;
   route: (LegView & { from: string; to: string; advancePct?: number; departsAt?: number; etaAt?: number })[]; handoffs: HandoffView[];
 };
 type Data = { chain: { topicId?: string; feeTokenId?: string; escrowId?: string }; parcel: Row };
@@ -115,7 +115,8 @@ function ParcelPage() {
                 </div>
                 <div className="flex flex-col sm:items-end">
                   <span className={`font-display text-2xl font-semibold ${s.tone}`}>{s.text}</span>
-                  <span className="font-mono text-sm text-muted-ink">₹{r.feeRupees.toFixed(2)} · {totalKm} km · meter {r.meter} · {when(r.createdAt)}</span>
+                  <span className="font-mono text-sm text-muted-ink">Shop paid ₹{r.paidRupees.toFixed(2)} · drivers ₹{r.feeRupees.toFixed(2)} · Daak ₹{(r.paidRupees - r.feeRupees).toFixed(2)}</span>
+                  <span className="font-mono text-sm text-muted-ink">{totalKm} km · meter {r.meter} · {when(r.createdAt)}</span>
                 </div>
               </div>
 
