@@ -400,6 +400,12 @@ class MainActivity : ComponentActivity() {
         thread { val b = runCatching { Api.shopBalance(uid) }.getOrNull(); runOnUiThread { shopBal = b } }
     }
 
+    /** Opens the parcel's tracking page, with its route on the map, in the phone's browser. */
+    private fun openMap(code: String) {
+        runCatching { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("${Api.base}/track/$code"))) }
+            .onFailure { note = "No browser found to open the map." }
+    }
+
     /** Opens the phone's UPI app (GPay, PhonePe, Paytm) to pay Daak; the operator credits it once the payment shows. */
     private fun payByUpi(rupees: Int) {
         val upi = shopBal?.upiId ?: run { note = "Ask Daak for its UPI ID to top up."; return }
@@ -836,6 +842,7 @@ class MainActivity : ComponentActivity() {
             else -> Verdict(Tokens.amber, "दर्ज हुआ, जाँच बाकी", "Recorded, waiting for the check", "The AI check could not run just now. The handoff is recorded and the payment waits; it is checked again automatically.")
         }
         v.code?.let { Body("$it${v.hop?.let { h -> " · handoff $h" } ?: ""}", Tokens.muted, 15) }
+        v.code?.let { code -> Secondary("मैप पर देखें · See it on the map") { openMap(code) } }
         Action("अगला पार्सल", "Next parcel") { screen = Screen.Handoff() }
     }
 
@@ -899,6 +906,7 @@ class MainActivity : ComponentActivity() {
             }
             Step(2, "पार्सल दोबारा लगाइए", "Tap the parcel again to attach its tracking link", if (s.written && s.problem == null) "Link attached" else null, !s.written)
             if (s.written) Sheet { Bi("अब ड्राइवर को सौंपिए", "Next: when the driver comes, tap this parcel and the driver's badge to hand it over.", size = 18) }
+            Secondary("मैप पर देखें · See the route on the map") { openMap(b.code) }
             if (s.receiver != null && s.drivers.isNotEmpty()) {
                 if (s.dailySaved) Body("रोज़ जाएगा · Repeats Monday to Saturday. Daak books and pays it at 4 am; you only tap that day's parcel.", Tokens.green, 16, FontWeight.SemiBold)
                 else Secondary(if (s.dailyBusy) "Saving…" else "हर दिन भेजें · Send this every day (Mon to Sat)") { if (!s.dailyBusy) makeDaily(s) }
@@ -919,5 +927,6 @@ class MainActivity : ComponentActivity() {
             info.delivered -> Verdict(Tokens.green, "पहुँच गया", "Delivered", "${info.code} · ${info.label}")
             else -> Verdict(Tokens.ink, "रास्ते में", "On the way", "${info.code} · next: ${info.next?.fromName} to ${info.next?.toName} at ${info.next?.place}")
         }
+        info?.code?.let { code -> Secondary("मैप पर देखें · See it on the map") { openMap(code) } }
     }
 }
