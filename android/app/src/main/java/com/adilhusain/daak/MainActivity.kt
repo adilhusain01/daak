@@ -567,7 +567,9 @@ class MainActivity : ComponentActivity() {
         loadBalance()
         thread {
             val known = runCatching { Api.parcel(tap.uid) }.getOrNull()
-            val waiting = if (known?.registered == true) null else runCatching { Api.daily(me!!.uid) }.getOrNull()
+            // A sticker whose last parcel was delivered is free again: shops reuse tags, so it books like a new one.
+            val live = known?.registered == true && !known.delivered
+            val waiting = if (live) null else runCatching { Api.daily(me!!.uid) }.getOrNull()
             val receivers = runCatching { Api.receivers() }.getOrNull()
             runOnUiThread {
                 when {
@@ -577,15 +579,14 @@ class MainActivity : ComponentActivity() {
                         voice.buzz(false); voice.say("यह बैज है, पार्सल नहीं।")
                     }
                     waiting?.waitingCode != null -> { screen = Screen.Pack(parcel = tap, receivers = receivers, dailyCode = waiting.waitingCode, dailyTo = waiting.waitingReceiver); voice.buzz(); voice.say("आज का रोज़ का पार्सल बुक है। इसे जोड़िए।") }
-                    known?.registered == true && known.delivered -> { screen = Screen.Pack(problem = "${known.code} was already delivered. Use a new sticker for a new parcel."); voice.buzz(false) }
-                    known?.registered == true && known.code != null && tap.writable && tap.text != "${Api.base}/track/${known.code}" -> {
+                    live && known!!.code != null && tap.writable && tap.text != "${Api.base}/track/${known.code}" -> {
                         // Booked, but the sticker never got its tracking link: write it now, then the next tap starts the pickup.
                         val b = Booking(known.code, "${Api.base}/track/${known.code}", emptyList())
                         nfc.pendingWrite = b.trackUrl
                         screen = Screen.Pack(parcel = tap, booking = b)
                         voice.buzz(); voice.say("पार्सल दोबारा लगाइए।")
                     }
-                    known?.registered == true -> { startHandoff(tap) } // already booked: the shop's next job is the pickup handoff
+                    live -> { startHandoff(tap) } // already booked: the shop's next job is the pickup handoff
                     receivers == null -> { screen = Screen.Pack(problem = "इंटरनेट नहीं मिला। No internet; booking needs signal."); voice.buzz(false) }
                     receivers.isEmpty() -> { screen = Screen.Pack(problem = "No receivers have joined Daak yet. The receiving shop taps a new badge to join."); voice.buzz(false) }
                     else -> { screen = Screen.Pack(parcel = tap, receivers = receivers); voice.buzz(); voice.say("पार्सल किसे भेजना है, चुनिए।") }

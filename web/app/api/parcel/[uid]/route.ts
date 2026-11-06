@@ -2,7 +2,7 @@ import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { consignmentByParcel, handoffsFor, getBadge } from "@/lib/arkiv";
 import { badgeHash } from "@/lib/history";
-import { tappedPerson } from "@/lib/rules";
+import { tappedPerson, openLeg } from "@/lib/rules";
 
 /**
  * What the phone shows right after a parcel is tapped: which consignment it is and who should take it next.
@@ -15,8 +15,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
   // Not a parcel: if it is someone's badge, say whose, so the phone can ask for the parcel instead of calling it unbooked.
   if (!c) return NextResponse.json({ registered: false, person: tappedPerson(await getBadge(uid).catch(() => null)) }, { status: 404 });
   const hs = await handoffsFor(c.code);
-  const done = new Set(hs.filter((h) => h.verdict !== "held").map((h) => h.hop));
-  const leg = c.route.find((l) => !done.has(l.hop));
+  const leg = openLeg(c.route, hs);
   const [to, from] = leg ? await Promise.all([getBadge(leg.to).catch(() => null), getBadge(leg.from).catch(() => null)]) : [null, null];
   return NextResponse.json({
     registered: true,

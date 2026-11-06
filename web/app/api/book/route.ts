@@ -5,8 +5,9 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { fundCompute } from "@/lib/compute";
 import { withX402 } from "@x402/next";
 import { x402Server, bookingPrice, routeKm } from "@/lib/x402";
-import { putConsignment, getBadge, consignmentByCode, arkivWrite, type Leg } from "@/lib/arkiv";
+import { putConsignment, getBadge, consignmentByCode, consignmentByParcel, handoffsFor, arkivWrite, type Leg } from "@/lib/arkiv";
 import { orUndo } from "@/lib/undo";
+import { openLeg } from "@/lib/rules";
 import { randomBytes } from "node:crypto";
 import { lockFee, hashscan, accountFor } from "@/lib/payout";
 import { shopAgentData, verifyUaid } from "@/lib/uaid";
@@ -34,6 +35,9 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   b.feeRupees = meterFee(km, b.weight ?? "s");
   // The parcel's sticker cannot be someone's badge: that would book a person as the parcel.
   if (await getBadge(b.parcel).catch(() => null)) return NextResponse.json({ error: "That tag is a person's badge, not a parcel sticker" }, { status: 400 });
+  // A sticker can take a new booking once its last one is delivered, never while that one is still on the road.
+  const last = await consignmentByParcel(b.parcel).catch(() => null);
+  if (last && openLeg(last.route, await handoffsFor(last.code))) return NextResponse.json({ error: `This sticker is on ${last.code}, which is not delivered yet` }, { status: 409 });
   // Only people who have joined Daak can be on a route: no accounts are created for made-up badges.
   const people = [...new Set(b.route.flatMap((l) => [l.from, l.to]))];
   const known = await Promise.all(people.map((u) => getBadge(u).catch(() => null)));

@@ -223,3 +223,9 @@ export function afterRechecks<T extends { t: string; code?: string; hop?: number
     return r && r.ts >= m.ts ? { ...m, verdict: r.verdict } : m;
   });
 }
+
+/** The first stop not yet handed over (a held handover leaves its stop open); undefined once the parcel is delivered. */
+export function openLeg<L extends { hop: number }>(route: L[], handoffs: { hop: number; verdict: string }[]): L | undefined {
+  const done = new Set(handoffs.filter((h) => h.verdict !== "held").map((h) => h.hop));
+  return route.find((l) => !done.has(l.hop));
+}
