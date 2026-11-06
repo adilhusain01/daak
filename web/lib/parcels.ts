@@ -60,8 +60,8 @@ export async function parcelPage(opts: { page: number; size: number; filter: Fil
   const q = opts.q?.trim().toUpperCase();
   const searched = q ? list.filter((s) => s.code.includes(q) || s.label.toUpperCase().includes(q)) : list;
   const counts = { all: searched.length, attention: 0, transit: 0, paid: 0 } as Record<Filter, number>;
-  for (const s of searched) for (const f of ["attention", "transit", "paid"] as Filter[]) if (inFilter(s, f, opts.publicOnly)) counts[f]++;
-  const rows = searched.filter((s) => inFilter(s, opts.filter, opts.publicOnly));
+  for (const s of searched) for (const f of ["attention", "transit", "paid"] as Filter[]) if (inFilter(s, f, opts.publicOnly || Boolean(opts.who))) counts[f]++;
+  const rows = searched.filter((s) => inFilter(s, opts.filter, opts.publicOnly || Boolean(opts.who)));
   const size = Math.min(Math.max(opts.size, 5), 100);
   const pages = Math.max(1, Math.ceil(rows.length / size));
   const page = Math.min(Math.max(1, opts.page), pages);

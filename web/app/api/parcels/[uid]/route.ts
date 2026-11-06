@@ -6,6 +6,6 @@ import { pageParams, parcelPage } from "@/lib/parcels";
 export async function GET(req: Request, { params }: { params: Promise<{ uid: string }> }) {
   if (!isApp(req) && !isOperator(req)) return denied("app");
   const who = decodeURIComponent((await params).uid);
-  const { counts: _c, ...page } = await parcelPage({ ...pageParams(req.url), who });
-  return NextResponse.json({ ...page, rows: page.rows.map(({ needsYou: _n, ...r }) => r) });
+  const { counts, ...page } = await parcelPage({ ...pageParams(req.url), who });
+  return NextResponse.json({ ...page, counts: { all: counts.all, transit: counts.transit, paid: counts.paid }, rows: page.rows.map(({ needsYou: _n, ...r }) => r) });
 }
