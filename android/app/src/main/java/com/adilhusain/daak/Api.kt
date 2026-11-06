@@ -32,7 +32,7 @@ data class ParcelRow(val code: String, val label: String, val statusKey: String,
 data class ParcelList(val rows: List<ParcelRow>, val page: Int, val pages: Int, val total: Int, val filter: String = "transit", val counts: Map<String, Int> = emptyMap())
 /** One stop of a parcel: its latest check and the driver's pay for the stretch into it. */
 data class StopView(val hop: Int, val place: String, val km: Int, val verdict: String?, val at: Long?, val reason: String?, val etaAt: Long?, val departsAt: Long?, val paid: Double, val held: Double?, val pct: Int?)
-data class ParcelDetail(val code: String, val label: String, val statusKey: String, val status: String, val fee: Double, val km: Int, val weight: String, val createdAt: Long, val stops: List<StopView>, val holdback: String?)
+data class ParcelDetail(val code: String, val label: String, val statusKey: String, val status: String, val fee: Double, val km: Int, val weight: String, val createdAt: Long, val stops: List<StopView>, val holdback: String?, val holdReleased: Boolean = false)
 
 /** "6 Nov, 11:28 am" in India time. */
 fun dayTime(ms: Long): String =
@@ -88,7 +88,8 @@ fun charge(plan: Plan, m: Measured): Result<Charged> {
     return Result.success(Charged(volumeKg, kg, band, factor, fee))
 }
 data class Todo(val code: String, val text: String, val action: String)
-data class ParcelInfo(val registered: Boolean, val code: String?, val label: String?, val delivered: Boolean, val next: Next?)
+/** person: whose badge the tag is, when it is a person's badge and not a parcel. */
+data class ParcelInfo(val registered: Boolean, val code: String?, val label: String?, val delivered: Boolean, val next: Next?, val person: String? = null)
 data class RoutePlan(val label: String, val from: String, val to: String, val stops: List<Pair<String, Int>>, val km: Int, val fee: Double, val meter: String)
 
 /** First 12 hex characters of SHA-256, the same short id the server and the public log use for a badge. */
@@ -155,8 +156,9 @@ object Api {
                 else -> null
             }
         }
+        val released = d.optJSONObject("holdback")?.let { !it.optBoolean("deleted") && !it.isNull("executedAt") } ?: false
         val st = d.getJSONObject("status")
-        return ParcelDetail(d.getString("code"), d.getString("label"), st.getString("key"), st.getString("text"), d.getDouble("feeRupees"), d.getInt("km"), d.getString("weight"), d.getLong("createdAt"), stops, hb)
+        return ParcelDetail(d.getString("code"), d.getString("label"), st.getString("key"), st.getString("text"), d.getDouble("feeRupees"), d.getInt("km"), d.getString("weight"), d.getLong("createdAt"), stops, hb, released)
     }
 
     /** Daak's Google web client id; Google issues the ID token for it and the server checks it. Public. */
@@ -179,7 +181,7 @@ object Api {
 
     fun parcel(uid: String): ParcelInfo {
         val (code, j) = get("/api/parcel/${enc(uid)}")
-        if (code == 404) return ParcelInfo(false, null, null, false, null)
+        if (code == 404) return ParcelInfo(false, null, null, false, null, j.optJSONObject("person")?.optString("name")?.ifBlank { null })
         if (code !in 200..299) error("server $code")
         val n = j.optJSONObject("next")
         return ParcelInfo(

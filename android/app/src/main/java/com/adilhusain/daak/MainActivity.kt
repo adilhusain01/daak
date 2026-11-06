@@ -266,7 +266,7 @@ class MainActivity : ComponentActivity() {
                 if (p.booking != null && !p.written) nfc.pendingWrite = p.booking.trackUrl
                 loadBalance()
             }
-            "track" -> { screen = if (again) Screen.Look() else savedLook ?: Screen.Look(); if (mine == null) loadMine(reset = true) }
+            "track" -> { screen = if (again) Screen.Look() else savedLook ?: Screen.Look(); loadMine(reset = true) } // the old list stays up while the fresh one loads
             else -> { homeTab = id; screen = Screen.Home; refreshHome() }
         }
     }
@@ -362,7 +362,11 @@ class MainActivity : ComponentActivity() {
 
     private fun signOut() {
         prefs.edit().clear().apply()
-        me = null; work = null; todo = null; mine = null; screen = Screen.SignIn
+        // Nothing of the last person's stays on the phone for the next badge: lists, filters, half-done tasks, edits.
+        me = null; work = null; todo = null; mine = null; daily = null; shopBal = null; note = null; answering = null
+        mineFilter = "transit"; homeTab = "jobs"; savedHandoff = null; savedPack = null; savedLook = null; showCode = false
+        timesEdit = null; legsEdit = null; idType = null; idLast4 = ""; idPhoto = null; nfc.pendingWrite = null
+        screen = Screen.SignIn
     }
 
     private fun firstName(p: Person?) = p?.name?.substringBefore(",")?.ifBlank { null } ?: "ji"
@@ -433,6 +437,11 @@ class MainActivity : ComponentActivity() {
                 val mine = me?.let { badgeHash(it.uid) }
                 when {
                     info == null -> { screen = Screen.Handoff(parcel = tap, problem = "No signal: the handoff will be saved on the phone and sent later."); voice.buzz() }
+                    tap.uid == me?.uid || info.person != null -> {
+                        val who = if (tap.uid == me?.uid) pick("आपका अपना बैज", "your own badge") else pick("${info.person} का बैज", "${info.person}'s badge")
+                        screen = Screen.Handoff(problem = pick("यह $who है। पहले पार्सल लगाइए।", "That is $who. Tap the parcel first."))
+                        voice.buzz(false); voice.say("पहले पार्सल लगाइए।")
+                    }
                     !info.registered -> { screen = Screen.Handoff(problem = "यह पार्सल बुक नहीं है। This parcel is not booked yet. The shop books it by tapping it."); voice.buzz(false); voice.say("यह पार्सल बुक नहीं है।") }
                     info.delivered -> { screen = Screen.Handoff(problem = "${info.code} पहुँच चुका है। ${info.code} is already delivered."); voice.buzz(false) }
                     info.next!!.fromHash != mine && info.next.toHash != mine -> {
@@ -562,6 +571,11 @@ class MainActivity : ComponentActivity() {
             val receivers = runCatching { Api.receivers() }.getOrNull()
             runOnUiThread {
                 when {
+                    tap.uid == me?.uid || known?.person != null -> {
+                        val who = if (tap.uid == me?.uid) pick("आपका अपना बैज", "your own badge") else pick("${known!!.person} का बैज", "${known!!.person}'s badge")
+                        screen = Screen.Pack(problem = pick("यह $who है। बुक करने के लिए नया पार्सल स्टिकर लगाइए।", "That is $who. Tap the parcel's sticker to book it."))
+                        voice.buzz(false); voice.say("यह बैज है, पार्सल नहीं।")
+                    }
                     waiting?.waitingCode != null -> { screen = Screen.Pack(parcel = tap, receivers = receivers, dailyCode = waiting.waitingCode, dailyTo = waiting.waitingReceiver); voice.buzz(); voice.say("आज का रोज़ का पार्सल बुक है। इसे जोड़िए।") }
                     known?.registered == true && known.delivered -> { screen = Screen.Pack(problem = "${known.code} was already delivered. Use a new sticker for a new parcel."); voice.buzz(false) }
                     known?.registered == true && known.code != null && tap.writable && tap.text != "${Api.base}/track/${known.code}" -> {
@@ -895,7 +909,7 @@ class MainActivity : ComponentActivity() {
         fun set(next: JoinForm) { screen = s.copy(form = next, errors = emptyList()) }
         Sheet {
             Bi("Daak से जुड़िए", if (s.idToken != null) "Join Daak with your Google account" else "Join Daak with this badge", size = 24)
-            Body((if (s.idToken != null) pick("Google खाते से। ", "Signed in with Google. ") else "Badge ${s.uid.takeLast(8)}. ") + pick("आपका फ़ोन नंबर, UPI और ईमेल छिपे रहते हैं; दूसरों को सिर्फ़ नाम, काम और रास्ता दिखता है।", "Your phone, UPI ID and email are kept sealed; only your name, role and route are visible to others."), Tokens.muted, 15)
+            Body((if (s.idToken != null) pick("Google खाते से। ", "Signed in with Google. ") else "Badge ${s.uid.uppercase()}. ") + pick("आपका फ़ोन नंबर, UPI और ईमेल छिपे रहते हैं; दूसरों को सिर्फ़ नाम, काम और रास्ता दिखता है।", "Your phone, UPI ID and email are kept sealed; only your name, role and route are visible to others."), Tokens.muted, 15)
         }
         Heading("आप कौन हैं?", "Who are you?")
         Choice("ड्राइवर · Driver", "I carry parcels on a bus route", f.role == "driver") { set(f.copy(role = "driver")) }
@@ -994,8 +1008,8 @@ class MainActivity : ComponentActivity() {
             Line("नाम · Name", p.name.ifBlank { "Not set" })
             Line("भूमिका · Role", role)
             if (p.vehicle.isNotBlank()) Line("बस · Bus", p.vehicle)
-            Line("बैज · Badge", "…${p.uid.takeLast(8)}")
-            Body("Handoffs from this phone are signed with a key kept in its secure hardware, so nobody can record one in your name.", Tokens.muted, 14)
+            Line("बैज · Badge", p.uid.uppercase())
+            Body(pick("इस फ़ोन से हर हैंडओवर उसके सुरक्षित हार्डवेयर में रखी चाबी से साइन होता है, इसलिए आपके नाम से कोई और हैंडओवर दर्ज नहीं कर सकता।", "Handoffs from this phone are signed with a key kept in its secure hardware, so nobody can record one in your name."), Tokens.muted, 14)
         }
         LanguageSwitch()
         if (p.role == "driver") work?.let { w ->
@@ -1113,7 +1127,7 @@ class MainActivity : ComponentActivity() {
         if (s.parcel == null && showCode) MyCode()
         Bi("पार्सल सौंपें या लें", "Hand over or take a parcel", size = 24)
         Step(1, "पार्सल लगाइए", "Tap the parcel",
-            when { s.loading -> "Reading the parcel…"; s.info?.code != null -> "${s.info.code} · ${if (s.iGive) "you give" else "you take"} at ${n?.place?.substringBefore(",")}"; s.parcel != null -> "Parcel ${s.parcel.uid.takeLast(8)}"; else -> null },
+            when { s.loading -> "Reading the parcel…"; s.info?.code != null -> "${s.info.code} · ${if (s.iGive) "you give" else "you take"} at ${n?.place?.substringBefore(",")}"; s.parcel != null -> "Parcel ${s.parcel.uid.uppercase()}"; else -> null },
             s.parcel == null && s.problem == null)
         val step2 = s.parcel != null && !s.loading && s.other == null && s.problem == null
         Step(2, if (otherName != null) "$otherName का कोड स्कैन करें या बैज लगाएँ" else "दूसरे व्यक्ति का कोड स्कैन करें या बैज लगाएँ",
@@ -1200,7 +1214,7 @@ class MainActivity : ComponentActivity() {
     private fun PackScreen(s: Screen.Pack) {
         val plan = s.plan
         Bi("पार्सल बुक करें", "Book a parcel", size = 24)
-        Step(1, "नया पार्सल लगाइए", "Tap the new parcel", when { s.parcel != null -> "Parcel ${s.parcel.uid.takeLast(8)}"; else -> null }, s.parcel == null && s.problem == null)
+        Step(1, "नया पार्सल लगाइए", "Tap the new parcel", when { s.parcel != null -> "Parcel ${s.parcel.uid.uppercase()}"; else -> null }, s.parcel == null && s.problem == null)
         if (s.dailyCode != null && s.booking == null) {
             Sheet {
                 Body("रोज़ का पार्सल · Today's daily order", Tokens.green, 16, FontWeight.SemiBold)
@@ -1323,8 +1337,13 @@ class MainActivity : ComponentActivity() {
             }
         }
         when {
-            l == null -> if (mineBusy) Waiting("Loading your parcels") else Body("Could not load your parcels.", Tokens.muted, 15)
-            l.rows.isEmpty() -> Body(empty, Tokens.muted, 15)
+            l == null -> if (mineBusy) Waiting(pick("पार्सल ला रहे हैं", "Loading your parcels")) else Body(pick("पार्सल नहीं खुले। टैब फिर दबाएँ।", "Could not load your parcels. Tap the tab again."), Tokens.muted, 15)
+            // A first-time user sees how parcels arrive here; someone with parcels in another list is told this one is empty.
+            l.rows.isEmpty() -> Body(when {
+                (l.counts["all"] ?: 0) == 0 -> empty
+                mineFilter == "transit" -> pick("अभी कोई पार्सल रास्ते में नहीं।", "Nothing on the way right now.")
+                else -> pick("अभी कोई पार्सल नहीं पहुँचा।", "Nothing delivered yet.")
+            }, Tokens.muted, 15)
             else -> {
                 l.rows.forEach { r ->
                     ParcelItem(r.code, "₹${"%.2f".format(r.fee)}", statusText(r.statusKey, r.status, r.handed, r.stops), statusColor(r.statusKey),
@@ -1365,7 +1384,7 @@ class MainActivity : ComponentActivity() {
                             else -> Body(st.verdict, Tokens.muted, 16)
                         }
                         st.reason?.let { Body(it, Tokens.muted, 14) }
-                        if (st.paid > 0) Body("Paid ₹${"%.2f".format(st.paid)} at the handover${st.pct?.let { " ($it%)" } ?: ""}, ₹${"%.2f".format(st.held ?: 0.0)} held until delivery", Tokens.ink, 15)
+                        if (st.paid > 0) Body("Paid ₹${"%.2f".format(st.paid)} at the handover${st.pct?.let { " ($it%)" } ?: ""}, ₹${"%.2f".format(st.held ?: 0.0)} ${if (d.holdReleased) "after delivery" else "held until delivery"}", Tokens.ink, 15)
                     }
                 }
                 d.holdback?.let { Sheet { Body(it, Tokens.ink, 15) } }

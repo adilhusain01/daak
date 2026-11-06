@@ -201,3 +201,8 @@ export function sameCode(read: string, expected: string): boolean {
 export function recheckable(verdict: string, reason: string): boolean {
   return verdict === "unchecked" || (verdict === "held" && (reason.startsWith("Backup check") || reason.startsWith("Code on the parcel reads")));
 }
+
+/** Whose badge a tapped tag is, as others may see it (name before the comma, and role); null when it is no one's. */
+export function tappedPerson(b: { name: string; role: string } | null): { name: string; role: string } | null {
+  return b ? { name: b.name.split(",")[0].trim(), role: b.role } : null;
+}

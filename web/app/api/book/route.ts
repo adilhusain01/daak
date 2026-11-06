@@ -32,6 +32,8 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   let km;
   try { km = routeKm(b.route); } catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 400 }); }
   b.feeRupees = meterFee(km, b.weight ?? "s");
+  // The parcel's sticker cannot be someone's badge: that would book a person as the parcel.
+  if (await getBadge(b.parcel).catch(() => null)) return NextResponse.json({ error: "That tag is a person's badge, not a parcel sticker" }, { status: 400 });
   // Only people who have joined Daak can be on a route: no accounts are created for made-up badges.
   const people = [...new Set(b.route.flatMap((l) => [l.from, l.to]))];
   const known = await Promise.all(people.map((u) => getBadge(u).catch(() => null)));
