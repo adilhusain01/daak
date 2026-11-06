@@ -34,6 +34,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.ui.graphics.drawscope.rotate
 
 /** The app's one language, Hindi or English, chosen on the Me tab (and at sign-in); it starts as the phone's own. */
 object Lang { var hindi by androidx.compose.runtime.mutableStateOf(java.util.Locale.getDefault().language == "hi") }
@@ -116,7 +120,7 @@ fun Bi(hi: String, en: String, color: Color = Tokens.ink, size: Int = 20) = Body
 
 /** A key: casts a shadow, so it can be pressed. Shrinks a little on press, at once. */
 @Composable
-fun Action(hi: String, en: String? = null, color: Color = Tokens.ink, enabled: Boolean = true, onClick: () -> Unit) {
+fun Action(hi: String, en: String? = null, color: Color = Tokens.ink, enabled: Boolean = true, busy: Boolean = false, onClick: () -> Unit) {
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     Box(
@@ -124,18 +128,20 @@ fun Action(hi: String, en: String? = null, color: Color = Tokens.ink, enabled: B
             .graphicsLayer { val s = if (pressed) 0.97f else 1f; scaleX = s; scaleY = s; alpha = if (enabled) 1f else 0.45f }
             .shadow(if (enabled) 6.dp else 0.dp, RoundedCornerShape(Tokens.radius))
             .background(color, RoundedCornerShape(Tokens.radius))
-            .clickable(interactionSource = source, indication = null, enabled = enabled, onClick = onClick)
+            .clickable(interactionSource = source, indication = null, enabled = enabled && !busy, onClick = onClick)
             .padding(horizontal = Tokens.pad, vertical = 18.dp),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        // Working: the spinner takes the label's place and the key keeps its size.
+        Column(Modifier.graphicsLayer { alpha = if (busy) 0f else 1f }, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             (if (en != null) pick(hi, en) else t(hi)).let { x -> BasicText(x, style = TextStyle(fontSize = 21.sp, fontWeight = FontWeight.Bold, color = Tokens.paper, fontFamily = Type.body(x))) }
         }
+        if (busy) Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) { Gather(26.dp, Tokens.paper) }
     }
 }
 
 /** A quieter key for the second choice on a screen. */
 @Composable
-fun Secondary(text: String, onClick: () -> Unit) {
+fun Secondary(text: String, busy: Boolean = false, onClick: () -> Unit) {
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     Box(
@@ -143,9 +149,12 @@ fun Secondary(text: String, onClick: () -> Unit) {
             .graphicsLayer { val s = if (pressed) 0.97f else 1f; scaleX = s; scaleY = s }
             .shadow(2.dp, RoundedCornerShape(Tokens.radius))
             .background(Tokens.sheet, RoundedCornerShape(Tokens.radius))
-            .clickable(interactionSource = source, indication = null, onClick = onClick)
+            .clickable(interactionSource = source, indication = null, enabled = !busy, onClick = onClick)
             .padding(horizontal = Tokens.pad, vertical = 14.dp),
-    ) { t(text).let { x -> BasicText(x, style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Tokens.ink, fontFamily = Type.body(x))) } }
+    ) {
+        t(text).let { x -> BasicText(x, Modifier.graphicsLayer { alpha = if (busy) 0f else 1f }, style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Tokens.ink, fontFamily = Type.body(x))) }
+        if (busy) Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) { Gather(22.dp) }
+    }
 }
 
 /** A sheet: read, never pressed. Flat, an edge, no shadow. */
@@ -427,3 +436,46 @@ fun Brand() {
         }
     }
 }
+
+/**
+ * loading.dev's Gather, drawn in Compose to match the website: four blocks pulling together, turning a quarter and
+ * pushing apart. Still when the phone has animations turned off.
+ */
+@Composable
+fun Gather(size: androidx.compose.ui.unit.Dp = 32.dp, color: Color = Tokens.gold) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    val reduced = remember { android.provider.Settings.Global.getFloat(view.context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
+    val t = if (reduced) 0f else {
+        val inf = androidx.compose.animation.core.rememberInfiniteTransition(label = "gather")
+        inf.animateFloat(0f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1400, easing = androidx.compose.animation.core.LinearEasing)), label = "t").value
+    }
+    androidx.compose.foundation.Canvas(Modifier.size(size)) {
+        val s = this.size.minDimension
+        val block = s * 0.3f
+        val ease = { x: Float -> if (x < 0.5f) 4 * x * x * x else 1 - Math.pow((-2.0 * x + 2), 3.0).toFloat() / 2 }
+        // Pull in over the first half, push out over the second; turn a quarter on the way.
+        val pull = ease(if (t < 0.5f) t * 2 else (1 - t) * 2)
+        val spread = s * 0.34f - pull * s * 0.18f
+        val c = androidx.compose.ui.geometry.Offset(s / 2, s / 2)
+        rotate(90f * ease(t), c) {
+            listOf(-1f to -1f, 1f to -1f, -1f to 1f, 1f to 1f).forEach { (dx, dy) ->
+                drawRoundRect(color, topLeft = androidx.compose.ui.geometry.Offset(c.x + dx * spread - block / 2, c.y + dy * spread - block / 2),
+                    size = androidx.compose.ui.geometry.Size(block, block), cornerRadius = androidx.compose.ui.geometry.CornerRadius(block * 0.32f))
+            }
+        }
+    }
+}
+
+/** Waiting for something the screen needs: the spinner in the middle of the space, the words kept for TalkBack. A long wait can say what it is under it. */
+@Composable
+fun Waiting(label: String, caption: String? = null) {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 40.dp).androidx_semantics(t(label)),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Gather(36.dp)
+        if (caption != null) Body(caption, Tokens.muted, 15)
+    }
+}
+
+private fun Modifier.androidx_semantics(label: String) = this.then(Modifier.semantics(mergeDescendants = true) { contentDescription = label })
