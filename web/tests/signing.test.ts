@@ -58,3 +58,16 @@ test("a code older than two minutes, or used before, is refused", () => {
 test("a taker with no registered phone cannot give a code", () => {
   assert.equal(checkReceiveProof(proof(), { to: taker.uid, devicePub: undefined, now, used: new Set() }).ok, false);
 });
+
+// Vouching: someone already trusted scans a newcomer's code and signs "I know this person".
+import { vouchMessage } from "../lib/signing.ts";
+
+test("a vouch verifies only with the voucher's key over that newcomer's code", () => {
+  const code = proof();
+  const voucher = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  const vpub = voucher.publicKey.export({ format: "der", type: "spki" }).toString("base64");
+  const vsig = sign("sha256", Buffer.from(vouchMessage("04:77", code)), voucher.privateKey).toString("base64");
+  assert.equal(verifyHandoff(vpub, vouchMessage("04:77", code), vsig), true);
+  assert.equal(verifyHandoff(vpub, vouchMessage("04:78", code), vsig), false);
+  assert.equal(verifyHandoff(vpub, vouchMessage("04:77", proof({ ...taker, nonce: "other123" })), vsig), false);
+});

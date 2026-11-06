@@ -723,6 +723,45 @@ class MainActivity : ComponentActivity() {
         LanguageSwitch()
     }
 
+    private var vouchBusy by mutableStateOf(false)
+
+    /**
+     * Who vouches for this driver, and, for someone whose ID Daak has checked, a key to vouch for a newcomer:
+     * scan their code, and this phone signs "I know them" onto the public log.
+     */
+    @Composable
+    private fun TrustCard(w: Work) {
+        Sheet {
+            Heading("भरोसा", "Who vouches for you")
+            if (w.vouchedBy.isEmpty()) Body(pick("अभी किसी ने नहीं। जिस ड्राइवर की पहचान जाँची जा चुकी है, उससे अपना कोड स्कैन करवाएँ।", "No one yet. Ask a driver whose ID Daak has checked to scan your code."), Tokens.muted, 15)
+            else Body(pick("${w.vouchedBy.joinToString(", ")} ने आपके लिए भरोसा दिया", "Vouched for by ${w.vouchedBy.joinToString(", ")}"), Tokens.green, 16, FontWeight.SemiBold)
+            if (w.idStatus == "verified") {
+                if (vouchBusy) Body(pick("भेज रहे हैं…", "Sending…"), Tokens.muted, 15)
+                else Secondary(pick("नए ड्राइवर के लिए भरोसा दें: उनका कोड स्कैन करें", "Vouch for a new driver: scan their code")) { vouchFor() }
+            }
+        }
+        MyCode()
+    }
+
+    private fun vouchFor() {
+        val uid = me?.uid ?: return
+        val opts = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE).build()
+        com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(this, opts).startScan().addOnSuccessListener { b ->
+            val code = b.rawValue.orEmpty()
+            if (!code.startsWith("DAAK1|")) { note = pick("यह Daak कोड नहीं है।", "That is not a Daak code."); return@addOnSuccessListener }
+            vouchBusy = true
+            thread {
+                val r = runCatching { Api.vouch(uid, code) }
+                runOnUiThread {
+                    vouchBusy = false
+                    r.onSuccess { name -> note = null; voice.buzz(); android.widget.Toast.makeText(this, pick("$name के लिए भरोसा दर्ज हुआ", "Vouched for $name, on the public log"), android.widget.Toast.LENGTH_LONG).show() }
+                        .onFailure { note = it.message; voice.buzz(false) }
+                }
+            }
+        }
+    }
+
     /** Hindi or English, for the whole app; remembered on the phone. */
     @Composable
     private fun LanguageSwitch() {
@@ -858,6 +897,7 @@ class MainActivity : ComponentActivity() {
             }
             if (timesEdit != null) Action(if (timesBusy) "सेव हो रहा है…" else "समय सेव करें", if (timesBusy) "Saving…" else "Save bus times", enabled = !timesBusy) { saveTimes(edit) }
         }
+        if (p.role == "driver") work?.let { w -> TrustCard(w) }
         if (p.role == "driver") work?.let { w ->
             Sheet {
                 Heading("पहचान पत्र", "Your ID")

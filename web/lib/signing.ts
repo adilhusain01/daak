@@ -39,3 +39,6 @@ export function checkReceiveProof(code: string, o: { to: string; devicePub?: str
   if (!verifyHandoff(o.devicePub, receiveMessage({ uid, issuedAt, nonce }), sig)) return { ok: false, why: "This code was not signed by that person's phone." };
   return { ok: true, nonce };
 }
+
+/** What a voucher's phone signs after scanning a newcomer's code: "I, voucher, know the person who showed this code." */
+export const vouchMessage = (voucher: string, code: string) => `daak.vouch|${voucher}|${code}`;

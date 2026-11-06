@@ -1,6 +1,6 @@
 import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { workHistory } from "@/lib/history";
+import { badgeHash, readLog, workHistory } from "@/lib/history";
 import { decodeTimetables } from "@/lib/timetable";
 import { istDate } from "@/lib/rules";
 import { getBadge, getPrefs, putPrefs } from "@/lib/arkiv";
@@ -10,11 +10,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
   if (!isApp(_req) && !isOperator(_req)) return denied("app");
   const { uid } = await ctx.params;
   const id = decodeURIComponent(uid);
-  const [history, prefs, badge] = await Promise.all([workHistory(id), getPrefs(id).catch(() => ({ savePercent: 0 })), getBadge(id).catch(() => null)]);
+  const log = await readLog().catch(() => []);
+  const [history, prefs, badge] = await Promise.all([workHistory(id, log), getPrefs(id).catch(() => ({ savePercent: 0 })), getBadge(id).catch(() => null)]);
+  // Who has vouched for this person, from the public log.
+  const vouchedBy = log.filter((m) => m.t === "daak.vouched" && (m as { who?: string }).who === badgeHash(id)).map((m) => (m as { byName?: string }).byName ?? "someone");
   return NextResponse.json({
     uid: id, name: badge?.name ?? null, ...history, savePercent: prefs.savePercent,
     legs: badge?.legs ?? [], timetable: decodeTimetables(badge?.timetable), awayToday: (badge?.away ?? []).includes(istDate()),
-    idStatus: badge?.kycStatus ?? (badge?.kyc ? "pending" : "missing"),
+    idStatus: badge?.kycStatus ?? (badge?.kyc ? "pending" : "missing"), vouchedBy,
   });
 }
 

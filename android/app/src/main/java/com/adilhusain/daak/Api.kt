@@ -23,6 +23,8 @@ data class Work(
     val legs: List<String> = emptyList(), val times: Map<String, String> = emptyMap(), val awayToday: Boolean = false,
     /** "missing", "pending", "verified" or "rejected". */
     val idStatus: String = "missing",
+    /** First names of people who vouched for this driver, from the public log. */
+    val vouchedBy: List<String> = emptyList(),
 )
 
 /** One parcel in "My parcels": its state in a word ("paid", "held", "transit"…) and in a sentence. */
@@ -210,6 +212,14 @@ object Api {
         return j.optJSONArray("handedOn")?.length() ?: 0
     }
 
+    /** Vouch for the person whose code was scanned; this phone signs "I know them". Returns their first name. */
+    fun vouch(voucher: String, code: String): String {
+        val sig = DeviceKey.sign("daak.vouch|$voucher|$code")
+        val (c, j) = post("/api/vouch", JSONObject().put("voucher", voucher).put("code", code).put("sig", sig), 60000)
+        if (c != 200) error(j.optString("error", "Could not vouch"))
+        return j.optString("name")
+    }
+
     /** A driver adds their government ID after joining; the phone's registered key signs it. */
     fun submitId(uid: String, idType: String, last4: String, photo: java.io.File) {
         val bytes = photo.readBytes()
@@ -313,6 +323,7 @@ object Api {
             j.optJSONObject("timetable")?.let { t -> t.keys().asSequence().associateWith { k -> t.getJSONObject(k).getString("dep") } } ?: emptyMap(),
             j.optBoolean("awayToday", false),
             j.optString("idStatus", "missing"),
+            j.optJSONArray("vouchedBy")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList(),
         )
     }
 
