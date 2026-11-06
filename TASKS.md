@@ -25,7 +25,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [x] Endpoint discovery: the agent reads `/.well-known/x402` first, then books.
 - [x] Each shop has its own agent account with prepaid dINR, topped up by UPI (operator enters the UTR on the dashboard; the app opens the UPI app); spend controls per shop.
 - [x] `DAAK_UPI_ID` set in Vercel; `X402_ASSET` unset (dINR).
-- [ ] Optional: dINR rebuilt on Stablecoin Studio (KYC, freeze, roles) for the Tokenize track.
+- [x] Stablecoin Studio skipped: it issues through its own Solidity contracts, which would weaken No Solidity.
 - [x] Agent identity (HCS-14), phone number login, self-custody, timetables, ETAs and SMS: moved to the README roadmap as milestones.
 
 ## Product, from the people using it
@@ -52,6 +52,8 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] Final README pass: 0G proof or the outage write-up, the business numbers.
 
 ## Done
+
+- [x] Hedera Agent Kit: "Ask Daak" assistant on the dashboard, read-only Agent Kit query tools plus Daak tools on Cloudflare Workers AI (Mistral Small 3.1); suggestions are buttons from real delivery state, confirmed by the operator; questions audited on HCS. Tested: right held delivery and escrow balance (matches the mirror node).
 
 - [x] Backup check for 0G outages: Cloudflare Workers AI or Gemini, labelled and unsealed, can only hold a payment (a pass still waits for 0G); 0G recheck covers backup-held hops; wrong badges or place hold regardless. Live on Cloudflare Workers AI (Llama 4 Scout): tested locally and on the live site (KNP-1204: wrong code held, right code passed and waits for 0G).
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SiteNav, ProofButton } from "@/components/site-nav";
 import { UpiPay } from "@/components/upi-pay";
 import { KycReview } from "@/components/kyc-review";
+import { AssistantPanel } from "@/components/assistant-panel";
 import { StandingPanel } from "@/components/standing-panel";
 import { ShopsPanel } from "@/components/shops-panel";
 import { useState } from "react";
@@ -112,6 +113,7 @@ export default function Dashboard() {
         );
       })()}
 
+      <AssistantPanel />
       <KycReview />
       <StandingPanel />
       <ShopsPanel />
