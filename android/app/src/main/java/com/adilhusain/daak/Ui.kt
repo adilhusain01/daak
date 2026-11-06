@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -206,10 +207,14 @@ fun Verdict(color: Color, hi: String, en: String, detail: String?) {
 fun Field(label: String, value: String, onChange: (String) -> Unit, hint: String = "", number: Boolean = false) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Body(label, Tokens.muted, 15)
+        // The field keeps its own cursor. When onChange reformats the text (a time gaining its colon), the cursor goes to the end,
+        // so the next digit lands after the last one instead of before it ("1130" stayed "11:03" before this).
+        var tf by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(value, androidx.compose.ui.text.TextRange(value.length))) }
+        if (tf.text != value) tf = androidx.compose.ui.text.input.TextFieldValue(value, androidx.compose.ui.text.TextRange(value.length))
         Box(Modifier.fillMaxWidth().background(Tokens.tray, RoundedCornerShape(Tokens.radius)).padding(6.dp)
             .background(Tokens.sheet, RoundedCornerShape(Tokens.inner)).border(1.dp, Tokens.line, RoundedCornerShape(Tokens.inner)).padding(14.dp)) {
             androidx.compose.foundation.text.BasicTextField(
-                value = value, onValueChange = onChange, singleLine = true,
+                value = tf, onValueChange = { tf = it; onChange(it.text) }, singleLine = true,
                 textStyle = TextStyle(fontSize = 19.sp, color = Tokens.ink, fontFamily = Type.sans),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = if (number) androidx.compose.ui.text.input.KeyboardType.Phone else androidx.compose.ui.text.input.KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth(),

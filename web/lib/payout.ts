@@ -65,8 +65,9 @@ export async function setupMoney() {
       .setCustomFees([fee]).setTokenMemo("Daak delivery fees, rupee credits")
       .freezeWith(hedera()).sign(operatorKey());
     c.feeTokenId = (await (await tx.execute(hedera())).getReceipt(hedera())).tokenId!.toString();
+    saveChain(c);
   }
-  saveChain(c);
+  // Nothing new was created: only read. The server's files are read-only in production.
   return c;
 }
 
