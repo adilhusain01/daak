@@ -8,7 +8,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] One clean rehearsal from the phone with a new photo per stop that runs each path once, so the public log shows them: green or backup-checked handoffs with signatures, an approval, a 0G recheck, a pay-anyway, a refund to the shop, a KYC check, a UPI UTR. Then set `DATA_SINCE`.
 
 - [x] Repo public with an MIT licence.
-- [ ] 0G credits from the 0G booth when it opens, then: the first real sealed check, the decision log on 0G Storage, "Recheck with 0G" on held handoffs, and the agent that pays for its own compute from a capped slice of each fee (Agents That Pay for Themselves). Wallet `0x575F8D53D5bE1d16d4c1eDb8D01C4B68A0D48901`.
+- [ ] 0G Storage log and "Agents That Pay for Themselves" still need real 0G in wallet `0x575F8D53D5bE1d16d4c1eDb8D01C4B68A0D48901` (ask the 0G booth). "Recheck with 0G" on the held KNP-1204 hops from `/ops`.
 - [ ] Demo video: 2:30 to 2:55 (ETHGlobal 2 to 4 minutes, 0G under 3), at least 720p, not recorded on a phone, a real voice (no AI voice, no music over captions in place of speaking), intro under 20 seconds, at most 4 bullets a slide, a settled payment on HashScan, the Swarm moment with its timestamp noted in `arkiv/swarm.md`.
 - [ ] Team: each teammate commits their own real part (video, slides, field test, data) and can explain it to judges.
 - [x] Planning artifacts and prompts committed (the rules require them for spec-driven work): `docs/planning/`.
@@ -65,6 +65,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Done
 
+- [x] 0G sealed check live (6 Nov): $1 Router credit, key in private (TEE-only) trust mode, `0gm-1.0-35b-a3b` on Intel TDX, pinned to a TEE-acknowledged provider; first checks matched KNP-7115 and refused KNP-9999 (ids in `docs/submission.md`); budget 20 s; key in Vercel.
 - [x] Audit fixes (Fable audit, 6 Nov): signatures required when a party has a registered phone; the 500 m stand check is real (stands' coordinates on every leg, accuracy capped at 200 m); the same photo never records or pays twice; random checked booking codes; refunds go to the shop's agent account and a delivery settles once; re-joining a badge refused, ID added from the Me tab signed by the phone; driver earnings need the app key, the public drivers page shows record and tier, public tracking carries no GPS; latest attempt per stop counts; 0G outages remembered for 10 minutes; booking never fails after escrow is funded; cash-out references unique; claims name the responsible stop and declared value; honest landing copy (2% fee, "redeemed").
 
 - [x] Parcel route map on every tracking page: road route, done and upcoming stretches, the parcel's position (estimated from the bus time between stops), with a test.
