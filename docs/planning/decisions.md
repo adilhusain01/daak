@@ -27,3 +27,13 @@ Dates are IST. "Team" means Adil Husain and teammates; "assistant" means the AI 
 - 6 Nov, team: the map follows the road, not straight lines, and covers all of India so the major hubs show; the meter charges road kilometres.
 - 6 Nov, team: full page width on the website, and the app tidied the same way.
 - 6 Nov, team: a review of everything against the live prize and rules pages; every gap became a task in `TASKS.md`.
+- 6 Nov, team: 0G's own Router credit runs the sealed checks; the key is in private (TEE only) mode.
+- 6 Nov, team: parcel lists paged on the server with each parcel on its own page, on the website and in the app; Ask Daak as a floating chat; one language at a time in the app (Hindi or English).
+- 6 Nov, team: one mark for Daak, ड, on the site, the favicon and the app; the landing page tells one real parcel's journey with the integration behind each step (the hero will carry the film).
+- 6 Nov, team: drivers should not need a sticker to sign in. Assistant (as a judge would see it): a sticker's ID can be copied and the taker never signed, so both phones sign every handoff by scanning a code; drivers join with Google, which every Android phone has; a badge stays as the one-phone fallback.
+- 6 Nov, team: World ID is kept for the roadmap (the event caps partner prizes and few drivers can reach an Orb); DigiLocker is the production path for IDs; 0G reads ID photos for the operator meanwhile.
+- 6 Nov, team: vouching between drivers, with limits because people can collude (three in 30 days, none for 90 days after a vouched driver is found responsible).
+- 6 Nov, team: drivers change their stretches and bus times themselves; UPI ID, phone and name only through the operator, so pay cannot be redirected from a phone.
+- 6 Nov, team: when 0G fails, the Cloudflare model reads too, labelled as not sealed, and it can only hold money, never release it.
+- 6 Nov, team: real 0G for storage and for the agent to pay for its own checks; each booking's 2% compute share moves on Hedera and is matched in 0G on 0G, both on the public log.
+

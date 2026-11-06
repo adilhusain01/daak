@@ -6,15 +6,15 @@ Daak
 
 ## Short description
 
-Proof of handoff and fair pay for parcels relayed across buses in UP and Bihar: a tap, a photo and a sealed AI check at every stop, drivers paid by the kilometre straight to UPI.
+Proof of handoff and fair pay for parcels relayed across buses in UP and Bihar: two phones sign every handoff, a sealed AI checks the lid, and drivers are paid by the kilometre at the handover.
 
 ## Description
 
 In UP and Bihar, manufacturers send parcels to small-town shops on buses, often across two buses with a driver-to-driver handoff at a bus stand. Nobody signs at the handoff, every driver quotes a different rate, drivers are paid in cash with no record of their work, and when a parcel arrives torn, everyone blames the next person.
 
-Daak puts a meter, a receipt and a payout on the network that already runs. A shop taps a new parcel with its Android phone, picks the receiver, the best-rated driver for each stretch and the weight, and its agent pays the exact booking over x402 on Hedera from the shop's prepaid rupees. At every bus stand, the driver taps the parcel's NFC sticker, taps the next person's badge and photographs the lid; the phone signs the handoff with a key in its secure hardware and adds GPS. A sealed vision model on 0G checks the photo: right parcel, right stop, still sealed. If 0G cannot answer, the handoff is recorded as "not checked by AI" and the money waits; nothing is faked.
+Daak puts a meter, a receipt and a payout on the network that already runs. A shop taps a new parcel with its Android phone, picks the receiver, the best-rated driver for each stretch and the weight, and its agent pays the exact booking over x402 on Hedera from the shop's prepaid rupees. Drivers join with their Google account; no wallet, no sticker. At every bus stand, the driver taps the parcel's NFC sticker, scans the next person's code (a QR their phone signs, good for two minutes and once) and photographs the lid, so both phones sign the handoff with keys in their secure hardware, and GPS is added. With only one phone, the next person taps their badge instead. A sealed vision model on 0G checks the photo: right parcel, right stop, still sealed. If 0G cannot answer, the handoff is recorded as "not checked by AI" and the money waits; nothing is faked.
 
-Each driver gets 50, 70 or 90% of their stretch's pay the moment the next person confirms the handover (more as their public record grows) and the rest after delivery, held in a Hedera scheduled transfer that releases itself unless the shop files a claim; then the responsible driver's held pay repays the shop. Pay is redeemed to UPI. Drivers can save in Bachat and unlock fuel advances from their proven record. The receiving shop tracks the parcel by tapping it with any phone. Nobody sees a wallet or a token.
+Each driver gets 50, 70 or 90% of their stretch's pay the moment the next person confirms the handover (more as their public record grows) and the rest after delivery, held in a Hedera scheduled transfer that releases itself unless the shop files a claim; then the responsible driver's held pay repays the shop. Pay is redeemed to UPI. Drivers can save in Bachat and unlock fuel advances from their proven record, and vouch for new drivers on their corridor, staking their own record on it. IDs are read by the same sealed AI before an operator verifies them. Every booking pays its own share of the AI checks: 2% of its fee on Hedera, the same value in 0G into Daak's own compute account. The receiving shop tracks the parcel by tapping it with any phone. Nobody sees a wallet or a token.
 
 Live on testnet: https://daak-ethglobal.vercel.app (every delivery read-only at `/live`, the network map at `/network`).
 
