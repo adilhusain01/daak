@@ -51,10 +51,12 @@ const inFilter = (s: Summary, f: Filter, publicView = false) =>
   f === "all" ? true : f === "attention" ? s.needsYou : f === "paid" ? done(s) : !done(s) && (publicView || !s.needsYou);
 
 /** One page of parcels with the count behind every filter, worked out on the server. */
-export async function parcelPage(opts: { page: number; size: number; filter: Filter; q?: string; publicOnly?: boolean }) {
+export async function parcelPage(opts: { page: number; size: number; filter: Filter; q?: string; publicOnly?: boolean; who?: string }) {
   const since = Number(process.env.DATA_SINCE ?? 0);
   const [all, verdicts, log] = await Promise.all([allConsignments(since), allVerdicts(), readLog()]);
-  const list = all.filter((c) => !opts.publicOnly || !isPlaceholder(c.parcel)).map((c) => summarise(c, verdicts, log));
+  // `who`: only the parcels this badge sends, carries or receives (the app's own list).
+  const list = all.filter((c) => (!opts.publicOnly || !isPlaceholder(c.parcel)) && (!opts.who || c.route.some((l) => l.from === opts.who || l.to === opts.who)))
+    .map((c) => summarise(c, verdicts, log));
   const q = opts.q?.trim().toUpperCase();
   const searched = q ? list.filter((s) => s.code.includes(q) || s.label.toUpperCase().includes(q)) : list;
   const counts = { all: searched.length, attention: 0, transit: 0, paid: 0 } as Record<Filter, number>;
@@ -117,8 +119,9 @@ export async function publicDetail(c: ConsignmentRow, log?: LogMsg[]) {
     const answer = (log.filter((m) => m.t === "daak.job" && m.code === c.code && m.hop === l.hop).at(-1) as { decision?: string } | undefined)?.decision ?? null;
     return { hop: l.hop, km: l.km, pct: l.advancePct ?? null, advanceRupees: adv?.rupees ?? 0, heldRupees: adv?.heldRupees ?? null, tx: adv?.tx ?? null, answer };
   });
+  const { status } = summarise(c, handoffs.map((h) => ({ code: c.code, hop: h.hop, verdict: h.verdict, at: h.at })), log);
   return {
-    code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, weight: band(c.weight ?? "s").label,
+    code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, weight: band(c.weight ?? "s").label, status,
     km: c.route.reduce((s, l) => s + (l.km ?? 0), 0), route: c.route.map((l) => ({ hop: l.hop, place: l.place, km: l.km ?? 0, departsAt: l.departsAt ?? null, etaAt: l.etaAt ?? null })),
     handoffs, money, holdback: isSplit(c) ? await holdbackStatus(c.code, log) : null,
   };

@@ -65,6 +65,8 @@ sealed interface Screen {
         val weight: String = "s",
     ) : Screen
     data class Look(val parcel: Tap? = null, val info: ParcelInfo? = null, val loading: Boolean = false) : Screen
+    /** One parcel opened from "My parcels"; Back returns to where it was opened. */
+    data class Parcel(val code: String, val from: Screen, val detail: ParcelDetail? = null, val problem: String? = null) : Screen
 }
 
 class MainActivity : ComponentActivity() {
@@ -88,6 +90,9 @@ class MainActivity : ComponentActivity() {
     private var idPhotoForMe = false
     /** Stretch names for display ("Kanpur to Lucknow"), from the published network. */
     private var legNames by mutableStateOf<Map<String, String>>(emptyMap())
+    /** "My parcels": the pages loaded so far, and whether the next is on its way. */
+    private var mine by mutableStateOf<ParcelList?>(null)
+    private var mineBusy by mutableStateOf(false)
 
     /** Digits typed into a time field become "HH:MM". */
     private fun timeInput(v: String): String {
@@ -176,9 +181,12 @@ class MainActivity : ComponentActivity() {
         else -> listOf(TabItem("receive", "लें", "Receive"), TabItem("track", "स्थिति", "Track"), TabItem("me", "मैं", "Me"))
     }
 
-    private fun currentTab(): String? {
+    private fun currentTab(): String? = tabOf(screen)
+
+    private fun tabOf(sc: Screen): String? {
         val role = me?.role ?: return null
-        return when (screen) {
+        return when (sc) {
+            is Screen.Parcel -> tabOf(sc.from)
             Screen.Home -> homeTab
             is Screen.Handoff, is Screen.Result -> when (role) { "driver" -> "hand"; "sender" -> "parcels"; else -> "receive" }
             is Screen.Pack -> "book"
@@ -205,7 +213,7 @@ class MainActivity : ComponentActivity() {
                 if (p.booking != null && !p.written) nfc.pendingWrite = p.booking.trackUrl
                 loadBalance()
             }
-            "track" -> screen = if (again) Screen.Look() else savedLook ?: Screen.Look()
+            "track" -> { screen = if (again) Screen.Look() else savedLook ?: Screen.Look(); if (mine == null) loadMine(reset = true) }
             else -> { homeTab = id; screen = Screen.Home; refreshHome() }
         }
     }
@@ -221,6 +229,36 @@ class MainActivity : ComponentActivity() {
             loadBalance()
         }
         thread { val t = runCatching { Api.todo(p.uid) }.getOrNull(); runOnUiThread { todo = t } }
+        loadMine(reset = true)
+    }
+
+    /** First page, or the next one appended to what is shown. */
+    private fun loadMine(reset: Boolean = false) {
+        val p = me ?: return
+        val have = mine
+        if (mineBusy || (!reset && have != null && have.page >= have.pages)) return
+        val page = if (reset || have == null) 1 else have.page + 1
+        mineBusy = true
+        thread {
+            val r = runCatching { Api.myParcels(p.uid, page) }
+            runOnUiThread {
+                mineBusy = false
+                r.onSuccess { l -> mine = if (page == 1) l else l.copy(rows = (have?.rows ?: emptyList()) + l.rows) }
+            }
+        }
+    }
+
+    private fun openParcel(code: String) {
+        val from = (screen as? Screen.Parcel)?.from ?: screen
+        screen = Screen.Parcel(code, from)
+        thread {
+            val r = runCatching { Api.parcelDetail(code) }
+            runOnUiThread {
+                val now = screen as? Screen.Parcel ?: return@runOnUiThread
+                if (now.code != code) return@runOnUiThread
+                screen = r.fold({ now.copy(detail = it) }, { now.copy(problem = "Could not load $code. Check the signal and try again.") })
+            }
+        }
     }
 
     private fun signIn(tap: Tap) {
@@ -247,7 +285,7 @@ class MainActivity : ComponentActivity() {
 
     private fun signOut() {
         prefs.edit().clear().apply()
-        me = null; work = null; todo = null; screen = Screen.SignIn
+        me = null; work = null; todo = null; mine = null; screen = Screen.SignIn
     }
 
     private fun firstName(p: Person?) = p?.name?.substringBefore(",")?.ifBlank { null } ?: "ji"
@@ -611,8 +649,9 @@ class MainActivity : ComponentActivity() {
         val current = currentTab()
         // Back goes to the first tab before it leaves the app.
         androidx.activity.compose.BackHandler(enabled = tabs != null && current != null && current != tabs.first().id) { selectTab(tabs!!.first().id) }
+        (screen as? Screen.Parcel)?.let { p -> androidx.activity.compose.BackHandler { screen = p.from } }
         val scroll = rememberScrollState()
-        androidx.compose.runtime.LaunchedEffect(current) { scroll.scrollTo(0) }
+        androidx.compose.runtime.LaunchedEffect(current, screen is Screen.Parcel) { scroll.scrollTo(0) }
         Column(Modifier.fillMaxSize().background(Tokens.paper).safeDrawingPadding()) {
         Column(
             Modifier.weight(1f).verticalScroll(scroll).padding(Tokens.pad),
@@ -628,6 +667,7 @@ class MainActivity : ComponentActivity() {
                 is Screen.Result -> ResultScreen(s)
                 is Screen.Pack -> PackScreen(s)
                 is Screen.Look -> LookScreen(s)
+                is Screen.Parcel -> ParcelScreen(s)
             }
             note?.let { Body(it, Tokens.red, 17) }
         }
@@ -713,6 +753,7 @@ class MainActivity : ComponentActivity() {
                 OfferCard((todo ?: emptyList()).filter { it.action == "offer" })
                 Action("पार्सल सौंपें या लें", "Hand over or take a parcel, or just tap it") { selectTab("hand") }
                 TodoCard("Nothing waiting. New jobs and handoffs show here.")
+                MyParcels("Parcels you carry show here once a shop books you.")
                 work?.let { w -> Toggle("आज छुट्टी · Not driving today", if (w.awayToday) "Today's stretches go to other drivers" else "Turn on if your bus is not running today", w.awayToday, awayBusy) { toggleAway() } }
                 QueuedNote()
             }
@@ -725,6 +766,7 @@ class MainActivity : ComponentActivity() {
                 TodoCard("No parcels waiting. Book one in the Book tab.")
                 Secondary("ड्राइवर को सौंपें · Hand a booked parcel to the driver") { screen = Screen.Handoff() }
                 DailyCard()
+                MyParcels("Parcels you book show here.")
                 QueuedNote()
             }
             "money" -> BalanceScreen()
@@ -971,5 +1013,65 @@ class MainActivity : ComponentActivity() {
             else -> Verdict(Tokens.ink, "रास्ते में", "On the way", "${info.code} · next: ${info.next?.fromName} to ${info.next?.toName} at ${info.next?.place}")
         }
         info?.code?.let { code -> Secondary("मैप पर देखें · See it on the map") { openMap(code) } }
+        if (s.parcel == null) MyParcels("Parcels coming to you show here once a shop books one.")
+    }
+
+    private fun statusColor(key: String) = when (key) { "paid", "releasing" -> Tokens.green; "held", "refunded" -> Tokens.red; "review" -> Tokens.amber; else -> Tokens.ink }
+
+    /** Every parcel this person sends, carries or receives, newest first; more load at the end of the list. */
+    @Composable
+    private fun MyParcels(empty: String) {
+        val l = mine
+        Heading("मेरे पार्सल", if (l != null && l.total > 0) "My parcels · ${l.total}" else "My parcels")
+        when {
+            l == null -> Body(if (mineBusy) "Loading…" else "Could not load your parcels.", Tokens.muted, 15)
+            l.rows.isEmpty() -> Body(empty, Tokens.muted, 15)
+            else -> {
+                l.rows.forEach { r ->
+                    ParcelItem(r.code, "${r.handed}/${r.stops} stops · ₹${"%.2f".format(r.fee)}", r.status, statusColor(r.statusKey),
+                        "${r.label.removePrefix("Parcel from ")} · ${dayTime(r.createdAt)}") { openParcel(r.code) }
+                }
+                if (l.page < l.pages) Secondary(if (mineBusy) "Loading…" else "और दिखाएँ · Show more (${l.total - l.rows.size} left)") { loadMine() }
+            }
+        }
+    }
+
+    /** One parcel: where it is, each stop's check, and what each driver was paid. */
+    @Composable
+    private fun ParcelScreen(s: Screen.Parcel) {
+        TextKey("‹ वापस · Back") { screen = s.from }
+        val d = s.detail
+        when {
+            s.problem != null -> Verdict(Tokens.amber, "नहीं खुला", "Could not open", s.problem)
+            d == null -> Bi("पढ़ रहे हैं…", "Reading ${s.code}…")
+            else -> {
+                Sheet {
+                    Body(d.code, Tokens.ink, 30, FontWeight.Bold)
+                    Body(d.label.removePrefix("Parcel from "), Tokens.muted, 15)
+                    Body(d.status, statusColor(d.statusKey), 18, FontWeight.SemiBold)
+                    Line("Fee", "₹${"%.2f".format(d.fee)}")
+                    Line("Distance", "${d.km} km · ${d.weight}")
+                    Line("Booked", dayTime(d.createdAt))
+                }
+                Heading("पड़ाव", "Stops")
+                d.stops.forEach { st ->
+                    Sheet {
+                        Body("${st.hop}. ${st.place}", Tokens.ink, 17, FontWeight.SemiBold)
+                        if (st.km > 0) Body("${st.km} km on this stretch", Tokens.muted, 14)
+                        when (st.verdict) {
+                            "green" -> Body("Checked and handed over, ${dayTime(st.at!!)}", Tokens.green, 16, FontWeight.Medium)
+                            "held" -> Body("Payment held, ${dayTime(st.at!!)}", Tokens.red, 16, FontWeight.Medium)
+                            "unchecked" -> Body("Handed over, waiting for the check, ${dayTime(st.at!!)}", Tokens.amber, 16, FontWeight.Medium)
+                            null -> Body(st.etaAt?.let { "Expected ${clock(it)}" + (st.departsAt?.let { b -> ", bus leaves ${clock(b)}" } ?: "") } ?: "Not handed over yet", Tokens.muted, 16)
+                            else -> Body(st.verdict, Tokens.muted, 16)
+                        }
+                        st.reason?.let { Body(it, Tokens.muted, 14) }
+                        if (st.paid > 0) Body("Paid ₹${"%.2f".format(st.paid)} at the handover${st.pct?.let { " ($it%)" } ?: ""}, ₹${"%.2f".format(st.held ?: 0.0)} held until delivery", Tokens.ink, 15)
+                    }
+                }
+                d.holdback?.let { Sheet { Body(it, Tokens.ink, 15) } }
+                Secondary("मैप पर देखें · See it on the map") { openMap(d.code) }
+            }
+        }
     }
 }

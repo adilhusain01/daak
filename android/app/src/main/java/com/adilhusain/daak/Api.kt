@@ -25,6 +25,17 @@ data class Work(
     val idStatus: String = "missing",
 )
 
+/** One parcel in "My parcels": its state in a word ("paid", "held", "transit"…) and in a sentence. */
+data class ParcelRow(val code: String, val label: String, val statusKey: String, val status: String, val handed: Int, val stops: Int, val fee: Double, val km: Int, val createdAt: Long)
+data class ParcelList(val rows: List<ParcelRow>, val page: Int, val pages: Int, val total: Int)
+/** One stop of a parcel: its latest check and the driver's pay for the stretch into it. */
+data class StopView(val hop: Int, val place: String, val km: Int, val verdict: String?, val at: Long?, val reason: String?, val etaAt: Long?, val departsAt: Long?, val paid: Double, val held: Double?, val pct: Int?)
+data class ParcelDetail(val code: String, val label: String, val statusKey: String, val status: String, val fee: Double, val km: Int, val weight: String, val createdAt: Long, val stops: List<StopView>, val holdback: String?)
+
+/** "6 Nov, 11:28 am" in India time. */
+fun dayTime(ms: Long): String =
+    java.time.format.DateTimeFormatter.ofPattern("d MMM, h:mm a", java.util.Locale.ENGLISH).format(java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneId.of("Asia/Kolkata"))).replace("AM", "am").replace("PM", "pm")
+
 data class Me(val known: Boolean, val name: String?, val role: String?, val vehicle: String?)
 data class Next(val hop: Int, val place: String, val km: Int?, val fromHash: String, val toHash: String, val toName: String, val toRole: String, val fromName: String, val fromRole: String)
 data class StopOpt(val id: String, val name: String)
@@ -72,6 +83,47 @@ object Api {
         val code = conn.responseCode
         val text = (if (code in 200..299) conn.inputStream else conn.errorStream).bufferedReader().readText()
         return code to JSONObject(text)
+    }
+
+    /** Parcels this badge sends, carries or receives, newest first, 20 a page. */
+    fun myParcels(uid: String, page: Int): ParcelList {
+        val (code, j) = get("/api/parcels/${enc(uid)}?page=$page&size=20")
+        if (code != 200) error(j.optString("error", "Could not load parcels"))
+        val a = j.getJSONArray("rows")
+        return ParcelList(List(a.length()) { a.getJSONObject(it).let { o ->
+            val st = o.getJSONObject("status")
+            ParcelRow(o.getString("code"), o.getString("label"), st.getString("key"), st.getString("text"), o.getInt("handed"), o.getInt("stops"), o.getDouble("feeRupees"), o.getInt("km"), o.getLong("createdAt"))
+        } }, j.getInt("page"), j.getInt("pages"), j.getInt("total"))
+    }
+
+    /** One parcel's stops, checks and pay: the same public view as the website's /live page. */
+    fun parcelDetail(code: String): ParcelDetail {
+        val (c, j) = get("/api/live/${enc(code)}")
+        if (c != 200) error(j.optString("error", "Could not load $code"))
+        val d = j.getJSONObject("delivery")
+        val hs = d.getJSONArray("handoffs").let { a -> List(a.length()) { a.getJSONObject(it) } }
+        val money = d.getJSONArray("money").let { a -> List(a.length()) { a.getJSONObject(it) } }
+        val route = d.getJSONArray("route")
+        val stops = List(route.length()) { i ->
+            val l = route.getJSONObject(i)
+            val hop = l.getInt("hop")
+            val h = hs.filter { it.getInt("hop") == hop }.maxByOrNull { it.getLong("at") }
+            val m = money.firstOrNull { it.getInt("hop") == hop }
+            StopView(hop, l.getString("place"), l.optInt("km"), h?.getString("verdict"), h?.getLong("at"), h?.optString("reason")?.ifBlank { null },
+                if (l.isNull("etaAt")) null else l.getLong("etaAt"), if (l.isNull("departsAt")) null else l.getLong("departsAt"),
+                m?.optDouble("advanceRupees", 0.0) ?: 0.0, m?.let { if (it.isNull("heldRupees")) null else it.getDouble("heldRupees") }, m?.let { if (it.isNull("pct")) null else it.getInt("pct") })
+        }
+        val hb = d.optJSONObject("holdback")?.let { h ->
+            val r = "₹${"%.2f".format(h.getDouble("rupees"))}"
+            when {
+                h.optBoolean("deleted") -> "Held pay $r was stopped by a claim; the shop was repaid."
+                !h.isNull("executedAt") -> "Held pay $r released to the drivers on Hedera, ${dayTime(h.getLong("executedAt"))}."
+                !h.isNull("releasesAt") -> "Held pay $r releases itself on Hedera at ${dayTime(h.getLong("releasesAt"))}, unless the shop reports damage."
+                else -> null
+            }
+        }
+        val st = d.getJSONObject("status")
+        return ParcelDetail(d.getString("code"), d.getString("label"), st.getString("key"), st.getString("text"), d.getDouble("feeRupees"), d.getInt("km"), d.getString("weight"), d.getLong("createdAt"), stops, hb)
     }
 
     fun me(uid: String): Me {

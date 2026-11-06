@@ -326,3 +326,27 @@ fun SegmentedTabs(items: List<TabItem>, selected: String, onSelect: (TabItem) ->
         }
     }
 }
+
+/** A parcel in a list: it casts a shadow because it opens; code and progress on top, its state in colour, the route below. */
+@Composable
+fun ParcelItem(code: String, trailing: String, status: String, statusColor: Color, sub: String, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    Column(
+        Modifier.fillMaxWidth()
+            .graphicsLayer { val s = if (pressed) 0.98f else 1f; scaleX = s; scaleY = s }
+            .shadow(2.dp, RoundedCornerShape(Tokens.radius))
+            .background(Tokens.sheet, RoundedCornerShape(Tokens.radius))
+            .border(1.dp, Tokens.line, RoundedCornerShape(Tokens.radius))
+            .clickable(interactionSource = source, indication = null, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Body(code, Tokens.ink, 18, FontWeight.SemiBold)
+            Body(trailing, Tokens.muted, 15)
+        }
+        Body(status, statusColor, 16, FontWeight.Medium)
+        Body(sub, Tokens.muted, 14)
+    }
+}
