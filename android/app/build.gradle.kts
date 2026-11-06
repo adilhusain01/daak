@@ -38,4 +38,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.activity:activity-compose:1.13.0")
+    // The other person's code at a handoff: drawn with ZXing, scanned with Google's code scanner (no camera permission).
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 }

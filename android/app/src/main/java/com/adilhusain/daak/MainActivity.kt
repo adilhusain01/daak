@@ -10,6 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +56,8 @@ sealed interface Screen {
     data class Handoff(
         val parcel: Tap? = null, val info: ParcelInfo? = null, val loading: Boolean = false,
         val other: Tap? = null, val iGive: Boolean = true, val sending: Boolean = false, val problem: String? = null,
+        /** The other person's signed code, when they showed it instead of tapping a badge. */
+        val otherCode: String? = null,
     ) : Screen
     data class Result(val verdict: Verdict, val offline: Boolean = false, val place: String? = null) : Screen
     data class Pack(
@@ -397,6 +401,22 @@ class MainActivity : ComponentActivity() {
         openCamera()
     }
 
+    /** Scans the other person's code with Google's scanner; it stands in for tapping their badge. */
+    private fun scanOther(s: Screen.Handoff) {
+        val opts = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE).build()
+        com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(this, opts).startScan()
+            .addOnSuccessListener { b ->
+                val raw = b.rawValue.orEmpty()
+                val parts = raw.split("|")
+                if (parts.size < 5 || parts[0] != "DAAK1") { note = pick("यह Daak कोड नहीं है।", "That is not a Daak code."); voice.buzz(false); return@addOnSuccessListener }
+                val uid = parts.subList(1, parts.size - 3).joinToString("|")
+                val now = screen as? Screen.Handoff ?: return@addOnSuccessListener
+                takeOther(now.copy(otherCode = raw), Tap(uid, null, false))
+            }
+            .addOnFailureListener { note = pick("स्कैन नहीं हुआ। बैज लगाइए।", "Could not scan; tap their badge instead.") }
+    }
+
     private fun openCamera() {
         val dir = File(cacheDir, "photos").apply { mkdirs() }
         val file = File(dir, "lid-${System.currentTimeMillis()}.jpg").also { photoFile = it }
@@ -422,7 +442,7 @@ class MainActivity : ComponentActivity() {
         // Signed on this phone: the server and anyone reading the public log can check it came from here.
         val message = "daak.handoff|${s.parcel!!.uid}|$from|$to|$at|${DeviceKey.sha256Hex(photo.readBytes())}"
         val sig = runCatching { DeviceKey.sign(message) }.getOrNull()
-        val h = Handoff(s.parcel.uid, from, to, photo, at = at, spot = where.last, signer = mine, sig = sig)
+        val h = Handoff(s.parcel.uid, from, to, photo, at = at, spot = where.last, signer = mine, sig = sig, otherCode = s.otherCode)
         screen = s.copy(sending = true)
         thread {
             val result = runCatching { Api.handoff(h) }
@@ -939,14 +959,51 @@ class MainActivity : ComponentActivity() {
         Step(1, "पार्सल लगाइए", "Tap the parcel",
             when { s.loading -> "Reading the parcel…"; s.info?.code != null -> "${s.info.code} · ${if (s.iGive) "you give" else "you take"} at ${n?.place?.substringBefore(",")}"; s.parcel != null -> "Parcel ${s.parcel.uid.takeLast(8)}"; else -> null },
             s.parcel == null && s.problem == null)
-        Step(2, if (otherName != null) "$otherName का बैज लगाइए" else "दूसरे व्यक्ति का बैज लगाइए",
-            if (otherName != null) "Tap $otherName's badge" else "Tap the other person's badge",
-            s.other?.let { "$otherName confirmed" }, s.parcel != null && !s.loading && s.other == null && s.problem == null)
+        val step2 = s.parcel != null && !s.loading && s.other == null && s.problem == null
+        Step(2, if (otherName != null) "$otherName का कोड स्कैन करें या बैज लगाएँ" else "दूसरे व्यक्ति का कोड स्कैन करें या बैज लगाएँ",
+            if (otherName != null) "Scan $otherName's code, or tap their badge" else "Scan the other person's code, or tap their badge",
+            s.other?.let { pick("$otherName ने पुष्टि की", "$otherName confirmed") + if (s.otherCode != null) pick(" · दोनों फ़ोन ने साइन किया", " · both phones signed") else "" }, step2)
+        if (step2) Action("कोड स्कैन करें", if (otherName != null) "Scan $otherName's code" else "Scan their code") { scanOther(s) }
         Step(3, "ढक्कन की फोटो", "Photo of the lid, with the code readable",
             if (s.sending) "Checking with the sealed AI…" else null, s.other != null)
         s.problem?.let { Verdict(Tokens.amber, "रुकिए", "Hold on", it) }
         if (s.other != null && !s.sending) Action("फोटो लीजिए", "Take the photo") { openCamera() }
         if (s.sending) Bi("जाँच हो रही है…", "Checking the photo. This takes a few seconds.", Tokens.muted, 18)
+        if (s.parcel == null) MyCode()
+    }
+
+    private var showCode by mutableStateOf(false)
+
+    /**
+     * This person's code for the other side of a handoff: signed by this phone's key, renewed every 30 seconds,
+     * good for two minutes and once. The other person scans it instead of tapping a badge.
+     */
+    @Composable
+    private fun MyCode() {
+        val p = me ?: return
+        if (!showCode) { Secondary(pick("लेने वाले हैं? अपना कोड दिखाएँ", "Receiving a parcel? Show my code")) { showCode = true }; return }
+        var tick by androidx.compose.runtime.remember { mutableStateOf(0) }
+        androidx.compose.runtime.LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(30_000); tick++ } }
+        val image = androidx.compose.runtime.remember(tick) {
+            val issuedAt = System.currentTimeMillis()
+            val nonce = java.util.UUID.randomUUID().toString().replace("-", "").take(12)
+            val sig = runCatching { DeviceKey.sign("daak.receive|${p.uid}|$issuedAt|$nonce") }.getOrNull()
+            sig?.let { qr("DAAK1|${p.uid}|$issuedAt|$nonce|$it", 640) }
+        }
+        Sheet {
+            Heading("मेरा कोड", "My code")
+            Body(pick("पार्सल देने वाले से इसे स्कैन करवाएँ। हर 30 सेकंड में नया बनता है और एक ही बार चलता है।", "Let the person handing over scan this. It renews every 30 seconds and works once."), Tokens.muted, 15)
+            if (image == null) Body(pick("इस फ़ोन की चाबी नहीं मिली।", "This phone's key is not available."), Tokens.red, 15)
+            else androidx.compose.foundation.Image(image, contentDescription = pick("मेरा कोड", "My code"), modifier = Modifier.fillMaxWidth().aspectRatio(1f))
+            TextKey(pick("छिपाएँ", "Hide")) { showCode = false }
+        }
+    }
+
+    /** A QR code as an image, drawn with ZXing. */
+    private fun qr(text: String, size: Int): androidx.compose.ui.graphics.ImageBitmap {
+        val m = com.google.zxing.qrcode.QRCodeWriter().encode(text, com.google.zxing.BarcodeFormat.QR_CODE, size, size, mapOf(com.google.zxing.EncodeHintType.MARGIN to 1))
+        val px = IntArray(size * size) { i -> if (m.get(i % size, i / size)) 0xFF1F2A44.toInt() else 0xFFFFFDF8.toInt() }
+        return Bitmap.createBitmap(px, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
     }
 
     @Composable

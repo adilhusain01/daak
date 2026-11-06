@@ -11,7 +11,7 @@ import java.util.UUID
 /** The server's answer to one handoff. verdict is "green", "held" or "unchecked". */
 data class Verdict(val verdict: String, val message: String, val code: String?, val hop: Int?)
 
-data class Handoff(val parcel: String, val from: String, val to: String, val photo: File, val at: Long = System.currentTimeMillis(), val spot: Spot? = null, val signer: String? = null, val sig: String? = null)
+data class Handoff(val parcel: String, val from: String, val to: String, val photo: File, val at: Long = System.currentTimeMillis(), val spot: Spot? = null, val signer: String? = null, val sig: String? = null, val otherCode: String? = null)
 
 /** What a driver sees about their own work, read from the server (which reads the public Hedera log). */
 data class Work(
@@ -360,6 +360,7 @@ object Api {
             field("at", h.at.toString())
             h.spot?.let { field("lat", it.lat.toString()); field("lng", it.lng.toString()); field("acc", it.accuracyM.toString()) }
             if (h.signer != null && h.sig != null) { field("signer", h.signer); field("sig", h.sig) }
+            h.otherCode?.let { field("otherCode", it) }
             write("--$boundary\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"lid.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n".toByteArray())
             write(h.photo.readBytes())
             write("\r\n--$boundary--\r\n".toByteArray())
@@ -395,7 +396,7 @@ class Outbox(context: Context) {
         h.photo.copyTo(File(dir, "$id.jpg"), overwrite = true)
         File(dir, "$id.json").writeText(
             JSONObject().put("parcel", h.parcel).put("from", h.from).put("to", h.to).put("at", h.at)
-                .apply { h.spot?.let { put("lat", it.lat).put("lng", it.lng).put("acc", it.accuracyM.toDouble()) }; h.signer?.let { put("signer", it) }; h.sig?.let { put("sig", it) } }.toString(),
+                .apply { h.spot?.let { put("lat", it.lat).put("lng", it.lng).put("acc", it.accuracyM.toDouble()) }; h.signer?.let { put("signer", it) }; h.sig?.let { put("sig", it) }; h.otherCode?.let { put("otherCode", it) } }.toString(),
         )
     }
 
@@ -409,7 +410,7 @@ class Outbox(context: Context) {
             val photo = File(dir, meta.nameWithoutExtension + ".jpg")
             runCatching {
                 val spot = if (j.has("lat")) Spot(j.getDouble("lat"), j.getDouble("lng"), j.getDouble("acc").toFloat()) else null
-                Api.handoff(Handoff(j.getString("parcel"), j.getString("from"), j.getString("to"), photo, j.getLong("at"), spot, j.optString("signer").ifEmpty { null }, j.optString("sig").ifEmpty { null }))
+                Api.handoff(Handoff(j.getString("parcel"), j.getString("from"), j.getString("to"), photo, j.getLong("at"), spot, j.optString("signer").ifEmpty { null }, j.optString("sig").ifEmpty { null }, j.optString("otherCode").ifEmpty { null }))
                 meta.delete(); photo.delete(); sent++
             }
         }

@@ -52,16 +52,19 @@ export async function POST(req: Request) {
     }
     signed = "valid";
   }
-  // How the taker confirmed: their own phone's fresh code, scanned by the giver (both phones signed), or a badge tap.
-  const takerCode = String(form.get("takerCode") ?? "");
-  let confirm: { by: "code"; nonce: string; issuedAt: number; sig: string } | { by: "badge" } = { by: "badge" };
-  if (takerCode) {
+  // How the other person confirmed: their own phone's fresh code, scanned by the one recording (so both phones
+  // signed), or a badge tap. The code must come from whichever of giver and taker did not record the handoff.
+  const otherCode = String(form.get("otherCode") ?? form.get("takerCode") ?? "");
+  let confirm: { by: "code"; who: string; nonce: string; issuedAt: number; sig: string } | { by: "badge" } = { by: "badge" };
+  if (otherCode) {
+    const other = signer === from ? { uid: to, badge: taker } : { uid: from, badge: giver };
     const used = new Set((await readLog().catch(() => [])).map((m) => (m as { confirm?: { nonce?: string } }).confirm?.nonce).filter((n): n is string => Boolean(n)));
-    const proof = checkReceiveProof(takerCode, { to, devicePub: taker?.devicePub, now: Date.now(), used });
+    // Fresh relative to the handoff's own signed time, so a handoff queued offline still counts when it arrives.
+    const proof = checkReceiveProof(otherCode, { to: other.uid, devicePub: other.badge?.devicePub, now: at, used });
     if (!proof.ok) return NextResponse.json({ verdict: "held", message: proof.why }, { status: 401 });
-    // The taker's own signature goes on the public log too, so anyone can check both people signed.
-    const parts = takerCode.split("|");
-    confirm = { by: "code", nonce: proof.nonce, issuedAt: Number(parts.at(-3)), sig: parts.at(-1)! };
+    // Their signature goes on the public log too, so anyone can check both people signed.
+    const parts = otherCode.split("|");
+    confirm = { by: "code", who: short(other.uid), nonce: proof.nonce, issuedAt: Number(parts.at(-3)), sig: parts.at(-1)! };
   }
   if (Math.abs(at - Date.now()) > 48 * 3600_000) return NextResponse.json({ verdict: "held", message: "The handoff time is not plausible." }, { status: 400 });
 

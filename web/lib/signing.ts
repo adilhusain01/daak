@@ -17,7 +17,7 @@ export function verifyHandoff(devicePubB64: string, message: string, sigB64: str
   }
 }
 
-/** What a taker's phone signs for its code: who, when, and a one-time value. */
+/** What a phone signs for its owner's code (shown to the other person at a handoff): who, when, and a one-time value. */
 export const receiveMessage = (t: { uid: string; issuedAt: number; nonce: string }) => `daak.receive|${t.uid}|${t.issuedAt}|${t.nonce}`;
 
 /** A taker's code lasts two minutes; the phone shows a new one every 30 seconds. */
@@ -32,10 +32,10 @@ export function checkReceiveProof(code: string, o: { to: string; devicePub?: str
   if (parts.length < 5 || parts[0] !== "DAAK1") return { ok: false, why: "That is not a Daak code." };
   const sig = parts.at(-1)!, nonce = parts.at(-2)!, issuedAt = Number(parts.at(-3));
   const uid = parts.slice(1, -3).join("|");
-  if (uid !== o.to) return { ok: false, why: "This code belongs to someone else." };
-  if (!o.devicePub) return { ok: false, why: "The taker has no registered phone." };
+  if (uid !== o.to) return { ok: false, why: "This code belongs to someone else, not the person on this handoff." };
+  if (!o.devicePub) return { ok: false, why: "That person has no registered phone; tap their badge instead." };
   if (!Number.isFinite(issuedAt) || o.now - issuedAt > RECEIVE_MAX_AGE_MS || issuedAt - o.now > 30_000) return { ok: false, why: "This code has expired; ask for the new one on their screen." };
   if (o.used.has(nonce)) return { ok: false, why: "This code was already used." };
-  if (!verifyHandoff(o.devicePub, receiveMessage({ uid, issuedAt, nonce }), sig)) return { ok: false, why: "This code was not signed by the taker's phone." };
+  if (!verifyHandoff(o.devicePub, receiveMessage({ uid, issuedAt, nonce }), sig)) return { ok: false, why: "This code was not signed by that person's phone." };
   return { ok: true, nonce };
 }
