@@ -95,6 +95,8 @@ class MainActivity : ComponentActivity() {
     /** "My parcels": the pages loaded so far, and whether the next is on its way. */
     private var mine by mutableStateOf<ParcelList?>(null)
     private var mineBusy by mutableStateOf(false)
+    /** Which of "My parcels" to show: still moving (default), delivered, or all. */
+    private var mineFilter by mutableStateOf("transit")
 
     /** Digits typed into a time field become "HH:MM". */
     private fun timeInput(v: String): String {
@@ -238,12 +240,14 @@ class MainActivity : ComponentActivity() {
     private fun loadMine(reset: Boolean = false) {
         val p = me ?: return
         val have = mine
-        if (mineBusy || (!reset && have != null && have.page >= have.pages)) return
+        if ((mineBusy && !reset) || (!reset && have != null && have.page >= have.pages)) return
         val page = if (reset || have == null) 1 else have.page + 1
+        val filter = mineFilter
         mineBusy = true
         thread {
-            val r = runCatching { Api.myParcels(p.uid, page) }
+            val r = runCatching { Api.myParcels(p.uid, page, filter) }
             runOnUiThread {
+                if (filter != mineFilter) return@runOnUiThread // the person switched filter meanwhile
                 mineBusy = false
                 r.onSuccess { l -> mine = if (page == 1) l else l.copy(rows = (have?.rows ?: emptyList()) + l.rows) }
             }
@@ -654,6 +658,11 @@ class MainActivity : ComponentActivity() {
         (screen as? Screen.Parcel)?.let { p -> androidx.activity.compose.BackHandler { screen = p.from } }
         val scroll = rememberScrollState()
         androidx.compose.runtime.LaunchedEffect(current, screen is Screen.Parcel) { scroll.scrollTo(0) }
+        // "My parcels" loads its next page by itself when the list nears the end of the screen.
+        androidx.compose.runtime.LaunchedEffect(scroll) {
+            androidx.compose.runtime.snapshotFlow { scroll.maxValue > 0 && scroll.value >= scroll.maxValue - 900 }
+                .collect { near -> if (near && screen !is Screen.Parcel) loadMine() }
+        }
         Column(Modifier.fillMaxSize().background(Tokens.paper).safeDrawingPadding()) {
         Column(
             Modifier.weight(1f).verticalScroll(scroll).padding(Tokens.pad),
@@ -1026,7 +1035,15 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun MyParcels(empty: String) {
         val l = mine
-        Heading("मेरे पार्सल", if (l != null && l.total > 0) "My parcels · ${l.total}" else "My parcels")
+        Heading("मेरे पार्सल", "My parcels")
+        androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(Triple("transit", "चल रहे", "Active"), Triple("paid", "पहुँचे", "Delivered"), Triple("all", "सब", "All")).forEach { (id, hi, en) ->
+                val n = l?.counts?.get(id)
+                SmallKey("$hi${n?.let { " · $it" } ?: ""}", Modifier.weight(1f), filled = mineFilter == id, sub = en) {
+                    if (mineFilter != id) { mineFilter = id; mine = null; loadMine(reset = true) }
+                }
+            }
+        }
         when {
             l == null -> Body(if (mineBusy) "Loading…" else "Could not load your parcels.", Tokens.muted, 15)
             l.rows.isEmpty() -> Body(empty, Tokens.muted, 15)
@@ -1035,7 +1052,7 @@ class MainActivity : ComponentActivity() {
                     ParcelItem(r.code, "₹${"%.2f".format(r.fee)}", r.status, statusColor(r.statusKey),
                         "${r.label.removePrefix("Parcel from ")} · ${dayTime(r.createdAt)}") { openParcel(r.code) }
                 }
-                if (l.page < l.pages) Secondary(if (mineBusy) "Loading…" else "और दिखाएँ · Show more (${l.total - l.rows.size} left)") { loadMine() }
+                if (l.page < l.pages) Secondary(if (mineBusy) "Loading more…" else "और दिखाएँ · Show more (${l.total - l.rows.size} left)") { loadMine() }
             }
         }
     }

@@ -27,7 +27,7 @@ data class Work(
 
 /** One parcel in "My parcels": its state in a word ("paid", "held", "transit"…) and in a sentence. */
 data class ParcelRow(val code: String, val label: String, val statusKey: String, val status: String, val handed: Int, val stops: Int, val fee: Double, val km: Int, val createdAt: Long)
-data class ParcelList(val rows: List<ParcelRow>, val page: Int, val pages: Int, val total: Int)
+data class ParcelList(val rows: List<ParcelRow>, val page: Int, val pages: Int, val total: Int, val filter: String = "transit", val counts: Map<String, Int> = emptyMap())
 /** One stop of a parcel: its latest check and the driver's pay for the stretch into it. */
 data class StopView(val hop: Int, val place: String, val km: Int, val verdict: String?, val at: Long?, val reason: String?, val etaAt: Long?, val departsAt: Long?, val paid: Double, val held: Double?, val pct: Int?)
 data class ParcelDetail(val code: String, val label: String, val statusKey: String, val status: String, val fee: Double, val km: Int, val weight: String, val createdAt: Long, val stops: List<StopView>, val holdback: String?)
@@ -86,14 +86,15 @@ object Api {
     }
 
     /** Parcels this badge sends, carries or receives, newest first, 20 a page. */
-    fun myParcels(uid: String, page: Int): ParcelList {
-        val (code, j) = get("/api/parcels/${enc(uid)}?page=$page&size=20")
+    fun myParcels(uid: String, page: Int, filter: String): ParcelList {
+        val (code, j) = get("/api/parcels/${enc(uid)}?page=$page&size=20&filter=$filter")
         if (code != 200) error(j.optString("error", "Could not load parcels"))
         val a = j.getJSONArray("rows")
         return ParcelList(List(a.length()) { a.getJSONObject(it).let { o ->
             val st = o.getJSONObject("status")
             ParcelRow(o.getString("code"), o.getString("label"), st.getString("key"), st.getString("text"), o.getInt("handed"), o.getInt("stops"), o.getDouble("feeRupees"), o.getInt("km"), o.getLong("createdAt"))
-        } }, j.getInt("page"), j.getInt("pages"), j.getInt("total"))
+        } }, j.getInt("page"), j.getInt("pages"), j.getInt("total"), filter,
+            j.optJSONObject("counts")?.let { c -> c.keys().asSequence().associateWith { k -> c.getInt(k) } } ?: emptyMap())
     }
 
     /** One parcel's stops, checks and pay: the same public view as the website's /live page. */

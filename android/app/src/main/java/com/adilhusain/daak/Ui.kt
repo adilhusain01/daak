@@ -353,7 +353,7 @@ fun ParcelItem(code: String, trailing: String, status: String, statusColor: Colo
 
 /** A key that sits beside another in a row: filled for the main choice, edged for the other. */
 @Composable
-fun SmallKey(text: String, modifier: Modifier = Modifier, color: Color = Tokens.ink, filled: Boolean = true, onClick: () -> Unit) {
+fun SmallKey(text: String, modifier: Modifier = Modifier, color: Color = Tokens.ink, filled: Boolean = true, sub: String? = null, onClick: () -> Unit) {
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     Box(
@@ -365,7 +365,12 @@ fun SmallKey(text: String, modifier: Modifier = Modifier, color: Color = Tokens.
             .clickable(interactionSource = source, indication = null, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
-    ) { BasicText(text, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (filled) Tokens.paper else Tokens.ink)) }
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            BasicText(text, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (filled) Tokens.paper else Tokens.ink))
+            if (sub != null) BasicText(sub, style = TextStyle(fontSize = 13.sp, color = if (filled) Tokens.paper.copy(alpha = 0.8f) else Tokens.muted))
+        }
+    }
 }
 
 /** Daak's mark: ड, the first letter of डाक, in amber on a square, beside the name. The same mark as the website. */
