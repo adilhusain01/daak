@@ -5,8 +5,9 @@ import { use } from "react";
 import Link from "next/link";
 import { arkivEntity, clock, isLate, when, type HandoffView, type LegView } from "@/lib/ui";
 import { ProofButton } from "@/components/site-nav";
+import { RouteMap, type RouteMapData } from "@/components/route-map";
 
-type Track = { code: string; label: string; feeRupees: number; route: (LegView & { etaAt?: number | null })[]; handoffs: HandoffView[] };
+type Track = { code: string; label: string; feeRupees: number; route: (LegView & { etaAt?: number | null })[]; handoffs: HandoffView[]; map: RouteMapData | null };
 
 const ago = (ms: number) => {
   const m = Math.max(1, Math.round((Date.now() - ms) / 60000));
@@ -68,6 +69,7 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
         {hero.sub && <p className="mt-2 text-sm opacity-85">{hero.sub}</p>}
       </section>
       {data.label && <p className="text-muted-ink">{data.label}</p>}
+      {data.map && <RouteMap data={data.map} />}
       {data.handoffs.length > 0 && (
         <details className="rounded-xl border border-rule bg-card-paper p-4 text-sm">
           <summary className="cursor-pointer font-medium">हर हैंडऑफ़ का सबूत · Proof of every handoff</summary>

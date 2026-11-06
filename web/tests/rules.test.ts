@@ -185,3 +185,20 @@ test("the backup check can only make a handoff safer: a problem holds it, a pass
   assert.equal(backupVerdict(ok, false, true), "held");
   assert.equal(backupVerdict(ok, true, false), "held");
 });
+
+test("a parcel between stops is placed along the road by the bus's time, clamped to the stretch", async () => {
+  const { pointAlong, parcelPosition } = await import("../lib/path.ts");
+  const line: [number, number][] = [[80, 26], [81, 26], [82, 26]]; // lng, lat: two equal pieces
+  assert.deepEqual(pointAlong(line, 0), [80, 26]);
+  assert.deepEqual(pointAlong(line, 0.5), [81, 26]);
+  assert.deepEqual(pointAlong(line, 0.75), [81.5, 26]);
+  assert.deepEqual(pointAlong(line, 2), [82, 26]);
+  const legs = [
+    { hop: 1, km: 0, coords: [] as [number, number][], stop: [80, 26] as [number, number] },
+    { hop: 2, km: 80, coords: line, stop: [82, 26] as [number, number], departsAt: 1000, etaAt: 3000 },
+  ];
+  assert.deepEqual(parcelPosition(legs, new Set([1]), 2000), { at: [81, 26], kind: "moving", hop: 2 });  // halfway in time
+  assert.deepEqual(parcelPosition(legs, new Set([1]), 500), { at: [80, 26], kind: "waiting", hop: 2 });  // bus not left yet
+  assert.deepEqual(parcelPosition(legs, new Set(), 2000), { at: [80, 26], kind: "waiting", hop: 1 });   // not picked up
+  assert.deepEqual(parcelPosition(legs, new Set([1, 2]), 2000), { at: [82, 26], kind: "arrived", hop: 2 });
+});

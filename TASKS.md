@@ -53,6 +53,8 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Done
 
+- [x] Parcel route map on every tracking page: road route, done and upcoming stretches, the parcel's position (estimated from the bus time between stops), with a test.
+
 - [x] Hedera Agent Kit: "Ask Daak" assistant on the dashboard, read-only Agent Kit query tools plus Daak tools on Cloudflare Workers AI (Mistral Small 3.1); suggestions are buttons from real delivery state, confirmed by the operator; questions audited on HCS. Tested: right held delivery and escrow balance (matches the mirror node).
 
 - [x] Backup check for 0G outages: Cloudflare Workers AI or Gemini, labelled and unsealed, can only hold a payment (a pass still waits for 0G); 0G recheck covers backup-held hops; wrong badges or place hold regardless. Live on Cloudflare Workers AI (Llama 4 Scout): tested locally and on the live site (KNP-1204: wrong code held, right code passed and waits for 0G).
