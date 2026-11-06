@@ -955,6 +955,8 @@ class MainActivity : ComponentActivity() {
     private fun HandoffScreen(s: Screen.Handoff) {
         val n = s.info?.next
         val otherName = if (s.iGive) n?.toName else n?.fromName
+        // Receiving: the code comes first, big enough to scan across a bus stand.
+        if (s.parcel == null && showCode) MyCode()
         Bi("पार्सल सौंपें या लें", "Hand over or take a parcel", size = 24)
         Step(1, "पार्सल लगाइए", "Tap the parcel",
             when { s.loading -> "Reading the parcel…"; s.info?.code != null -> "${s.info.code} · ${if (s.iGive) "you give" else "you take"} at ${n?.place?.substringBefore(",")}"; s.parcel != null -> "Parcel ${s.parcel.uid.takeLast(8)}"; else -> null },
@@ -969,7 +971,7 @@ class MainActivity : ComponentActivity() {
         s.problem?.let { Verdict(Tokens.amber, "रुकिए", "Hold on", it) }
         if (s.other != null && !s.sending) Action("फोटो लीजिए", "Take the photo") { openCamera() }
         if (s.sending) Bi("जाँच हो रही है…", "Checking the photo. This takes a few seconds.", Tokens.muted, 18)
-        if (s.parcel == null) MyCode()
+        if (s.parcel == null && !showCode) MyCode()
     }
 
     private var showCode by mutableStateOf(false)
