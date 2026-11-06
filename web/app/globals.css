@@ -7,10 +7,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --font-display: var(--font-baloo);
+  /* Mulish for reading, Bodoni Moda for display, Geist Mono for codes and amounts; Hindi falls through to Tiro Devanagari. */
+  --font-sans: var(--font-mulish), var(--font-tiro), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-bodoni), var(--font-tiro), Georgia, serif;
+  --font-display: var(--font-bodoni), var(--font-tiro), Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,72 +51,39 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* shadcn's names, pointed at Daak's tokens below so Button, Sonner and Card follow them. */
+  --background: #ece5d3;
+  --foreground: #1c1a14;
+  --card: #e5dcc6;
+  --card-foreground: #1c1a14;
+  --popover: #e5dcc6;
+  --popover-foreground: #1c1a14;
+  --primary: #1c1a14;
+  --primary-foreground: #ece5d3;
+  --secondary: #dbd1b8;
+  --secondary-foreground: #1c1a14;
+  --muted: #dbd1b8;
+  --muted-foreground: #4a4537;
+  --accent: #dbd1b8;
+  --accent-foreground: #1c1a14;
+  --destructive: #9a3b2a;
+  --border: #d0c7ae;
+  --input: #d0c7ae;
+  --ring: #1c1a14;
+  --chart-1: #a87e36;
+  --chart-2: #1c1a14;
+  --chart-3: #4a4537;
+  --chart-4: #8d8670;
+  --chart-5: #d0c7ae;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: #e5dcc6;
+  --sidebar-foreground: #1c1a14;
+  --sidebar-primary: #1c1a14;
+  --sidebar-primary-foreground: #ece5d3;
+  --sidebar-accent: #dbd1b8;
+  --sidebar-accent-foreground: #1c1a14;
+  --sidebar-border: #d0c7ae;
+  --sidebar-ring: #1c1a14;
 }
 
 @layer base {
@@ -129,16 +97,48 @@
     @apply font-sans;
   }
 }
-/* Daak tokens: the same paper and ink as the Android app. Every colour on the site comes from here. */
+/*
+ * Daak tokens, after Umbra's editorial set (abaresks24/umbra at 05a3bf1): warm cream paper, charcoal ink and one
+ * aged gold. Gold is the light that breaks through: it marks a proven handoff or money released, never decoration.
+ * Text colours are measured at 4.5:1 or better on paper and card-paper; gold itself (2.9:1) only fills shapes and
+ * large numerals, and gold text uses gold-deep. The Android app's Tokens object holds the same values.
+ */
 @theme {
-  --color-paper: #f7f3ea;
-  --color-card-paper: #fffdf8;
-  --color-ink: #1f2a44;
-  --color-muted-ink: #6b6f7a;
-  --color-rule: #e2dbcb;
-  --color-ok: #2e7d4f;
-  --color-wait: #b7791f;
-  --color-held: #b23a3a;
-  --color-night: #151c2e;
-  --color-lamp: #e3a33b;
+  --color-paper: #ece5d3;      /* the page */
+  --color-card-paper: #e5dcc6; /* raised: cards, sheets */
+  --color-tray: #dbd1b8;       /* pressed in, wells */
+  --color-ink: #1c1a14;
+  --color-soft-ink: #4a4537;   /* 7.6:1 */
+  --color-muted-ink: #6b6551;  /* 4.6:1 */
+  --color-rule: #d0c7ae;
+  --color-gold: #a87e36;
+  --color-gold-deep: #7a5a22;  /* gold as text, 5.0:1 */
+  --color-ok: #36603f;         /* paid, delivered: 5.8:1 */
+  --color-wait: #7a5a22;       /* waiting reads as gold-deep */
+  --color-held: #9a3b2a;       /* oxblood: held for a check */
+  --color-night: #1c1a14;      /* the ink panel */
+  --color-lamp: #c9a15a;       /* gold on ink, 7.2:1 */
+
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-key: 0 1px 0 rgb(28 26 20 / 0.08), 0 10px 24px -14px rgb(40 34 18 / 0.55);
 }
+
+::selection { background: rgb(168 126 54 / 0.25); }
+:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+
+/* The paper itself: a faint grain and a lighter top, from Umbra. Fixed to the viewport so it never seams. */
+.paper-grain {
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(120% 100% at 50% 0%, rgb(255 252 244 / 0.5), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+/* A partner's logo drawn in the current text colour: the file is the mask, so every logo takes the page's ink. */
+.logo-mask { background-color: currentColor; mask: var(--logo) no-repeat center / contain; -webkit-mask: var(--logo) no-repeat center / contain; }
+
+/* Packets running along the architecture diagram's wires. */
+@keyframes packet { from { offset-distance: 0%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } to { offset-distance: 100%; opacity: 0; } }
+.packet { offset-rotate: 0deg; animation: packet var(--dur, 2.4s) linear infinite; animation-delay: var(--delay, 0s); }
+@media (prefers-reduced-motion: reduce) { .packet { display: none; } }

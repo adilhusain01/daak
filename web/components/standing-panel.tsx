@@ -36,24 +36,24 @@ export function StandingPanel() {
   const orders = Array.isArray(data?.orders) ? data.orders : [];
   if (!orders.length) return null;
   return (
-    <section className="rounded-xl border border-rule bg-card-paper p-4 sm:p-5">
+    <section className="border-t border-rule pt-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Daily orders ({orders.filter((o) => o.active).length} active)</h2>
-          <p className="text-sm text-muted-ink">Booked and paid by each shop&apos;s agent at 4 am. The shop taps that day&apos;s parcel to attach it.</p>
+          <h2 className="font-display text-2xl font-semibold">Daily orders ({orders.filter((o) => o.active).length} active)</h2>
+          <p className="mt-1 text-sm text-soft-ink">Booked and paid by each shop&apos;s agent at 4 am. The shop taps that day&apos;s parcel to attach it.</p>
         </div>
-        <Button className="rounded-lg bg-ink text-paper shadow-sm active:translate-y-px" disabled={run.isPending} onClick={() => run.mutate()}>
+        <Button className="rounded-lg bg-ink text-paper shadow-[var(--shadow-key)] active:translate-y-px" disabled={run.isPending} onClick={() => run.mutate()}>
           {run.isPending ? "Booking..." : "Book today's now"}
         </Button>
       </div>
       <ul className="mt-3 flex flex-col gap-2">
         {orders.map((o) => (
-          <li key={o.id} className="flex items-center justify-between gap-3 rounded-lg border border-rule p-3 text-sm">
+          <li key={o.id} className="flex items-center justify-between gap-3 rounded-[10px] bg-card-paper p-4 shadow-[inset_0_0_0_1px_var(--color-rule)] text-sm">
             <div className="min-w-0">
               <p className="font-medium">{o.sender} to {o.receiver}</p>
               <p className="truncate text-muted-ink">{o.daysText} · {o.drivers.join(", ")} · {o.lastCode ? `last ${o.lastCode} on ${o.lastRun}` : "not booked yet"}</p>
             </div>
-            <Button variant="outline" className="shrink-0 rounded-lg shadow-sm active:translate-y-px" disabled={pause.isPending} onClick={() => pause.mutate(o)}>
+            <Button variant="outline" className="shrink-0 rounded-lg shadow-[var(--shadow-key)] active:translate-y-px" disabled={pause.isPending} onClick={() => pause.mutate(o)}>
               {o.active ? "Pause" : "Resume"}
             </Button>
           </li>

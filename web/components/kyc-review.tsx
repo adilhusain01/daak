@@ -45,23 +45,23 @@ export function KycReview() {
   const pending = data?.drivers?.filter((d) => d.status === "pending") ?? [];
   if (!pending.length) return null;
   return (
-    <section className="rounded-xl border border-rule bg-card-paper p-4 sm:p-5">
-      <h2 className="text-lg font-semibold">Driver ID checks ({pending.length})</h2>
-      <p className="text-sm text-muted-ink">Ask 0G to read the photo in a sealed machine, check it yourself, then decide. Only the last 4 characters are kept.</p>
+    <section className="border-t border-rule pt-6">
+      <h2 className="font-display text-2xl font-semibold">Driver ID checks ({pending.length})</h2>
+      <p className="mt-1 text-sm text-soft-ink">Ask 0G to read the photo in a sealed machine, check it yourself, then decide. Only the last 4 characters are kept.</p>
       <ul className="mt-3 flex flex-col gap-3">
         {pending.map((d) => (
-          <li key={d.uid} className="flex flex-col gap-2 rounded-lg border border-rule p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <li key={d.uid} className="flex flex-col gap-2 rounded-[10px] bg-card-paper p-4 shadow-[inset_0_0_0_1px_var(--color-rule)] sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="min-w-0 text-sm">
               <p className="font-medium">{d.name}</p>
               <p className="text-muted-ink">{d.vehicle} · {d.idType} ending {d.last4}{d.at ? ` · sent ${when(d.at)}` : ""}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <ProofButton href={`/api/kyc/${encodeURIComponent(d.uid)}`}>View ID photo</ProofButton>
-              <Button variant="outline" className="rounded-lg shadow-sm active:translate-y-px" disabled={read.isPending} onClick={() => read.mutate(d.uid)}>
+              <Button variant="outline" className="rounded-lg shadow-[var(--shadow-key)] active:translate-y-px" disabled={read.isPending} onClick={() => read.mutate(d.uid)}>
                 {read.isPending && read.variables === d.uid ? "Reading…" : "Ask 0G to read it"}
               </Button>
-              <Button className="rounded-lg bg-ok text-paper shadow-sm active:translate-y-px" disabled={decide.isPending} onClick={() => decide.mutate({ uid: d.uid, status: "verified" })}>Verify</Button>
-              <Button variant="outline" className="rounded-lg border-held text-held shadow-sm active:translate-y-px" disabled={decide.isPending} onClick={() => decide.mutate({ uid: d.uid, status: "rejected" })}>Reject</Button>
+              <Button className="rounded-lg bg-ok text-paper shadow-[var(--shadow-key)] active:translate-y-px" disabled={decide.isPending} onClick={() => decide.mutate({ uid: d.uid, status: "verified" })}>Verify</Button>
+              <Button variant="outline" className="rounded-lg border-held text-held shadow-[var(--shadow-key)] active:translate-y-px" disabled={decide.isPending} onClick={() => decide.mutate({ uid: d.uid, status: "rejected" })}>Reject</Button>
             </div>
             {readings[d.uid] && (() => {
               const r = readings[d.uid];

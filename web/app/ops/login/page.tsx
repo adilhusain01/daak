@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { DaakMark } from "@/components/daak-mark";
 
 /** The operator signs in once on this device; the passcode lives in the team's secrets, never in the page. */
 export default function Login() {
@@ -19,14 +20,15 @@ export default function Login() {
   }
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-4">
-      <h1 className="text-3xl font-semibold tracking-tight">Daak operations</h1>
-      <p className="mt-1 text-muted-ink">Deliveries, disputes and payouts. Sign in with the team passcode.</p>
+      <DaakMark className="mb-6 size-12 rounded-[10px]" />
+      <h1 className="font-display text-4xl font-semibold tracking-tight">Operator sign-in</h1>
+      <p className="mt-2 text-soft-ink">Deliveries, disputes and payouts.</p>
       <form onSubmit={submit} className="mt-6 flex flex-col gap-3">
         <label htmlFor="passcode" className="text-sm text-muted-ink">Passcode</label>
         <input id="passcode" type="password" autoComplete="current-password" value={code} onChange={(e) => setCode(e.target.value)}
-          className="rounded-xl border border-rule bg-card-paper px-4 py-3 text-lg outline-none focus-visible:ring-2 focus-visible:ring-ink" />
+          className="rounded-[10px] bg-card-paper px-4 py-3 text-lg shadow-[inset_0_0_0_1.5px_var(--color-rule)] outline-none focus-visible:shadow-[inset_0_0_0_1.5px_var(--color-ink)]" />
         {error && <p className="text-sm text-held" role="alert">{error}</p>}
-        <Button type="submit" disabled={busy || !code} className="h-12 rounded-xl bg-ink text-paper shadow-sm active:translate-y-px">{busy ? "Checking..." : "Sign in"}</Button>
+        <Button type="submit" disabled={busy || !code} className="h-12 rounded-[10px] bg-ink text-base font-bold text-paper shadow-[var(--shadow-key)] active:translate-y-px">{busy ? "Checking..." : "Sign in"}</Button>
       </form>
     </main>
   );

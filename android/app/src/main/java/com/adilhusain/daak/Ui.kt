@@ -29,6 +29,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,29 +65,50 @@ fun t(s: String): String {
     return s
 }
 
-/** One set of tokens for every screen: the same paper and ink as the website. */
+/**
+ * One set of tokens for every screen, the same as the website's (after Umbra's editorial set): warm cream paper,
+ * charcoal ink and one aged gold. Gold marks a proven handoff or money released; gold text uses goldDeep (5:1).
+ */
 object Tokens {
-    val paper = Color(0xFFF7F3EA)
-    val sheet = Color(0xFFFFFDF8)
-    val tray = Color(0xFFEFE9DC)
-    val ink = Color(0xFF1F2A44)
-    val muted = Color(0xFF6B6F7A)
-    val line = Color(0xFFE2DBCB)
-    val green = Color(0xFF2E7D4F)
-    val amber = Color(0xFFB7791F)
-    val red = Color(0xFFB23A3A)
-    val radius = 16.dp
-    val inner = 10.dp // radius minus the 6dp padding of a tray: concentric corners
+    val paper = Color(0xFFECE5D3)
+    val sheet = Color(0xFFE5DCC6)
+    val tray = Color(0xFFDBD1B8)
+    val ink = Color(0xFF1C1A14)
+    val soft = Color(0xFF4A4537)
+    val muted = Color(0xFF6B6551)
+    val line = Color(0xFFD0C7AE)
+    val gold = Color(0xFFA87E36)
+    val goldDeep = Color(0xFF7A5A22)
+    val green = Color(0xFF36603F)
+    val amber = goldDeep // waiting reads as gold text
+    val red = Color(0xFF9A3B2A)
+    val radius = 14.dp
+    val inner = 8.dp // radius minus the 6dp padding of a tray: concentric corners
     val pad = 20.dp
+}
+
+/** Umbra's faces, bundled: Bodoni Moda for display, Mulish for reading, Geist Mono for codes, Tiro Devanagari Hindi for Hindi. */
+object Type {
+    val sans = FontFamily(
+        Font(R.font.mulish_regular, FontWeight.Normal), Font(R.font.mulish_semibold, FontWeight.Medium),
+        Font(R.font.mulish_semibold, FontWeight.SemiBold), Font(R.font.mulish_bold, FontWeight.Bold), Font(R.font.mulish_extrabold, FontWeight.ExtraBold),
+    )
+    val display = FontFamily(Font(R.font.bodoni_moda_medium, FontWeight.Medium), Font(R.font.bodoni_moda_semibold, FontWeight.SemiBold), Font(R.font.bodoni_moda_semibold, FontWeight.Bold))
+    val deva = FontFamily(Font(R.font.tiro_devanagari, FontWeight.Normal))
+    val mono = FontFamily(Font(R.font.geist_mono_medium, FontWeight.Medium))
+    private val hindi = Regex("[\\u0900-\\u097F]")
+    /** Hindi lines take Tiro; the rest take Mulish for reading, Bodoni for display. */
+    fun body(s: String) = if (hindi.containsMatchIn(s)) deva else sans
+    fun head(s: String) = if (hindi.containsMatchIn(s)) deva else display
 }
 
 @Composable
 fun Title(text: String) =
-    BasicText(text, style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.SemiBold, color = Tokens.ink))
+    BasicText(t(text), style = TextStyle(fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.Medium, color = Tokens.ink, fontFamily = Type.head(t(text))))
 
 @Composable
 fun Body(text: String, color: Color = Tokens.ink, size: Int = 18, weight: FontWeight = FontWeight.Normal) =
-    BasicText(t(text), style = TextStyle(fontSize = size.sp, lineHeight = (size * 1.35).sp, color = color, fontWeight = weight))
+    t(text).let { x -> BasicText(x, style = TextStyle(fontSize = size.sp, lineHeight = (size * 1.4).sp, color = color, fontWeight = weight, fontFamily = Type.body(x))) }
 
 /** A line in the chosen language. */
 @Composable
@@ -105,7 +128,7 @@ fun Action(hi: String, en: String? = null, color: Color = Tokens.ink, enabled: B
             .padding(horizontal = Tokens.pad, vertical = 18.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            BasicText(if (en != null) pick(hi, en) else t(hi), style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Tokens.paper))
+            (if (en != null) pick(hi, en) else t(hi)).let { x -> BasicText(x, style = TextStyle(fontSize = 21.sp, fontWeight = FontWeight.Bold, color = Tokens.paper, fontFamily = Type.body(x))) }
         }
     }
 }
@@ -122,7 +145,7 @@ fun Secondary(text: String, onClick: () -> Unit) {
             .background(Tokens.sheet, RoundedCornerShape(Tokens.radius))
             .clickable(interactionSource = source, indication = null, onClick = onClick)
             .padding(horizontal = Tokens.pad, vertical = 14.dp),
-    ) { BasicText(t(text), style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Medium, color = Tokens.ink)) }
+    ) { t(text).let { x -> BasicText(x, style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Tokens.ink, fontFamily = Type.body(x))) } }
 }
 
 /** A sheet: read, never pressed. Flat, an edge, no shadow. */
@@ -149,7 +172,7 @@ fun Step(n: Int, hi: String, en: String, done: String?, active: Boolean) {
         Box(
             Modifier.size(34.dp).background(if (done != null) Tokens.green else if (active) Tokens.ink else Tokens.line, RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
-        ) { BasicText(if (done != null) "✓" else "$n", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Tokens.paper)) }
+        ) { BasicText(if (done != null) "✓" else "$n", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Tokens.paper, fontFamily = Type.sans)) }
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Body(pick(hi, en), if (done == null && !active) Tokens.muted else Tokens.ink, 19, FontWeight.SemiBold)
             if (done != null) Body(done, Tokens.green, 15)
@@ -164,8 +187,8 @@ fun Verdict(color: Color, hi: String, en: String, detail: String?) {
         Modifier.fillMaxWidth().background(color, RoundedCornerShape(Tokens.radius)).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        BasicText(pick(hi, en), style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Tokens.paper))
-        if (!detail.isNullOrBlank()) BasicText(t(detail), style = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, color = Tokens.paper.copy(alpha = 0.85f)))
+        pick(hi, en).let { x -> BasicText(x, style = TextStyle(fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.Medium, color = Tokens.paper, fontFamily = Type.head(x))) }
+        if (!detail.isNullOrBlank()) t(detail).let { x -> BasicText(x, style = TextStyle(fontSize = 16.sp, lineHeight = 23.sp, color = Tokens.paper.copy(alpha = 0.85f), fontFamily = Type.body(x))) }
     }
 }
 
@@ -178,10 +201,10 @@ fun Field(label: String, value: String, onChange: (String) -> Unit, hint: String
             .background(Tokens.sheet, RoundedCornerShape(Tokens.inner)).border(1.dp, Tokens.line, RoundedCornerShape(Tokens.inner)).padding(14.dp)) {
             androidx.compose.foundation.text.BasicTextField(
                 value = value, onValueChange = onChange, singleLine = true,
-                textStyle = TextStyle(fontSize = 19.sp, color = Tokens.ink),
+                textStyle = TextStyle(fontSize = 19.sp, color = Tokens.ink, fontFamily = Type.sans),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = if (number) androidx.compose.ui.text.input.KeyboardType.Phone else androidx.compose.ui.text.input.KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth(),
-                decorationBox = { inner -> if (value.isEmpty()) BasicText(hint, style = TextStyle(fontSize = 19.sp, color = Tokens.muted)); inner() },
+                decorationBox = { inner -> if (value.isEmpty()) BasicText(hint, style = TextStyle(fontSize = 19.sp, color = Tokens.muted, fontFamily = Type.body(hint))); inner() },
             )
         }
     }
@@ -222,7 +245,7 @@ fun Stats(items: List<Pair<String, String>>) {
                 Modifier.weight(1f).background(Tokens.tray, RoundedCornerShape(Tokens.inner)).padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Body(value, Tokens.ink, 22, FontWeight.SemiBold)
+                BasicText(value, style = TextStyle(fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.Medium, color = Tokens.ink, fontFamily = Type.display))
                 Body(label, Tokens.muted, 13)
             }
         }
@@ -240,7 +263,7 @@ fun Line(label: String, value: String, valueColor: Color = Tokens.ink, big: Bool
 
 /** How far along something is: a filled bar in a tray. */
 @Composable
-fun Progress(fraction: Float, color: Color = Tokens.green) {
+fun Progress(fraction: Float, color: Color = Tokens.gold) {
     Box(Modifier.fillMaxWidth().height(8.dp).background(Tokens.tray, RoundedCornerShape(4.dp))) {
         Box(Modifier.fillMaxWidth(fraction.coerceIn(0.02f, 1f)).height(8.dp).background(color, RoundedCornerShape(4.dp)))
     }
@@ -339,7 +362,7 @@ fun SegmentedTabs(items: List<TabItem>, selected: String, onSelect: (TabItem) ->
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        BasicText(pick(item.hi, item.en), style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (on) Tokens.paper else Tokens.ink))
+                        pick(item.hi, item.en).let { x -> BasicText(x, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (on) Tokens.paper else Tokens.soft, fontFamily = Type.body(x))) }
                     }
                 }
             }
@@ -363,8 +386,8 @@ fun ParcelItem(code: String, trailing: String, status: String, statusColor: Colo
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Body(code, Tokens.ink, 18, FontWeight.Bold)
-            Body(trailing, Tokens.ink, 16, FontWeight.Medium)
+            BasicText(code, style = TextStyle(fontSize = 17.sp, color = Tokens.ink, fontFamily = Type.mono))
+            BasicText(trailing, style = TextStyle(fontSize = 15.sp, color = Tokens.soft, fontFamily = Type.mono))
         }
         Body(status, statusColor, 16, FontWeight.Medium)
         Body(sub, Tokens.muted, 14)
@@ -387,8 +410,8 @@ fun SmallKey(text: String, modifier: Modifier = Modifier, color: Color = Tokens.
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            BasicText(t(text), style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (filled) Tokens.paper else Tokens.ink))
-            if (sub != null) BasicText(sub, style = TextStyle(fontSize = 13.sp, color = if (filled) Tokens.paper.copy(alpha = 0.8f) else Tokens.muted))
+            t(text).let { x -> BasicText(x, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (filled) Tokens.paper else Tokens.ink, fontFamily = Type.body(x))) }
+            if (sub != null) BasicText(sub, style = TextStyle(fontSize = 13.sp, color = if (filled) Tokens.paper.copy(alpha = 0.8f) else Tokens.muted, fontFamily = Type.body(sub)))
         }
     }
 }
@@ -399,8 +422,8 @@ fun Brand() {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.daak_mark), contentDescription = null, modifier = Modifier.size(40.dp))
         Column {
-            BasicText("Daak", style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = Tokens.ink, lineHeight = 26.sp))
-            BasicText(pick("डाक · हर पार्सल का हिसाब", "Every parcel handoff on record"), style = TextStyle(fontSize = 13.sp, color = Tokens.muted))
+            BasicText("Daak", style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Tokens.ink, lineHeight = 28.sp, fontFamily = Type.display))
+            pick("डाक · हर पार्सल का हिसाब", "Every parcel handoff on record").let { x -> BasicText(x, style = TextStyle(fontSize = 13.sp, color = Tokens.muted, fontFamily = Type.body(x))) }
         }
     }
 }

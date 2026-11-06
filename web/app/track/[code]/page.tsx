@@ -5,6 +5,7 @@ import { use } from "react";
 import Link from "next/link";
 import { arkivEntity, clock, isLate, when, type HandoffView, type LegView } from "@/lib/ui";
 import { ProofButton } from "@/components/site-nav";
+import { DaakMark } from "@/components/daak-mark";
 import { RouteMap, type RouteMapData } from "@/components/route-map";
 
 type Track = { code: string; label: string; feeRupees: number; route: (LegView & { etaAt?: number | null })[]; handoffs: HandoffView[]; map: RouteMapData | null };
@@ -29,10 +30,10 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
     },
   });
 
-  if (isLoading) return <main className="w-full px-4 py-10 sm:px-6 lg:px-10 text-muted-ink">Loading parcel {code}...</main>;
+  if (isLoading) return <main className="w-full px-5 py-10 sm:px-8 lg:px-16 xl:px-20 text-muted-ink">Loading parcel {code}...</main>;
   if (isError || !data) {
     return (
-      <main className="w-full px-4 py-10 sm:px-6 lg:px-10">
+      <main className="w-full px-5 py-10 sm:px-8 lg:px-16 xl:px-20">
         <p className="text-xl font-semibold">पार्सल {code} नहीं मिला</p>
         <p className="mt-1 text-muted-ink">We could not find parcel {code}. Check the code written on the lid.</p>
       </main>
@@ -56,16 +57,16 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
         : { tone: "bg-ink", hi: "बुक हो गया, पिकअप का इंतज़ार", en: "Booked, waiting for pickup", sub: next ? `First stop: ${next.place}.` : "" };
 
   return (
-    <main className="w-full px-4 py-8 sm:px-6 lg:px-10">
+    <main className="w-full px-5 py-8 sm:px-8 lg:px-16 xl:px-20">
       <nav className="mb-8 flex items-center justify-between gap-3">
-        <Link href="/" className="text-2xl font-semibold tracking-tight">Daak</Link>
-        <span className="text-sm text-muted-ink">पार्सल · Parcel {data.code}</span>
+        <Link href="/" className="flex items-center gap-2.5"><DaakMark className="size-8 rounded-[7px]" /><span className="font-display text-2xl font-semibold tracking-tight">Daak</span></Link>
+        <span className="font-mono text-sm text-soft-ink">{data.code}</span>
       </nav>
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
       <div className="flex flex-col gap-4 lg:col-span-5">
-      <section className={`rounded-2xl p-6 text-paper sm:p-8 ${hero.tone}`}>
-        <p className="text-2xl font-semibold sm:text-3xl">{hero.hi}</p>
-        <p className="text-lg opacity-90">{hero.en}</p>
+      <section className={`rounded-2xl p-7 text-paper sm:p-10 ${hero.tone}`}>
+        <p lang="hi" className="text-4xl sm:text-5xl">{hero.hi}</p>
+        <p className="mt-1 font-display text-2xl opacity-90">{hero.en}</p>
         {hero.sub && <p className="mt-2 text-sm opacity-85">{hero.sub}</p>}
       </section>
       {data.label && <p className="text-muted-ink">{data.label}</p>}
@@ -83,8 +84,8 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
       )}
       </div>
 
-      <section className="rounded-2xl border border-rule bg-card-paper p-5 sm:p-7 lg:col-span-7">
-      <p className="mb-5 text-sm font-medium text-muted-ink">रास्ता · The route</p>
+      <section className="lg:col-span-7 lg:pl-6">
+      <p className="mb-6 font-display text-2xl font-semibold">रास्ता · The route</p>
       <ol className="flex flex-col">
         {data.route.map((l, i) => {
           const h = latest.get(l.hop);
@@ -92,13 +93,13 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
           return (
             <li key={l.hop} className="relative flex gap-4 pb-6 last:pb-0">
               <div className="flex flex-col items-center">
-                <span className={`mt-1 size-3.5 rounded-[4px] ${h ? (h.verdict === "held" ? "bg-held" : "bg-ok") : isNext ? "bg-ink" : "bg-rule"}`} />
-                {i < data.route.length - 1 && <span className="mt-1 w-px flex-1 bg-rule" />}
+                <span className={`mt-1.5 size-4 rounded-[4px] ${h ? (h.verdict === "held" ? "bg-held" : "bg-gold") : isNext ? "bg-ink" : "bg-rule"}`} />
+                {i < data.route.length - 1 && <span className={`mt-1 w-1 flex-1 ${latest.get(data.route[i + 1].hop) ? "bg-gold" : "bg-rule"}`} />}
               </div>
               <div className="min-w-0">
-                <p className="font-medium">{l.place}</p>
+                <p className="font-display text-xl font-semibold">{l.place}</p>
                 {h ? (
-                  <p className={`text-sm ${h.verdict === "held" ? "text-held" : "text-ok"}`}>
+                  <p className={`text-sm ${h.verdict === "held" ? "text-held" : "text-gold-deep"}`}>
                     {h.verdict === "held" ? "जाँच के लिए रुका · Stopped for a check" : "पहुँचा · Reached"} · {when(h.at)}
                   </p>
                 ) : (

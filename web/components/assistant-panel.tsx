@@ -105,7 +105,7 @@ export function AssistantChat() {
             <div className="flex flex-col items-start gap-2">
               <p className="text-muted-ink">Try one of these:</p>
               {SUGGESTED.map((s) => (
-                <button key={s} onClick={() => submit(s)} className="rounded-md border border-rule bg-paper px-2.5 py-1.5 text-left text-xs font-medium shadow-sm transition-transform active:scale-[0.97]">{s}</button>
+                <button key={s} onClick={() => submit(s)} className="rounded-md border border-rule bg-paper px-2.5 py-1.5 text-left text-xs font-medium shadow-[var(--shadow-key)] transition-transform active:scale-[0.97]">{s}</button>
               ))}
             </div>
           )}
@@ -118,9 +118,9 @@ export function AssistantChat() {
                   {m.proposals.map((p) => {
                     const id = `${m.id}:${p.action}:${p.code}`;
                     return confirming === id ? (
-                      <Button key={id} size="sm" className="rounded-lg bg-held text-paper shadow-sm active:translate-y-px" disabled={act.isPending} onClick={() => act.mutate(p)}>Confirm: {LABEL[p.action]} {p.code}</Button>
+                      <Button key={id} size="sm" className="rounded-lg bg-held text-paper shadow-[var(--shadow-key)] active:translate-y-px" disabled={act.isPending} onClick={() => act.mutate(p)}>Confirm: {LABEL[p.action]} {p.code}</Button>
                     ) : (
-                      <Button key={id} size="sm" variant="outline" title={p.why} className="rounded-lg shadow-sm active:translate-y-px" onClick={() => setConfirming(id)}>{LABEL[p.action]} {p.code}</Button>
+                      <Button key={id} size="sm" variant="outline" title={p.why} className="rounded-lg shadow-[var(--shadow-key)] active:translate-y-px" onClick={() => setConfirming(id)}>{LABEL[p.action]} {p.code}</Button>
                     );
                   })}
                 </div>
@@ -135,7 +135,7 @@ export function AssistantChat() {
           <label htmlFor="ask" className="sr-only">Question</label>
           <input id="ask" ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Which deliveries are late or held?"
             className="min-w-0 flex-1 rounded-lg border border-rule bg-paper px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ink" />
-          <Button type="submit" className="rounded-lg bg-ink text-paper shadow-sm active:translate-y-px" disabled={askIt.isPending || !q.trim()}>Ask</Button>
+          <Button type="submit" className="rounded-lg bg-ink text-paper shadow-[var(--shadow-key)] active:translate-y-px" disabled={askIt.isPending || !q.trim()}>Ask</Button>
         </form>
       </section>
     </>

@@ -10,7 +10,7 @@ type Target = { hop: number; account: string; name: string; vpa: string | null; 
 
 function Qr({ text }: { text: string }) {
   const [src, setSrc] = useState<string | null>(null);
-  useEffect(() => { QRCode.toDataURL(text, { margin: 1, width: 180, color: { dark: "#1f2a44", light: "#fffdf8" } }).then(setSrc); }, [text]);
+  useEffect(() => { QRCode.toDataURL(text, { margin: 1, width: 180, color: { dark: "#1c1a14", light: "#ece5d3" } }).then(setSrc); }, [text]);
   return src ? <img src={src} alt="UPI payment QR code" width={180} height={180} className="rounded-lg border border-rule" /> : null;
 }
 
@@ -45,7 +45,7 @@ export function UpiPay({ code }: { code: string }) {
               <div className="flex gap-2">
                 <input id={`utr-${d.account}`} value={utr[d.account] ?? ""} onChange={(e) => setUtr({ ...utr, [d.account]: e.target.value })} inputMode="numeric"
                   className="min-w-0 flex-1 rounded-md border border-rule bg-paper px-2 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ink" />
-                <Button size="sm" className="rounded-md bg-ink text-paper shadow-sm" disabled={save.isPending} onClick={() => save.mutate(d)}>Record</Button>
+                <Button size="sm" className="rounded-md bg-ink text-paper shadow-[var(--shadow-key)]" disabled={save.isPending} onClick={() => save.mutate(d)}>Record</Button>
               </div>
             </>
           ) : (

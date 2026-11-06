@@ -2,11 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SiteNav } from "@/components/site-nav";
-import { JourneyHero } from "@/components/landing/journey-hero";
+import { JourneyCaption, JourneyRoad, JourneySteps, useJourney } from "@/components/landing/journey-hero";
+import { MorphStory } from "@/components/landing/morph-story";
+import { Architecture } from "@/components/landing/architecture";
+
+// WebGL, so it only runs in the browser.
+const Dither = dynamic(() => import("@/components/dither"), { ssr: false });
 
 type Stats = { topicId?: string; bookings: number; handoffs: number; km: number; paidOut: number; people: number; last: number | null };
 
@@ -14,253 +20,211 @@ const hashscan = (kind: string, id: string) => `https://hashscan.io/testnet/${ki
 /** "0.0.1@123.456" is how the SDK writes a transaction id; HashScan wants "0.0.1-123-456". */
 const txUrl = (id: string) => hashscan("transaction", id.replace("@", "-").replace(/\.(\d+)$/, "-$1"));
 
-/** One parcel's day, told as chapters. Each names the part of the stack that does it and links the real proof. */
-const CHAPTERS: {
-  place: string; title: string; story: string; stack: { name: string; does: string }[];
-  proof?: { label: string; value: string; href?: string }[]; shot?: { src: string; alt: string; w: number; h: number };
-}[] = [
-  {
-    place: "Kanpur, 7:04 am",
-    title: "The shop books, and its agent pays",
-    story: "Gupta Garments taps a new parcel, picks Ghosh Cloth House in Gorakhpur and the best-rated driver for each stretch. The price is the published meter: ₹5 plus 50 paise a road kilometre. The shop's own agent pays it from prepaid rupees; nobody approves a payment.",
-    stack: [
-      { name: "Hedera x402", does: "The booking API answers 402 with the exact price; the agent pays and retries." },
-      { name: "dINR on Hedera Token Service", does: "Rupee credits with Daak's 2% written into the token's own fee rule." },
-      { name: "HCS-14 agent identity", does: "The agent checks Daak's ID before paying and leaves its own on the log." },
-    ],
-    proof: [
-      { label: "Paid", value: "₹184.50 meter + ₹22.14 booking fee" },
-      { label: "Shop's agent", value: "0.0.11331484", href: hashscan("account", "0.0.11331484") },
-      { label: "Booking on the public log", value: "topic 0.0.11327109", href: hashscan("topic", "0.0.11327109") },
-    ],
-  },
-  {
-    place: "On Ramesh's phone",
-    title: "The driver sees the job, the pay and the bus",
-    story: "Ramesh drives the 9:00 bus from Kanpur to Lucknow. The job arrives with the stretch, the kilometres and what he earns at the handover. Every parcel he carries is in one list, active ones first.",
-    stack: [
-      { name: "Arkiv", does: "People, bookings, timetables and handoffs live as records Daak's app reads; handoffs expire after a day." },
-    ],
-    shot: { src: "/shots/jobs.webp", alt: "The Daak app's Jobs tab: hand over a parcel, the not driving today switch, and My parcels with Active 13, Delivered 3 and All 16", w: 520, h: 617 },
-  },
-  {
-    place: "Kanpur bus stand",
-    title: "A handoff anyone can verify",
-    story: "Three taps: the parcel's sticker, the next person's badge, then a photo of the lid with the code on it. The phone signs the handoff with a key in its secure hardware and adds where it happened. The photo is encrypted before it leaves.",
-    stack: [
-      { name: "Android Keystore", does: "A P-256 key per phone signs every handoff, so nobody records one in a driver's name." },
-      { name: "Swarm", does: "The lid photo, encrypted; its reference is sealed again before it goes into the record." },
-    ],
-    shot: { src: "/shots/handover.webp", alt: "The Daak app's Hand over screen: tap the parcel, tap the other person's badge, photo of the lid", w: 520, h: 535 },
-  },
-  {
-    place: "Inside a sealed machine",
-    title: "A sealed AI checks the photo",
-    story: "The photo goes to a vision model running inside a TEE on 0G: is this the right code, at the right stop, still sealed? When 0G could not answer this morning, nothing was faked. A backup model refused a photo with the wrong code, the money waited, and 0G's recheck at 11:28 passed all three stops.",
-    stack: [
-      { name: "0G compute", does: "0gm-1.0-35b-a3b on Intel TDX, in private mode: no unsealed provider can answer." },
-      { name: "Safe-stop", does: "No answer in 20 seconds means recorded, not checked, and no payment." },
-    ],
-    proof: [
-      { label: "Kanpur", value: "0G check 6eb1ede1, code matches, parcel intact" },
-      { label: "Lucknow", value: "0G check 73f8e8bb" },
-      { label: "Gorakhpur", value: "0G check 224ee09e" },
-    ],
-  },
-  {
-    place: "Lucknow, 87 km",
-    title: "Paid at the handover, not days later",
-    story: "The moment Suresh confirms he has the parcel, Ramesh is paid half his stretch: ₹22.35 of ₹44.71. The other half waits for delivery, so if the parcel arrives torn his held pay repays the shop. Proven handoffs raise his share to 70% and then 90%.",
-    stack: [
-      { name: "Hedera Token Service", does: "Escrow pays each advance as a token transfer; drivers redeem it to UPI." },
-    ],
-    proof: [
-      { label: "Ramesh, Kanpur to Lucknow", value: "₹22.35 now, ₹22.36 held", href: txUrl("0.0.11325722@1793944725.308873159") },
-      { label: "Suresh, Lucknow to Gorakhpur", value: "₹69.89 now, ₹69.90 held", href: txUrl("0.0.11325722@1793944729.696671174") },
-    ],
-    shot: { src: "/shots/parcel.webp", alt: "KNP-1204 in the Daak app: three stops checked and handed over, the pay at each handover, and the held pay released on Hedera", w: 520, h: 864 },
-  },
-  {
-    place: "Gorakhpur, 11:44 am",
-    title: "Delivered, and the rest of the pay releases itself",
-    story: "At delivery Daak signs one scheduled transfer of everything still held, ₹92.26, set to run when the claim window ends. If the shop reports damage, the schedule is deleted and the responsible stop's share goes back to the shop. Nobody did either: at 11:44:00 Hedera ran it on its own.",
-    stack: [
-      { name: "Hedera scheduled transactions", does: "Long-term schedules with wait-for-expiry: escrow with a dispute window and no server." },
-      { name: "Hedera Consensus Service", does: "Every booking, handoff, check and payout as a public message." },
-    ],
-    proof: [
-      { label: "Held pay schedule", value: "0.0.11335076, executed 11:44:00", href: hashscan("schedule", "0.0.11335076") },
-      { label: "The whole parcel, read-only", value: "/live/KNP-1204", href: "/live/KNP-1204" },
-    ],
-  },
+/** KNP-1204's real money, from its public record: each driver's stretch, paid half at the handover and half on delivery. */
+const SPLIT = [
+  { who: "Ramesh", leg: "Kanpur to Lucknow", km: 87, now: 22.35, held: 22.36, tx: "0.0.11325722@1793944725.308873159" },
+  { who: "Suresh", leg: "Lucknow to Gorakhpur", km: 272, now: 69.89, held: 69.9, tx: "0.0.11325722@1793944729.696671174" },
+];
+const FEE = 22.14;
+const TOTAL = 206.64;
+
+const STEPS = [
+  { n: 1, title: "Tap the sticker", line: "The parcel's own NFC tag.", shot: { src: "/shots/jobs.webp", alt: "The Daak app's Jobs tab with the parcels a driver carries", w: 520, h: 617 } },
+  { n: 2, title: "Tap the badge", line: "The next person's card, or their code.", shot: { src: "/shots/handover.webp", alt: "The Hand over screen: tap the parcel, tap the other person's badge, photo of the lid", w: 520, h: 535 } },
+  { n: 3, title: "Photograph the lid", line: "Signed by the phone, checked by 0G.", shot: { src: "/shots/parcel.webp", alt: "KNP-1204 in the app: three stops checked and handed over, and the pay at each one", w: 520, h: 864 } },
 ];
 
-const PAINS = [
-  ["Nobody signs at the stand", "A parcel changes hands between two buses with no receipt, so a lost one has no last owner."],
-  ["Every driver quotes his own rate", "The same stretch costs a different amount every time, and the shop cannot check it."],
-  ["Pay leaves no record", "Cash, days late, written nowhere: no savings, no loan, no proof of years of work."],
-  ["Damage belongs to no one", "When a parcel arrives torn, each person blames the next and the shop pays."],
+const RECEIPTS: [string, string, string][] = [
+  ["Booking on the public log", "topic 0.0.11327109", hashscan("topic", "0.0.11327109")],
+  ["Shop's agent that paid", "0.0.11331484", hashscan("account", "0.0.11331484")],
+  ["Sealed 0G checks", "6eb1ede1, 73f8e8bb, 224ee09e", "/live/KNP-1204"],
+  ["Ramesh paid at Lucknow", "₹22.35", txUrl(SPLIT[0].tx)],
+  ["Held pay released itself", "schedule 0.0.11335076, 11:44:00", hashscan("schedule", "0.0.11335076")],
 ];
 
-function Proof({ items }: { items: NonNullable<(typeof CHAPTERS)[number]["proof"]> }) {
+/** The page's side margins, after codos.ai: full width, with room at the edges. */
+const X = "px-5 sm:px-8 lg:px-16 xl:px-20";
+
+function TrackForm({ id, dark = false }: { id: string; dark?: boolean }) {
+  const router = useRouter();
+  const [code, setCode] = useState("");
   return (
-    <dl className="divide-y divide-rule overflow-hidden rounded-xl border border-rule bg-card-paper">
-      {items.map((p) => (
-        <div key={p.label} className="flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
-          <dt className="text-sm text-muted-ink">{p.label}</dt>
-          <dd className="font-medium tabular-nums">
-            {p.href ? <a href={p.href} target={p.href.startsWith("/") ? undefined : "_blank"} rel="noreferrer" className="underline decoration-rule decoration-2 underline-offset-4 transition-colors hover:decoration-wait">{p.value}</a> : p.value}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <form onSubmit={(e) => { e.preventDefault(); if (code.trim()) router.push(`/track/${code.trim().toUpperCase()}`); }} className="flex w-full max-w-md gap-2">
+      <label htmlFor={id} className="sr-only">Parcel code</label>
+      <input id={id} value={code} onChange={(e) => setCode(e.target.value)} placeholder="KNP-1204" autoCapitalize="characters"
+        className={`min-w-0 flex-1 rounded-[10px] px-4 py-3 font-mono text-base outline-none ${dark ? "bg-paper/10 text-paper placeholder:text-paper/45 focus-visible:ring-2 focus-visible:ring-lamp" : "bg-card-paper text-ink shadow-[inset_0_0_0_1.5px_var(--color-rule)] placeholder:text-muted-ink focus-visible:shadow-[inset_0_0_0_1.5px_var(--color-ink)]"}`} />
+      <button type="submit" className={`rounded-[10px] px-5 py-3 font-bold transition-transform active:scale-[0.97] ${dark ? "bg-lamp text-night" : "bg-ink text-paper shadow-[var(--shadow-key)]"}`}>Track</button>
+    </form>
   );
 }
 
-/** The public face of Daak: one real parcel's journey, chapter by chapter, with the part of the stack behind each step. */
+/** Where KNP-1204's ₹206.64 went, as one bar: each driver's stretch by kilometre, paid now and held, then Daak's fee. */
+function MoneyBar() {
+  return (
+    <figure className="flex flex-col gap-4">
+      <div className="flex h-14 w-full overflow-hidden rounded-[10px] shadow-[inset_0_0_0_1px_var(--color-rule)]" role="img"
+        aria-label={`₹${TOTAL}: Ramesh ₹44.71 for 87 km, Suresh ₹139.79 for 272 km, each half paid at the handover and half held until delivery, and Daak's fee ₹${FEE}`}>
+        {SPLIT.map((s) => (
+          <div key={s.who} className="flex h-full" style={{ width: `${((s.now + s.held) / TOTAL) * 100}%` }}>
+            <div className="h-full bg-gold" style={{ width: "50%" }} />
+            <div className="h-full bg-[repeating-linear-gradient(135deg,var(--color-gold)_0_3px,transparent_3px_8px)] opacity-70" style={{ width: "50%" }} />
+          </div>
+        ))}
+        <div className="h-full bg-ink" style={{ width: `${(FEE / TOTAL) * 100}%` }} />
+      </div>
+      <figcaption className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        {SPLIT.map((s) => (
+          <div key={s.who} className="border-t border-rule pt-3">
+            <p className="font-display text-2xl font-semibold">{s.who} <span className="font-mono text-base text-soft-ink">₹{(s.now + s.held).toFixed(2)}</span></p>
+            <p className="text-soft-ink">{s.leg}, {s.km} km</p>
+            <p className="mt-1 flex items-center gap-2 text-sm"><span className="size-3 rounded-[3px] bg-gold" />₹{s.now.toFixed(2)} at the handover</p>
+            <p className="flex items-center gap-2 text-sm"><span className="size-3 rounded-[3px] bg-[repeating-linear-gradient(135deg,var(--color-gold)_0_2px,transparent_2px_5px)]" />₹{s.held.toFixed(2)} held, then released</p>
+          </div>
+        ))}
+        <div className="border-t border-rule pt-3">
+          <p className="font-display text-2xl font-semibold">Daak <span className="font-mono text-base text-soft-ink">₹{FEE.toFixed(2)}</span></p>
+          <p className="text-soft-ink">12% booking fee</p>
+          <p className="mt-1 flex items-center gap-2 text-sm"><span className="size-3 rounded-[3px] bg-ink" />Taken by the token&apos;s own fee rule</p>
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+
+/** The public face of Daak: one real parcel's day in the hero, then why, how, the money and the stack, each as a picture. */
 export default function Landing() {
-  const router = useRouter();
-  const [code, setCode] = useState("");
+  const j = useJourney();
   const { data: s } = useQuery<Stats>({ queryKey: ["stats"], queryFn: () => fetch("/api/stats").then((r) => r.json()), refetchInterval: 30000 });
-  const track = (e: React.FormEvent) => { e.preventDefault(); if (code.trim()) router.push(`/track/${code.trim().toUpperCase()}`); };
 
   return (
     <main className="w-full">
-      {/* Night on the Grand Trunk Road: the one moment that moves on its own. */}
-      <section className="bg-night px-4 pb-12 pt-8 text-paper sm:px-6 lg:px-10 lg:pb-16">
-        <SiteNav dark className="mb-12 lg:mb-16" />
-        <div className="grid grid-cols-1 gap-10 xl:grid-cols-12 xl:items-center">
-          <div className="xl:col-span-5">
-            <h1 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight sm:text-6xl xl:text-7xl">Every parcel handoff, on the record.</h1>
-            <p lang="hi" className="mt-4 font-display text-2xl font-semibold text-lamp sm:text-3xl">हर पार्सल का हिसाब, हर ड्राइवर को किलोमीटर से भुगतान।</p>
-            <p className="mt-5 max-w-xl text-lg text-paper/75">
-              Parcels in UP and Bihar ride two buses and pass through three pairs of hands. Daak gives each handoff a signature, a photo and a sealed check, and pays every driver by the kilometre at the moment they hand over.
-            </p>
-            <form onSubmit={track} className="mt-7 flex w-full max-w-md gap-2">
-              <label htmlFor="code" className="sr-only">Parcel code</label>
-              <input id="code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Track a parcel: KNP-1204"
-                className="min-w-0 flex-1 rounded-xl border border-paper/20 bg-paper/5 px-4 py-3 text-base text-paper placeholder:text-paper/45 outline-none focus-visible:ring-2 focus-visible:ring-lamp" />
-              <button type="submit" className="rounded-xl bg-lamp px-5 py-3 font-semibold text-night shadow-lg shadow-black/20 transition-transform active:scale-[0.97]">Track</button>
-            </form>
-            <Link href="/live" className="mt-3 inline-block text-sm font-medium text-paper/75 underline decoration-paper/25 underline-offset-4 hover:text-paper">Or watch every delivery live</Link>
+      {/* The one bold thing: night on the road, full screen, dithered, with KNP-1204's real day replayed on it. */}
+      <section className="relative isolate flex min-h-svh flex-col bg-night text-paper">
+        {/* Ink falls darker behind the words, so the dither never fights the headline. */}
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(90deg,var(--color-night)_15%,rgb(28_26_20/0.55)_55%,transparent_85%)] max-lg:bg-[linear-gradient(180deg,var(--color-night)_30%,rgb(28_26_20/0.5)_70%,transparent)]" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 -z-20 opacity-40" aria-hidden>
+          <Dither waveColor={[0.26, 0.22, 0.14]} backgroundColor="transparent" colorNum={3} pixelSize={3} waveSpeed={0.02} waveFrequency={1.6} waveAmplitude={0.22} contrast={0.8}
+            enableMouseInteraction={false} clickRipple={false} intro={false} ditherMode="bayer" />
+        </div>
+        <div className={`${X} pt-6 sm:pt-8`}><SiteNav dark className="" /></div>
+        <div className={`${X} grid flex-1 grid-cols-1 content-center gap-12 py-14 lg:grid-cols-12 lg:items-center lg:gap-16`}>
+          <div className="lg:col-span-5">
+            <h1 className="font-display text-5xl font-medium leading-[0.98] tracking-tight sm:text-7xl 2xl:text-8xl">Every parcel handoff, on the record.</h1>
+            <p lang="hi" className="mt-6 text-2xl text-paper/75 sm:text-3xl">हर पार्सल का हिसाब।</p>
+            <p className="mt-6 max-w-md text-lg text-paper/70">Proof at every bus stand. Drivers paid by the kilometre the moment they hand over.</p>
+            <div className="mt-10"><TrackForm id="code" dark /></div>
           </div>
-          <div className="xl:col-span-7">
-            <JourneyHero />
-          </div>
+          <div className="lg:col-span-7"><JourneyRoad pos={j.pos} /></div>
+        </div>
+        <div className={`${X} grid grid-cols-1 gap-8 border-t border-paper/10 py-8 sm:py-10 lg:grid-cols-12 lg:items-end lg:gap-16`}>
+          <div className="lg:col-span-6"><JourneyCaption j={j} /></div>
+          <div className="lg:col-span-6"><JourneySteps j={j} /></div>
         </div>
       </section>
 
-      <div className="px-4 sm:px-6 lg:px-10">
-        <section aria-label="Live from the public log" className="grid grid-cols-2 gap-x-6 gap-y-6 border-b border-rule py-10 lg:grid-cols-4">
-          {[
-            [s?.handoffs ?? "–", "handoffs on the record"],
-            [s ? `${s.km} km` : "–", "carried and proven"],
-            [s ? `₹${Math.round(s.paidOut)}` : "–", "redeemed for drivers"],
-            [s?.bookings ?? "–", "bookings paid by agents"],
-          ].map(([n, label]) => (
-            <div key={String(label)}>
-              <p className="font-display text-5xl font-extrabold tabular-nums leading-none sm:text-6xl">{n}</p>
-              <p className="mt-2 text-muted-ink">{label}</p>
-            </div>
-          ))}
-          <p className="col-span-2 text-sm text-muted-ink lg:col-span-4">
-            Counted live from Daak&apos;s public Hedera log on testnet.{" "}
-            {s?.topicId && <a className="font-medium text-ink underline decoration-rule decoration-2 underline-offset-4" href={hashscan("topic", s.topicId)} target="_blank" rel="noreferrer">Read the log yourself</a>}
-          </p>
-        </section>
-
-        <section className="grid grid-cols-1 gap-8 py-16 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <h2 className="font-display text-4xl font-extrabold leading-tight tracking-tight">The buses already carry the parcels. Nothing else does.</h2>
-            <p className="mt-3 max-w-md text-muted-ink">India Post and the state buses built the network decades ago. What is missing is a receipt at each stand and a fair meter.</p>
+      <section aria-label="Live from the public log" className={`${X} grid grid-cols-2 gap-x-8 gap-y-10 border-b border-rule py-16 sm:py-20 lg:grid-cols-4`}>
+        {[
+          [s?.handoffs ?? "–", "handoffs on record"],
+          [s ? `${s.km}` : "–", "km carried and proven"],
+          [s ? `₹${Math.round(s.paidOut)}` : "–", "redeemed by drivers"],
+          [s?.bookings ?? "–", "bookings paid by agents"],
+        ].map(([n, label]) => (
+          <div key={String(label)}>
+            <p className="font-display text-5xl font-medium tabular-nums leading-none sm:text-6xl">{n}</p>
+            <p className="mt-2 text-soft-ink">{label}</p>
           </div>
-          <ul className="grid grid-cols-1 gap-x-10 sm:grid-cols-2 lg:col-span-8">
-            {PAINS.map(([t, d]) => (
-              <li key={t} className="border-t border-rule py-5">
-                <p className="font-display text-xl font-bold">{t}</p>
-                <p className="mt-1 text-muted-ink">{d}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
+        ))}
+        {s?.topicId && <a className="col-span-2 text-sm font-semibold text-gold-deep underline decoration-rule decoration-2 underline-offset-4 hover:decoration-gold lg:col-span-4" href={hashscan("topic", s.topicId)} target="_blank" rel="noreferrer">Counted live from Daak&apos;s public Hedera log. Read it yourself</a>}
+      </section>
 
-        <section aria-labelledby="journey" className="pb-8">
-          <h2 id="journey" className="font-display text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">One parcel, KNP-1204, start to finish</h2>
-          <p className="mt-3 max-w-2xl text-lg text-muted-ink">A box of garments from Kanpur to Gorakhpur on 6 November, 359 km on two buses. Every number below is from its public record.</p>
+      <MorphStory />
 
-          {/* The road runs down the page: each chapter is a stand on it. */}
-          <ol className="relative mt-12 flex flex-col gap-16 border-l-4 border-dashed border-wait/40 pl-6 sm:pl-10 lg:ml-4">
-            {CHAPTERS.map((c, i) => (
-              <li key={c.title} className="relative grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
-                <span aria-hidden className="absolute -left-[calc(1.5rem+14px)] top-1 grid size-6 place-items-center rounded-md bg-wait font-display text-sm font-extrabold text-paper sm:-left-[calc(2.5rem+14px)]">{i + 1}</span>
-                <div className={c.shot ? "lg:col-span-7" : "lg:col-span-6"}>
-                  <p className="text-sm font-medium text-wait">{c.place}</p>
-                  <h3 className="mt-1 font-display text-3xl font-extrabold leading-tight tracking-tight">{c.title}</h3>
-                  <p className="mt-3 max-w-2xl text-lg leading-relaxed text-ink/85">{c.story}</p>
-                  <ul className="mt-6 flex flex-col gap-3">
-                    {c.stack.map((x) => (
-                      <li key={x.name} className="flex flex-col gap-0.5 rounded-xl bg-rule/35 px-4 py-3 sm:flex-row sm:gap-4">
-                        <span className="shrink-0 font-semibold sm:w-56">{x.name}</span>
-                        <span className="text-muted-ink">{x.does}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {c.proof && c.shot && <div className="mt-6"><Proof items={c.proof} /></div>}
+      <div className={X}>
+        <section aria-labelledby="how" className="py-24 sm:py-32">
+          <h2 id="how" className="max-w-2xl font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">A handoff takes three taps.</h2>
+          <ol className="mt-16 grid grid-cols-1 gap-14 sm:grid-cols-3 lg:gap-20">
+            {STEPS.map((x) => (
+              <li key={x.n} className="flex flex-col gap-5">
+                <div className="flex items-baseline gap-3">
+                  <span className="font-display text-5xl font-medium text-gold">{x.n}</span>
+                  <div>
+                    <p className="font-display text-2xl font-semibold">{x.title}</p>
+                    <p className="text-soft-ink">{x.line}</p>
+                  </div>
                 </div>
-                <div className={c.shot ? "lg:col-span-5" : "lg:col-span-6 lg:pt-8"}>
-                  {c.shot ? (
-                    <div className="mx-auto w-full max-w-xs overflow-hidden rounded-[2rem] border-[10px] border-night bg-paper shadow-xl shadow-night/20">
-                      <Image src={c.shot.src} alt={c.shot.alt} width={c.shot.w} height={c.shot.h} className="h-auto w-full" />
-                    </div>
-                  ) : c.proof && <Proof items={c.proof} />}
+                <div className="mx-auto w-full max-w-[260px] overflow-hidden rounded-[1.75rem] border-[8px] border-ink bg-paper">
+                  <Image src={x.shot.src} alt={x.shot.alt} width={x.shot.w} height={x.shot.h} className="h-auto w-full" />
                 </div>
               </li>
             ))}
           </ol>
         </section>
 
-        <section className="grid grid-cols-1 gap-6 border-t border-rule py-16 md:grid-cols-3">
+        <section aria-labelledby="money" className="border-t border-rule py-24 sm:py-32">
+          <div className="mb-14 flex flex-col gap-3">
+            <h2 id="money" className="font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">Where ₹206.64 went.</h2>
+            <p className="text-lg text-soft-ink">KNP-1204, Kanpur to Gorakhpur, 359 km on two buses.</p>
+          </div>
+          <MoneyBar />
+        </section>
+
+        <section aria-labelledby="stack" className="border-t border-rule py-24 sm:py-32">
+          <div className="mb-14 flex flex-col gap-3">
+            <h2 id="stack" className="font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">Where each partner comes in.</h2>
+            <p className="text-lg text-soft-ink">Every call, in order. Nobody on the route sees a wallet or a token.</p>
+          </div>
+          <Architecture />
+        </section>
+
+        <section aria-labelledby="proof" className="grid grid-cols-1 gap-8 border-t border-rule py-24 sm:py-32 lg:grid-cols-12">
+          <div className="lg:col-span-4">
+            <h2 id="proof" className="font-display text-4xl font-semibold leading-tight tracking-tight">Check it yourself.</h2>
+            <p className="mt-2 text-lg text-soft-ink">Every receipt for KNP-1204 is public.</p>
+          </div>
+          <dl className="divide-y divide-rule border-y border-rule lg:col-span-8">
+            {RECEIPTS.map(([label, value, href]) => (
+              <div key={label} className="flex flex-col gap-0.5 py-3.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
+                <dt className="text-soft-ink">{label}</dt>
+                <dd><a href={href} target={href.startsWith("/") ? undefined : "_blank"} rel="noreferrer" className="font-mono text-sm text-gold-deep underline decoration-rule decoration-2 underline-offset-4 hover:decoration-gold">{value}</a></dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <section className="grid grid-cols-1 gap-8 border-t border-rule py-24 sm:py-32 md:grid-cols-3">
           {[
-            ["Drivers", "Paid by the kilometre at every handover, a savings pot, and a record of proven work they own: it raises their share up front and unlocks fuel advances."],
-            ["Shops", "One published rate, the route and drivers chosen before paying, a photo at every stand, and a refund from the responsible driver's held pay."],
-            ["Receiving shops", "Tap the parcel with any phone to see where it is. No app and no account."],
+            ["Drivers", "Paid per km at every handover, and a record of proven work that raises their share."],
+            ["Shops", "One published rate, a photo at every stand, and a refund from the responsible driver's held pay."],
+            ["Receiving shops", "Tap the parcel with any phone. No app, no account."],
           ].map(([t, d]) => (
             <div key={t}>
-              <p className="font-display text-2xl font-extrabold">{t}</p>
-              <p className="mt-2 text-muted-ink">{d}</p>
+              <p className="font-display text-2xl font-semibold">{t}</p>
+              <p className="mt-2 text-soft-ink">{d}</p>
             </div>
           ))}
-          <p className="text-muted-ink md:col-span-3">
-            Nobody on the route sees a wallet or a token. Phone numbers, UPI IDs and ID documents are sealed before they reach any record; badges appear on the public log only as a short hash.
-          </p>
         </section>
       </div>
 
-      <section className="bg-night px-4 py-14 text-paper sm:px-6 lg:px-10">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end">
+      <section className="bg-night text-paper">
+        <div className={`${X} grid grid-cols-1 gap-10 py-20 lg:grid-cols-12 lg:items-end`}>
           <div className="lg:col-span-7">
-            <h2 className="font-display text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">Named after the dak, the relay that carried India&apos;s post by runner and horse.</h2>
-            <p className="mt-3 max-w-2xl text-paper/70">Same idea, one change: every hand on the route signs, and every hand gets paid.</p>
+            <h2 className="font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">Named after the dak, the relay that carried India&apos;s post.</h2>
+            <p className="mt-3 max-w-xl text-paper/70">Same relay. Now every hand signs, and every hand gets paid.</p>
           </div>
           <div className="flex flex-col gap-3 lg:col-span-5">
-            <form onSubmit={track} className="flex gap-2">
-              <label htmlFor="code2" className="sr-only">Parcel code</label>
-              <input id="code2" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Parcel code"
-                className="min-w-0 flex-1 rounded-xl border border-paper/20 bg-paper/5 px-4 py-3 text-paper placeholder:text-paper/45 outline-none focus-visible:ring-2 focus-visible:ring-lamp" />
-              <button type="submit" className="rounded-xl bg-lamp px-5 py-3 font-semibold text-night transition-transform active:scale-[0.97]">Track</button>
-            </form>
+            <TrackForm id="code2" dark />
             <div className="flex flex-wrap gap-2">
-              {[["/live", "Live deliveries"], ["/network", "The network map"], ["/drivers", "Drivers' records"], ["https://github.com/adilhusain01/daak", "Source on GitHub"]].map(([href, label]) => (
+              {[["/live", "Live deliveries"], ["/network", "Network map"], ["/drivers", "Drivers"], ["https://github.com/adilhusain01/daak", "Source on GitHub"]].map(([href, label]) => (
                 <a key={href} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer"
-                  className="rounded-lg bg-paper/10 px-3 py-2 text-sm font-medium transition-transform hover:bg-paper/15 active:scale-[0.97]">{label}</a>
+                  className="rounded-md bg-paper/10 px-3 py-2 text-sm font-semibold transition-transform hover:bg-paper/15 active:scale-[0.97]">{label}</a>
               ))}
             </div>
           </div>
+          <footer className="flex flex-col gap-2 border-t border-paper/15 pt-6 text-sm text-paper/60 sm:flex-row sm:justify-between lg:col-span-12">
+            <span>Built at ETHGlobal Mumbai 2026. Testnet, MIT licence.</span>
+            <span>Data: India Post (GODL-India), OpenStreetMap, OSRM. Logos belong to Hedera, 0G, Arkiv and Swarm.</span>
+          </footer>
         </div>
-        <footer className="mt-12 flex flex-col gap-2 border-t border-paper/15 pt-6 text-sm text-paper/55 sm:flex-row sm:justify-between">
-          <span>Built at ETHGlobal Mumbai 2026. Testnet build, MIT licence.</span>
-          <span>Post office data: India Post (GODL-India). Map data: OpenStreetMap. Roads: OSRM.</span>
-        </footer>
       </section>
     </main>
   );
