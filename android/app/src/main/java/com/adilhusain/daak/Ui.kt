@@ -343,10 +343,27 @@ fun ParcelItem(code: String, trailing: String, status: String, statusColor: Colo
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Body(code, Tokens.ink, 18, FontWeight.SemiBold)
-            Body(trailing, Tokens.muted, 15)
+            Body(code, Tokens.ink, 18, FontWeight.Bold)
+            Body(trailing, Tokens.ink, 16, FontWeight.Medium)
         }
         Body(status, statusColor, 16, FontWeight.Medium)
         Body(sub, Tokens.muted, 14)
     }
+}
+
+/** A key that sits beside another in a row: filled for the main choice, edged for the other. */
+@Composable
+fun SmallKey(text: String, modifier: Modifier = Modifier, color: Color = Tokens.ink, filled: Boolean = true, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    Box(
+        modifier
+            .graphicsLayer { val s = if (pressed) 0.97f else 1f; scaleX = s; scaleY = s }
+            .shadow(if (filled) 4.dp else 2.dp, RoundedCornerShape(Tokens.inner))
+            .background(if (filled) color else Tokens.sheet, RoundedCornerShape(Tokens.inner))
+            .border(1.dp, if (filled) color else Tokens.line, RoundedCornerShape(Tokens.inner))
+            .clickable(interactionSource = source, indication = null, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) { BasicText(text, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (filled) Tokens.paper else Tokens.ink)) }
 }

@@ -10,6 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -750,12 +752,12 @@ class MainActivity : ComponentActivity() {
         val p = me ?: return
         when (homeTab) {
             "jobs" -> {
-                OfferCard((todo ?: emptyList()).filter { it.action == "offer" })
                 Action("पार्सल सौंपें या लें", "Hand over or take a parcel, or just tap it") { selectTab("hand") }
-                TodoCard("Nothing waiting. New jobs and handoffs show here.")
-                MyParcels("Parcels you carry show here once a shop books you.")
-                work?.let { w -> Toggle("आज छुट्टी · Not driving today", if (w.awayToday) "Today's stretches go to other drivers" else "Turn on if your bus is not running today", w.awayToday, awayBusy) { toggleAway() } }
                 QueuedNote()
+                OfferCard((todo ?: emptyList()).filter { it.action == "offer" })
+                TodoCard("Nothing waiting. New jobs and handoffs show here.")
+                work?.let { w -> Toggle("आज छुट्टी · Not driving today", if (w.awayToday) "Today's stretches go to other drivers" else "Turn on if your bus is not running today", w.awayToday, awayBusy) { toggleAway() } }
+                MyParcels("Parcels you carry show here once a shop books you.")
             }
             "earn" -> {
                 WorkCard(work)
@@ -853,16 +855,20 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun OfferCard(offers: List<Todo>) {
-        offers.take(2).forEach { o ->
-            Sheet {
-                Heading("नया काम", "New job · ${o.code}")
-                Body(o.text, Tokens.ink, 17, FontWeight.Medium)
+        if (offers.isEmpty()) return
+        Sheet {
+            Heading("नया काम", "New jobs · ${offers.size}")
+            offers.take(3).forEachIndexed { i, o ->
+                if (i > 0) Rule()
+                Body(o.code, Tokens.ink, 17, FontWeight.Bold)
+                Body(o.text, Tokens.ink, 16)
                 if (answering == o.code) Body("Sending…", Tokens.muted, 15)
-                else {
-                    Action("स्वीकार करें", "Accept this job", Tokens.green) { answerJob(o, true) }
-                    TextKey("मना करें · Decline") { answerJob(o, false) }
+                else androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallKey("स्वीकार · Accept", Modifier.weight(1f), Tokens.green) { answerJob(o, true) }
+                    SmallKey("मना · Decline", Modifier.weight(1f), filled = false) { answerJob(o, false) }
                 }
             }
+            if (offers.size > 3) Body("+${offers.size - 3} more after you answer these", Tokens.muted, 14)
         }
     }
 
@@ -873,11 +879,14 @@ class MainActivity : ComponentActivity() {
         if (t.isEmpty()) { if (empty != null) Body(empty, Tokens.muted, 16); return }
         Sheet {
             Heading("आगे क्या करना है", "Up next")
-            t.take(4).forEachIndexed { i, item ->
+            t.take(3).forEachIndexed { i, item ->
                 if (i > 0) Rule()
-                Body(item.code, Tokens.ink, 17, FontWeight.SemiBold)
-                Body(item.text.replace("${item.code} ", ""), Tokens.muted, 15)
+                Column(Modifier.fillMaxWidth().clickable { openParcel(item.code) }, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Body(item.code, Tokens.ink, 17, FontWeight.Bold)
+                    Body(item.text.replace("${item.code} ", ""), Tokens.muted, 15)
+                }
             }
+            if (t.size > 3) Body("+${t.size - 3} more in My parcels below", Tokens.muted, 14)
         }
     }
 
@@ -1028,7 +1037,7 @@ class MainActivity : ComponentActivity() {
             l.rows.isEmpty() -> Body(empty, Tokens.muted, 15)
             else -> {
                 l.rows.forEach { r ->
-                    ParcelItem(r.code, "${r.handed}/${r.stops} stops · ₹${"%.2f".format(r.fee)}", r.status, statusColor(r.statusKey),
+                    ParcelItem(r.code, "₹${"%.2f".format(r.fee)}", r.status, statusColor(r.statusKey),
                         "${r.label.removePrefix("Parcel from ")} · ${dayTime(r.createdAt)}") { openParcel(r.code) }
                 }
                 if (l.page < l.pages) Secondary(if (mineBusy) "Loading…" else "और दिखाएँ · Show more (${l.total - l.rows.size} left)") { loadMine() }
@@ -1039,7 +1048,7 @@ class MainActivity : ComponentActivity() {
     /** One parcel: where it is, each stop's check, and what each driver was paid. */
     @Composable
     private fun ParcelScreen(s: Screen.Parcel) {
-        TextKey("‹ वापस · Back") { screen = s.from }
+        androidx.compose.foundation.layout.Row { SmallKey("‹ वापस · Back", filled = false) { screen = s.from } }
         val d = s.detail
         when {
             s.problem != null -> Verdict(Tokens.amber, "नहीं खुला", "Could not open", s.problem)

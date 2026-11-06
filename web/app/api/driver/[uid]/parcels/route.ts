@@ -5,6 +5,8 @@ import { badgeHash, readLog } from "@/lib/history";
 import { legPay } from "@/lib/split";
 import { clock } from "@/lib/timetable";
 
+const OFFER_MS = 24 * 3600_000;
+
 /** What a person should do next: parcels where they are the giver or the taker of the next handoff. */
 export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }> }) {
   if (!isApp(_req)) return denied("app");
@@ -20,9 +22,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
     const done = new Set((await handoffsFor(c.code)).filter((h) => h.verdict !== "held").map((h) => h.hop));
     // A new job: this driver carries a stretch not yet handed over and has not answered the offer.
     const mine = c.route.find((l) => l.from === uid && (l.km ?? 0) > 0);
-    if (mine && !done.has(mine.hop) && !answered.has(`${c.code}#${mine.hop}`)) {
+    // An offer lasts a day: an unanswered job from yesterday has gone to the bus that ran.
+    if (mine && !done.has(mine.hop) && !answered.has(`${c.code}#${mine.hop}`) && Date.now() - c.createdAt < OFFER_MS) {
       const pay = legPay(c).find((p) => p.hop === mine.hop);
-      const start = c.route.find((l) => l.to === uid)?.place ?? "";
+      const prev = c.route[c.route.indexOf(mine) - 1];
+      const start = c.route.find((l) => l.to === uid)?.place ?? prev?.place ?? "the pickup";
       offers.push({
         code: c.code, label: c.label, place: mine.place, action: "offer", hop: mine.hop,
         text: `${start.split(",")[0]} to ${mine.place.split(",")[0]}, ${mine.km} km, ₹${((pay?.units ?? 0) / 100).toFixed(2)} (${pay?.pct ?? 50}% at handover)${mine.departsAt ? `, bus ${clock(mine.departsAt)}` : ""}`,
