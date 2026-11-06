@@ -33,20 +33,21 @@ function provider() {
 
 export const backupReady = () => provider() !== null;
 
-export async function backupCheck(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Backup> {
+/** Any question about a photo, asked of the backup model (Cloudflare first). Not sealed; callers label it as the backup. */
+export async function askBackup(photo: Buffer, prompt: string, budgetMs = BACKUP_BUDGET_MS): Promise<{ content: string; model: string; provider: "cloudflare" | "gemini" }> {
   const p = provider();
   if (!p) throw new Error("No backup model configured");
   const res = await fetch(p.url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${p.key}` },
-    signal: AbortSignal.timeout(BACKUP_BUDGET_MS),
+    signal: AbortSignal.timeout(budgetMs),
     body: JSON.stringify({
       model: p.model,
       temperature: 0,
       messages: [{
         role: "user",
         content: [
-          { type: "text", text: parcelPrompt(expectedCode, hopLabel) },
+          { type: "text", text: prompt },
           { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photo.toString("base64")}` } },
         ],
       }],
@@ -54,7 +55,12 @@ export async function backupCheck(photo: Buffer, expectedCode: string, hopLabel:
   });
   if (!res.ok) throw new Error(`backup ${p.name} ${res.status}: ${(await res.text()).slice(0, 160)}`);
   const data = await res.json();
-  return { ...parseAnswer(data.choices?.[0]?.message?.content ?? ""), model: p.model, provider: p.name };
+  return { content: data.choices?.[0]?.message?.content ?? "", model: p.model, provider: p.name };
+}
+
+export async function backupCheck(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Backup> {
+  const r = await askBackup(photo, parcelPrompt(expectedCode, hopLabel));
+  return { ...parseAnswer(r.content), model: r.model, provider: r.provider };
 }
 
 /** What a backup answer means for the handoff: a problem holds it; a pass waits for 0G (or pays, in test mode). */

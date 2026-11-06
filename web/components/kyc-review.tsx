@@ -9,7 +9,7 @@ import { useState } from "react";
 
 type Reading = {
   read: { docType: string; name: string; last4: string; vehicleClasses: string };
-  notes: string; requestId?: string;
+  notes: string; requestId?: string; sealed?: boolean; model?: string;
   checks: { typeOk: boolean; nameOk: boolean; last4Ok: boolean; busOk: boolean | null; maskOk: boolean | null; editedOk: boolean };
 };
 
@@ -58,7 +58,7 @@ export function KycReview() {
             <div className="flex flex-wrap gap-2">
               <ProofButton href={`/api/kyc/${encodeURIComponent(d.uid)}`}>View ID photo</ProofButton>
               <Button variant="outline" className="rounded-lg shadow-sm active:translate-y-px" disabled={read.isPending} onClick={() => read.mutate(d.uid)}>
-                {read.isPending && read.variables === d.uid ? "0G is reading…" : "Ask 0G to read it"}
+                {read.isPending && read.variables === d.uid ? "Reading…" : "Ask 0G to read it"}
               </Button>
               <Button className="rounded-lg bg-ok text-paper shadow-sm active:translate-y-px" disabled={decide.isPending} onClick={() => decide.mutate({ uid: d.uid, status: "verified" })}>Verify</Button>
               <Button variant="outline" className="rounded-lg border-held text-held shadow-sm active:translate-y-px" disabled={decide.isPending} onClick={() => decide.mutate({ uid: d.uid, status: "rejected" })}>Reject</Button>
@@ -67,7 +67,7 @@ export function KycReview() {
               const r = readings[d.uid];
               return (
                 <div className="basis-full rounded-lg bg-rule/35 p-3 text-sm">
-                  <p><span className="font-medium">0G read:</span> {r.read.name || "no name"}, ending {r.read.last4 || "?"}{r.read.vehicleClasses ? `, classes ${r.read.vehicleClasses}` : ""}. <span className="text-muted-ink">{r.notes}</span></p>
+                  <p><span className="font-medium">{r.sealed === false ? "Backup model read (Cloudflare, not sealed):" : "0G read:"}</span> {r.read.name || "no name"}, ending {r.read.last4 || "?"}{r.read.vehicleClasses ? `, classes ${r.read.vehicleClasses}` : ""}. <span className="text-muted-ink">{r.notes}</span></p>
                   <p className="mt-2 flex flex-wrap gap-1.5">
                     {CHECKS.filter(([k]) => r.checks[k] !== null).map(([k, label]) => (
                       <span key={k} className={`rounded-md px-2 py-0.5 text-xs font-medium ${r.checks[k] ? "bg-ok/15 text-ok" : "bg-held/15 text-held"}`}>{r.checks[k] ? "Matches" : "Check"}: {label}</span>
