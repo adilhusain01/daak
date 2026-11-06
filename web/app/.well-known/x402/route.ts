@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { WEIGHT_BANDS, METER, BOOKING_FEE } from "@/lib/network";
 import { settlementAsset, settlesInRupees, X402_ASSET } from "@/lib/x402";
+import { canonical, daakAgent, uaid } from "@/lib/uaid";
 
 /**
  * Daak's x402 catalogue: what an agent can buy here, where, and how it is priced. A shop's agent reads this
@@ -11,6 +12,8 @@ export async function GET(req: Request) {
   return NextResponse.json({
     x402Version: 2,
     name: "Daak",
+    // HCS-14 identity: recompute the UAID from these fields to check this is Daak, and that payTo is its account.
+    agent: { uaid: uaid(daakAgent(process.env.HEDERA_OPERATOR_ID ?? "")), standard: "HCS-14 (aid)", fields: canonical(daakAgent(process.env.HEDERA_OPERATOR_ID ?? "")) },
     description: "Relay delivery on UP and Bihar bus routes, with every handoff proven and every driver paid by the kilometre.",
     resources: [{
       id: "daak.book",

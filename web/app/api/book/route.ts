@@ -5,7 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "@x402/next";
 import { x402Server, bookingPrice, routeKm } from "@/lib/x402";
 import { putConsignment, getBadge, type Leg } from "@/lib/arkiv";
-import { lockFee, hashscan } from "@/lib/payout";
+import { lockFee, hashscan, accountFor } from "@/lib/payout";
+import { shopAgentData, verifyUaid } from "@/lib/uaid";
+import { shopAgentLabel } from "@/lib/shop";
+import { badgeHash } from "@/lib/history";
 import { logHandoff } from "@/lib/hedera";
 
 type Body = { parcel: string; label: string; feeRupees?: number; route: Leg[]; weight?: string };
@@ -41,9 +44,17 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   const money = await lockFee(code, b.feeRupees, b.route.filter((l) => (l.km ?? 0) > 0).map((l) => ({ badge: l.from, km: l.km! })));
   const pool = await fundPool(code, b.feeRupees).catch((e) => { console.error("pool", e); return null; });
   const shares = legPay({ code, feeRupees: b.feeRupees, route: b.route });
+  // HCS-14: the paying agent's identity, recomputed from the shop on the route and its agent account.
+  const claimed = req.headers.get("x-agent-uaid");
+  let agentUaid: string | null = null;
+  if (claimed) {
+    const shop = b.route[0]?.from ?? "";
+    const account = await accountFor(shopAgentLabel(shop));
+    agentUaid = verifyUaid(claimed, shopAgentData(badgeHash(shop), account), account) ? claimed : null;
+  }
   const hcs = await logHandoff({
     t: "daak.booked", code, legs: b.route.length, weight: weight.id, feeRupees: b.feeRupees, bookingFeeRupees: bookingFee(b.feeRupees),
-    split: shares.map((s) => ({ hop: s.hop, pct: s.pct })), poolRupees: pool?.rupees ?? 0,
+    split: shares.map((s) => ({ hop: s.hop, pct: s.pct })), poolRupees: pool?.rupees ?? 0, agent: agentUaid,
   });
   return NextResponse.json({
     code,
@@ -51,6 +62,7 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
     bookingFeeRupees: bookingFee(b.feeRupees),
     meter: `Rs 5 + Rs 0.50/km, ${weight.label} (x${weight.factor})`,
     weight: weight.label,
+    agentUaid,
     shares: shares.map((s) => ({ hop: s.hop, km: s.km, rupees: s.units / 100, atHandoverPct: s.pct, atHandoverRupees: s.advance / 100, atDeliveryRupees: s.holdback / 100 })),
     proofs: { arkiv, lock: hashscan("transaction", money.lockTx), pool: pool && hashscan("transaction", pool.tx), hcs },
   });

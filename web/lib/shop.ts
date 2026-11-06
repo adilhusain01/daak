@@ -3,6 +3,7 @@ import { env } from "./env";
 import { chain, hedera, logHandoff } from "./hedera";
 import { badgeHash } from "./history";
 import { accountFor } from "./payout";
+import { shopAgentData, uaid } from "./uaid";
 
 /**
  * Each shop has its own agent account on Hedera holding the shop's prepaid rupees (dINR). The shop tops it up
@@ -32,6 +33,6 @@ export async function topUpShop(sender: string, rupees: number, utr: string) {
     .setTransactionMemo(`Daak shop top-up by UPI ${utr}`).execute(hedera());
   await res.getReceipt(hedera());
   const tx = res.transactionId.toString();
-  const hcs = await logHandoff({ t: "daak.topup", shop: badgeHash(sender), rupees, utr, tx });
+  const hcs = await logHandoff({ t: "daak.topup", shop: badgeHash(sender), rupees, utr, tx, agent: uaid(shopAgentData(badgeHash(sender), agent), agent) });
   return { agent, rupees, tx, hcs };
 }

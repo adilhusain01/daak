@@ -6,6 +6,8 @@ import { accountFor, keyFor } from "./payout";
 import { chain, hedera } from "./hedera";
 import { bookingTotal, settlesInRupees } from "./x402";
 import { shopAgentLabel, shopBalance } from "./shop";
+import { daakAgent, shopAgentData, uaid, verifyUaid } from "./uaid";
+import { badgeHash } from "./history";
 import { env } from "./env";
 import type { Leg } from "./arkiv";
 
@@ -20,6 +22,11 @@ export async function agentBook(baseUrl: string, body: { parcel: string; label: 
   const catalogue = await (await fetch(`${baseUrl}/.well-known/x402`, { cache: "no-store" })).json().catch(() => null);
   const offer = catalogue?.resources?.find((r: { id: string }) => r.id === "daak.book");
   const endpoint: string = offer?.resource ?? `${baseUrl}/api/book`;
+  // HCS-14: check the seller is Daak before paying. The UAID must recompute from its fields, and the account it
+  // names must be the one the booking pays.
+  const seller = daakAgent(env.hederaOperatorId());
+  if (catalogue?.agent?.uaid && !verifyUaid(catalogue.agent.uaid, seller)) throw new Error("The booking service's HCS-14 identity does not check out; not paying");
+  if (offer?.payTo && offer.payTo !== env.hederaOperatorId()) throw new Error("The catalogue's payTo is not Daak's account; not paying");
 
   const inRupees = settlesInRupees() && Boolean(shop);
   const label = inRupees ? shopAgentLabel(shop!) : "sender-agent";
@@ -45,10 +52,11 @@ export async function agentBook(baseUrl: string, body: { parcel: string; label: 
     },
     policies: [(_v, reqs) => reqs.filter((r) => r.payTo === env.hederaOperatorId())],
   });
-  const res = await pay(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const me = inRupees ? uaid(shopAgentData(badgeHash(shop!), agentId), agentId) : null;
+  const res = await pay(endpoint, { method: "POST", headers: { "Content-Type": "application/json", ...(me ? { "x-agent-uaid": me } : {}) }, body: JSON.stringify(body) });
   const text = await res.text();
   if (!res.ok) throw new Error(`booking ${res.status}: ${text.slice(0, 200)}`);
-  return { ...JSON.parse(text), paidBy: agentId, x402: res.headers.get("payment-response") ? "settled" : "unknown", endpoint };
+  return { ...JSON.parse(text), paidBy: agentId, agentUaid: me, x402: res.headers.get("payment-response") ? "settled" : "unknown", endpoint };
 }
 
 /** The shared agent of the flat-price mode keeps a small float of HBAR, and USDC when settling in USDC. */

@@ -153,3 +153,23 @@ test("drivers without bus times stay bookable, after those with times, with no E
   assert.deepEqual(plan[0].options.map((o) => o.uid), ["A", "X"]);
   assert.equal(plan[0].options[1].dep, null);
 });
+
+test("an HCS-14 UAID is deterministic, normalised, and ignores nothing it should hash", async () => {
+  const { uaid, verifyUaid } = await import("../lib/uaid.ts");
+  const a = { registry: "Daak ", name: "Daak booking", version: "1", protocol: "X402", nativeId: "hedera:testnet:0.0.11325722", skills: [17, 0] };
+  const id = uaid(a);
+  assert.match(id, /^uaid:aid:[1-9A-HJ-NP-Za-km-z]+;uid=0;registry=daak;proto=x402;nativeId=hedera:testnet:0\.0\.11325722$/);
+  assert.equal(uaid({ ...a, registry: "daak", protocol: "x402", skills: [0, 17] }), id); // case and order do not matter
+  assert.notEqual(uaid({ ...a, nativeId: "hedera:testnet:0.0.1" }), id); // a different account is a different agent
+  assert.equal(verifyUaid(id, a), true);
+  assert.throws(() => uaid({ ...a, skills: [50] }));
+});
+
+test("UAIDs match Hashgraph Online's reference SDK byte for byte", async () => {
+  const { uaid } = await import("../lib/uaid.ts");
+  // Expected values produced by @hashgraphonline/standards-sdk 0.1.192, HCS14Client.createUaid(data, { uid, proto }).
+  assert.equal(uaid({ registry: "daak", name: "Daak booking", version: "1", protocol: "x402", nativeId: "hedera:testnet:0.0.11325722", skills: [] }, "0"),
+    "uaid:aid:523zLFUo5BZwGPAisoPoqfMe8KozkL9SPrW9ftvNBpNmDT9BJ3WCVBd7vXBLoRQ525;uid=0;registry=daak;proto=x402;nativeId=hedera:testnet:0.0.11325722");
+  assert.equal(uaid({ registry: "acme", name: "Support", version: "1.0.0", protocol: "a2a", nativeId: "acme.example", skills: [17, 0] }, "support"),
+    "uaid:aid:6tBGtdYtv1buF76s9QLtSZjQfTpqheRXxdktpXZqszjNJiNgvHoeNdwAMpPy6zE2uu;uid=support;registry=acme;proto=a2a;nativeId=acme.example");
+});
