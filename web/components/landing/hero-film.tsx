@@ -88,13 +88,21 @@ export function HeroFilm({ clock }: { clock: React.RefObject<Clock> }) {
       });
     };
 
-    const busWorldX = (k: Clock) => {
-      const la = ROUTE.lucknowAt;
-      const along = k.pos <= la ? stands.KNP + (stands.LKO - stands.KNP) * (k.pos / la) : stands.LKO + (stands.GKP - stands.LKO) * ((k.pos - la) / (1 - la));
-      // The bus stops just short of each stand, so the hand-over between the person and its door shows.
-      const stop = h * 0.2;
-      if (k.beat === 0) { const e = 1 - Math.pow(1 - Math.min(1, k.fill / 0.7), 3); return stands.KNP - stop - w * 0.55 + w * 0.55 * e; } // arriving at Kanpur
-      return along - stop;
+    /**
+     * Two buses, as on KNP-1204's real day: Ramesh drives Kanpur to Lucknow and stops short of the stand; Suresh's bus
+     * waits past it, takes the parcel from him and drives on to Gorakhpur. Returns both, and where the camera looks.
+     */
+    const buses = (k: Clock) => {
+      const la = ROUTE.lucknowAt, stop = h * 0.2, arrived = k.pos >= la - 0.001;
+      const a = k.beat === 0
+        ? stands.KNP - stop - w * 0.55 + w * 0.55 * (1 - Math.pow(1 - Math.min(1, k.fill / 0.7), 3))
+        : k.beat <= 2 ? stands.KNP - stop
+        : k.beat === 3 ? stands.KNP - stop + (stands.LKO - stands.KNP) * Math.min(1, k.pos / la)
+        : stands.LKO - stop;
+      const bStart = stands.LKO + stop, bEnd = stands.GKP - stop;
+      const b = k.beat === 4 ? bStart + (bEnd - bStart) * Math.max(0, (k.pos - la) / (1 - la)) : bStart;
+      const look = k.beat <= 2 ? a : k.beat === 3 ? (arrived ? (a + b) / 2 : a) : b;
+      return { a, b, look, arrived, aMoving: (k.beat === 0 && k.fill < 0.7) || (k.beat === 3 && !arrived), bMoving: k.beat === 4 && k.pos < 0.999 };
     };
 
     const figure = (x: number, y: number, s: number, color = "#0c0b08") => {
@@ -118,7 +126,7 @@ export function HeroFilm({ clock }: { clock: React.RefObject<Clock> }) {
       ctx.fillStyle = `rgba(236,229,211,${lit ? 0.85 : 0.5})`; ctx.font = `500 ${Math.max(16, h * 0.03)}px ${serif}`; ctx.textAlign = "center";
       ctx.fillText(name, x, ground - s * 1.35);
     };
-    const bus = (x: number, ground: number, moving: boolean, t: number) => {
+    const bus = (x: number, ground: number, moving: boolean, t: number, driver: string) => {
       const L = h * 0.17, H = h * 0.06, y = ground - H - h * 0.01;
       if (moving) { // headlights reaching ahead
         const beam = ctx.createLinearGradient(x + L / 2, 0, x + L / 2 + h * 0.45, 0);
@@ -135,6 +143,9 @@ export function HeroFilm({ clock }: { clock: React.RefObject<Clock> }) {
       ctx.fillStyle = rgba(GOLD, 0.9); ctx.fillRect(x + L / 2 - H * 0.08, y + H * 0.62, H * 0.08, H * 0.12);
       ctx.fillStyle = "#050504";
       [-0.3, 0.3].forEach((k) => { ctx.beginPath(); ctx.arc(x + k * L, y + H, H * 0.2, 0, Math.PI * 2); ctx.fill(); });
+      // Whose bus it is, above the roof.
+      ctx.fillStyle = "rgba(236,229,211,0.7)"; ctx.font = `600 ${Math.max(11, h * 0.017)}px var(--font-mulish), system-ui, sans-serif`; ctx.textAlign = "center";
+      ctx.fillText(driver, x, y - H * 0.5);
     };
     const ring = (x: number, y: number, k: number) => {
       for (let i = 0; i < 3; i++) {
@@ -150,8 +161,8 @@ export function HeroFilm({ clock }: { clock: React.RefObject<Clock> }) {
       const dt = Math.min(64, now - (lastT || now)); lastT = now;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const ground = h * GROUND;
-      const bx = busWorldX(k);
-      const target = Math.max(0, Math.min(worldW - w, bx - w * 0.6));
+      const B = buses(k);
+      const target = Math.max(0, Math.min(worldW - w, B.look - w * 0.6));
       // The camera holds the bus in frame, easing a little; when the day starts again it cuts back to Kanpur.
       if (k.beat === 0 && lastBeat === 4) first = true;
       camX = reduce || first ? target : camX + (target - camX) * Math.min(1, dt / 90);
@@ -192,7 +203,7 @@ export function HeroFilm({ clock }: { clock: React.RefObject<Clock> }) {
       ctx.strokeStyle = "rgba(236,229,211,0.12)"; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(0, ground); ctx.lineTo(w, ground); ctx.stroke();
       // Proven road turns gold behind the bus; on delivery the gold runs back the whole way.
-      const goldTo = k.beat >= 2 ? bx : stands.KNP;
+      const goldTo = k.beat < 2 ? stands.KNP : k.beat === 3 ? B.a : B.b;
       ctx.strokeStyle = rgba(GOLD, 0.9); ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(stands.KNP - camX, ground); ctx.lineTo(goldTo - camX, ground); ctx.stroke();
       if (k.beat === 4 && k.fill > 0.55) {
@@ -202,28 +213,30 @@ export function HeroFilm({ clock }: { clock: React.RefObject<Clock> }) {
         ctx.strokeStyle = sweep; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(from - camX - 200, ground); ctx.lineTo(from - camX + 60, ground); ctx.stroke();
       }
 
-      // Stands, the people waiting at them, and the parcel's way between them.
+      // Stands, the shop at Kanpur and the receiver at Gorakhpur, and the parcel's way between them.
       const s = h * 0.075;
       (["KNP", "LKO", "GKP"] as const).forEach((id, i) => {
         const x = stands[id] - camX;
         if (x < -w * 0.3 || x > w * 1.3) return;
-        const reached = (id === "KNP" && k.beat >= 1) || (id === "LKO" && k.beat >= 3 && k.pos >= ROUTE.lucknowAt - 0.001) || (id === "GKP" && k.beat >= 4 && k.pos >= 0.999);
+        const reached = (id === "KNP" && k.beat >= 1) || (id === "LKO" && k.beat >= 3 && B.arrived) || (id === "GKP" && k.beat >= 4 && k.pos >= 0.999);
         stand(x, ground, ["Kanpur", "Lucknow", "Gorakhpur"][i], reached);
-        figure(x - s * 0.9, ground, s);
+        if (id !== "LKO") figure(x - s * 0.9, ground, s);
       });
-      const busX = bx - camX, busTop = ground - h * 0.09;
-      const handTo = (fromX: number, toX: number, p: number, lift: number) => {
+      const aX = B.a - camX, bX = B.b - camX, busTop = ground - h * 0.09, door = h * 0.05;
+      const handTo = (fromX: number, toX: number, p: number) => {
         const e = 1 - Math.pow(1 - Math.min(1, Math.max(0, p)), 3);
-        parcel(fromX + (toX - fromX) * e, busTop - lift - Math.sin(e * Math.PI) * h * 0.05, h * 0.03);
+        parcel(fromX + (toX - fromX) * e, busTop - Math.sin(e * Math.PI) * h * 0.06, h * 0.03);
       };
-      const atStand = (id: "KNP" | "LKO" | "GKP") => stands[id] - camX - s * 0.9;
+      const atStand = (id: "KNP" | "GKP") => stands[id] - camX - s * 0.9;
       if (k.beat === 0) parcel(atStand("KNP") + s * 0.25, ground - s * 0.5, h * 0.03);
-      if (k.beat === 1) handTo(atStand("KNP") + s * 0.25, busX - h * 0.06, (k.fill - 0.2) / 0.6, 0);
-      if (k.beat === 2) { parcel(busX - h * 0.06, busTop, h * 0.03); ring(busX - h * 0.06, busTop, k.fill); }
-      if (k.beat === 3 && k.pos >= ROUTE.lucknowAt - 0.001) handTo(busX - h * 0.06, atStand("LKO") + s * 0.25, (k.fill - 0.5) / 0.4, 0);
-      if (k.beat === 4 && k.pos >= 0.999) handTo(busX - h * 0.06, atStand("GKP") + s * 0.25, (k.fill - 0.5) / 0.3, 0);
+      if (k.beat === 1) handTo(atStand("KNP") + s * 0.25, aX + door, (k.fill - 0.2) / 0.6);
+      if (k.beat === 2) { parcel(aX + door, busTop, h * 0.03); ring(aX + door, busTop, k.fill); }
+      // Lucknow: Ramesh hands it across to Suresh's bus, driver to driver.
+      if (k.beat === 3 && B.arrived) handTo(aX + door, bX - door, (k.fill - 0.5) / 0.4);
+      if (k.beat === 4 && k.pos >= 0.999) handTo(bX + door, atStand("GKP") + s * 0.25, (k.fill - 0.5) / 0.3);
 
-      bus(busX, ground, k.beat !== 2 && !(k.beat === 1) && k.fill < 0.55, now);
+      if (aX > -w * 0.3 && aX < w * 1.3) bus(aX, ground, B.aMoving, now, "Ramesh");
+      if (bX > -w * 0.3 && bX < w * 1.3) bus(bX, ground, B.bMoving, now, "Suresh");
 
       // Gold rising where a driver is paid (Lucknow) and where the held pay releases (Gorakhpur).
       if (k.beat !== lastBeat) {
