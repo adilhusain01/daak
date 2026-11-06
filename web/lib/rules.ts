@@ -184,3 +184,20 @@ export function mergeBySeq<T extends { seq: number }>(cached: T[], fresh: T[]): 
   const last = cached.at(-1)?.seq ?? 0;
   return [...cached, ...fresh.filter((m) => m.seq > last)];
 }
+
+/**
+ * Whether a code read off a lid is the parcel's code. People write codes by hand, over two lines, with or without
+ * hyphens and spaces, in any case; only the letters and digits count.
+ */
+export function sameCode(read: string, expected: string): boolean {
+  const norm = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return norm(read).length > 0 && norm(read) === norm(expected);
+}
+
+/**
+ * Which stops 0G may look at again: not checked yet, held by the unsealed backup, or held only because the code on
+ * the lid did not match (a misread, or the old letter-for-letter compare). Damage and wrong people or place stay held.
+ */
+export function recheckable(verdict: string, reason: string): boolean {
+  return verdict === "unchecked" || (verdict === "held" && (reason.startsWith("Backup check") || reason.startsWith("Code on the parcel reads")));
+}

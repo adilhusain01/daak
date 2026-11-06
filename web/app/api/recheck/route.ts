@@ -1,3 +1,4 @@
+import { recheckable } from "@/lib/rules";
 import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { consignmentByCode, handoffsFor, writeHandoff } from "@/lib/arkiv";
@@ -24,15 +25,14 @@ export async function POST(req: Request) {
   for (const h of [...all].sort((a, b) => a.at - b.at)) latestByHop.set(h.hop, h);
   const results = [];
   for (const h of latestByHop.values()) {
-    // Unchecked hops, and hops the unsealed backup held: 0G's sealed check has the final word on both.
-    const backupHeld = h.verdict === "held" && h.reason.startsWith("Backup check");
-    if ((h.verdict !== "unchecked" && !backupHeld) || !h.photo) continue;
+    // Unchecked hops, backup holds and code misreads: 0G's sealed check has the final word (see recheckable).
+    if (!recheckable(h.verdict, h.reason) || !h.photo) continue;
     const leg = c.route.find((l) => l.hop === h.hop)!;
     try {
       const photo = Buffer.from(await downloadPhoto(openRef(h.photo)));
       const check = await checkParcel(photo, code, `hop ${h.hop} at ${leg.place}`, 40000, true);
       const verdict = check.match && check.condition === "intact" ? "green" : "held";
-      const reason = verdict === "green" ? "Rechecked by 0G after the outage: code matches, parcel intact." : `Rechecked by 0G: ${check.reason}`;
+      const reason = verdict === "green" ? "Rechecked by 0G: code matches, parcel intact." : `Rechecked by 0G: ${check.reason}`;
       const log = await submitLog({ t: "daak.recheck", code, hop: h.hop, verdict, zg: check.requestId ?? null, photo: h.photoSha256, was: h.key });
       const seq = await log.sequence().catch(() => "");
       const zg = await logDecision({ t: "daak.decision", code, hop: h.hop, verdict, reason, model: check.model, requestId: check.requestId, teeVerified: check.verified, recheckOf: h.key }).catch(() => null);

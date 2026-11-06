@@ -1,6 +1,7 @@
 import { ethers } from "ethers";
 import { createZGComputeNetworkBroker } from "@0gfoundation/0g-compute-ts-sdk";
 import { env } from "./env";
+import { sameCode } from "./rules";
 
 export type Check = {
   match: boolean;
@@ -30,11 +31,13 @@ export const parcelPrompt = (expectedCode: string, hopLabel: string) =>
   `"condition": "intact" | "damaged" | "opened" | "unclear", "reason": string (one short sentence)}.`;
 
 /** Parses a model's JSON answer into a check (shared by 0G and the backup). */
-export function parseAnswer(content: string) {
+export function parseAnswer(content: string, expectedCode: string) {
   const json = JSON.parse(content.slice(content.indexOf("{"), content.lastIndexOf("}") + 1));
+  const codeRead = String(json.code_read ?? "");
   return {
-    match: Boolean(json.match),
-    codeRead: String(json.code_read ?? ""),
+    // Daak decides the match from what was read, not the model: a code wrapped over two lines is still the code.
+    match: sameCode(codeRead, expectedCode),
+    codeRead,
     condition: (["intact", "damaged", "opened"].includes(json.condition) ? json.condition : "unclear") as Check["condition"],
     reason: String(json.reason ?? ""),
   };
@@ -149,5 +152,5 @@ async function askRouter(photo: Buffer, prompt: string, budgetMs: number): Promi
 
 async function checkParcelInner(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Check> {
   const r = await askSealed(photo, parcelPrompt(expectedCode, hopLabel));
-  return { ...parseAnswer(r.content), requestId: r.requestId, verified: r.verified ?? null, model: r.model };
+  return { ...parseAnswer(r.content, expectedCode), requestId: r.requestId, verified: r.verified ?? null, model: r.model };
 }

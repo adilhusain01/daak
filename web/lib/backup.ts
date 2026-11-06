@@ -60,7 +60,7 @@ export async function askBackup(photo: Buffer, prompt: string, budgetMs = BACKUP
 
 export async function backupCheck(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Backup> {
   const r = await askBackup(photo, parcelPrompt(expectedCode, hopLabel));
-  return { ...parseAnswer(r.content), model: r.model, provider: r.provider };
+  return { ...parseAnswer(r.content, expectedCode), model: r.model, provider: r.provider };
 }
 
 /** What a backup answer means for the handoff: a problem holds it; a pass waits for 0G (or pays, in test mode). */

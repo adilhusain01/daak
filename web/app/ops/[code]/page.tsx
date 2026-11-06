@@ -12,6 +12,7 @@ import { Suspense, useState } from "react";
 import { arkivEntity, clock, hashscanTopic, isLate, when, type HandoffView, type LegView } from "@/lib/ui";
 import { RouteSteps, PayBar, type StopState } from "@/components/route-steps";
 import { Busy, Loader } from "@/components/loader";
+import { recheckable } from "@/lib/rules";
 
 type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number; advanceRupees: number; advancePct: number | null; heldRupees: number | null; answer: string | null };
 type Holdback = { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean };
@@ -180,8 +181,11 @@ function ParcelPage() {
                   )}
                   <p className="mt-1 text-muted-ink">Daak&apos;s 2% was taken by the dINR token&apos;s own fee rule on the way.</p>
                   {r.money.some((m) => m.upiStatus === "not_connected") && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer font-medium">Pay the drivers by UPI</summary>
+                    <details className="group mt-4">
+                      <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-md bg-paper px-3 py-1.5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-rule),var(--shadow-key)] outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ink active:scale-[0.97] [&::-webkit-details-marker]:hidden">
+                        <svg viewBox="0 0 12 12" aria-hidden="true" className="size-3 transition-transform duration-150 ease-out group-open:rotate-90 motion-reduce:transition-none"><path d="M4 2.5 7.5 6 4 9.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        Pay the drivers by UPI
+                      </summary>
                       <UpiPay code={r.code} />
                     </details>
                   )}
@@ -194,7 +198,7 @@ function ParcelPage() {
                   {r.schedule && <ProofButton href={`https://hashscan.io/testnet/schedule/${r.schedule}`}>Open scheduled payout</ProofButton>}
                   {r.holdback && <ProofButton href={`https://hashscan.io/testnet/schedule/${r.holdback.schedule}`}>Open holdback schedule</ProofButton>}
                 </div>
-                {!r.paidAt && [...byHop.values()].some((h) => h.verdict === "unchecked") && (
+                {!r.paidAt && [...byHop.values()].some((h) => recheckable(h.verdict, h.reason ?? "")) && (
                   <Button variant="outline" className="rounded-lg border-ink shadow-[var(--shadow-key)] active:translate-y-px" disabled={recheck.isPending} onClick={() => recheck.mutate(r.code)}>
                     <Busy busy={recheck.isPending && recheck.variables === r.code}>Recheck with 0G</Busy>
                   </Button>

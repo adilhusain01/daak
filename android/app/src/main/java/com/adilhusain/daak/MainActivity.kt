@@ -139,7 +139,35 @@ class MainActivity : ComponentActivity() {
     private val prefs by lazy { getSharedPreferences("daak", Context.MODE_PRIVATE) }
 
     private val askLocation = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-        if (granted.values.any { it }) where.refresh()
+        if (granted.values.any { it }) { where.refresh(); askLocationOn() }
+    }
+
+    private val turnOnLocation = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { r ->
+        if (r.resultCode == RESULT_OK) where.refresh()
+    }
+
+    private fun hasLocationPermission() = listOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+        .any { checkSelfPermission(it) == android.content.pm.PackageManager.PERMISSION_GRANTED }
+
+    /**
+     * Every handoff carries where it happened. Without the permission, Android's prompt opens; with it but location
+     * switched off, the system's "Turn on location?" window opens. Either way the handoff goes ahead without a place.
+     */
+    private fun ensureLocation() {
+        if (!hasLocationPermission()) askLocation.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION))
+        else askLocationOn()
+    }
+
+    private fun askLocationOn() {
+        val req = com.google.android.gms.location.LocationSettingsRequest.Builder()
+            .addLocationRequest(com.google.android.gms.location.LocationRequest.Builder(com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY, 10_000).build())
+            .setAlwaysShow(true).build()
+        com.google.android.gms.location.LocationServices.getSettingsClient(this).checkLocationSettings(req)
+            .addOnSuccessListener { where.refresh() }
+            .addOnFailureListener { e ->
+                if (e is com.google.android.gms.common.api.ResolvableApiException)
+                    runCatching { turnOnLocation.launch(androidx.activity.result.IntentSenderRequest.Builder(e.resolution).build()) }
+            }
     }
 
     private val takePhoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -160,7 +188,7 @@ class MainActivity : ComponentActivity() {
         queued = outbox.size()
         prefs.getString("lang", null)?.let { Lang.hindi = it == "hi" }
         nfc = Nfc(this, ::onTap)
-        askLocation.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION))
+        ensureLocation()
         restore()
         setContent { App() }
     }
@@ -395,6 +423,7 @@ class MainActivity : ComponentActivity() {
     private fun startHandoff(tap: Tap) {
         screen = Screen.Handoff(parcel = tap, loading = true)
         where.refresh()
+        ensureLocation()
         thread {
             val r = runCatching { Api.parcel(tap.uid) }
             runOnUiThread {

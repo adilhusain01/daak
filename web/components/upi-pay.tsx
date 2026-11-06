@@ -5,14 +5,14 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Loader } from "@/components/loader";
+import { Busy, Loader } from "@/components/loader";
 
 type Target = { hop: number; account: string; name: string; vpa: string | null; rupees: number; utr: string | null };
 
 function Qr({ text }: { text: string }) {
   const [src, setSrc] = useState<string | null>(null);
-  useEffect(() => { QRCode.toDataURL(text, { margin: 1, width: 180, color: { dark: "#1c1a14", light: "#ece5d3" } }).then(setSrc); }, [text]);
-  return src ? <img src={src} alt="UPI payment QR code" width={180} height={180} className="rounded-lg border border-rule" /> : null;
+  useEffect(() => { QRCode.toDataURL(text, { margin: 1, width: 264, color: { dark: "#1c1a14", light: "#ece5d3" } }).then(setSrc); }, [text]);
+  return src ? <img src={src} alt="UPI payment QR code" width={132} height={132} className="size-[132px] rounded-[6px]" /> : <span className="size-[132px] rounded-[6px] bg-tray" />;
 }
 
 /** Pay each driver of a delivered parcel by UPI, then record the bank's reference on the public log. */
@@ -32,28 +32,44 @@ export function UpiPay({ code }: { code: string }) {
   });
   if (!data) return <Loader label="Loading drivers" className="min-h-32" />;
   return (
-    <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {data.drivers.map((d) => (
-        <div key={d.account} className="flex flex-col gap-2 rounded-lg border border-rule bg-card-paper p-3">
-          <p className="font-medium">{d.name.split(",")[0]} · ₹{d.rupees.toFixed(2)}</p>
-          {d.utr ? (
-            <p className="text-sm text-ok">Paid by UPI · UTR {d.utr}</p>
-          ) : d.vpa ? (
-            <>
-              <Qr text={`upi://pay?pa=${encodeURIComponent(d.vpa)}&pn=${encodeURIComponent(d.name.split(",")[0])}&am=${d.rupees.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Daak ${code}`)}`} />
-              <p className="text-xs text-muted-ink">Scan with any UPI app to pay {d.vpa}</p>
-              <label className="text-xs text-muted-ink" htmlFor={`utr-${d.account}`}>UPI reference (UTR) after paying</label>
-              <div className="flex gap-2">
-                <input id={`utr-${d.account}`} value={utr[d.account] ?? ""} onChange={(e) => setUtr({ ...utr, [d.account]: e.target.value })} inputMode="numeric"
-                  className="min-w-0 flex-1 rounded-md border border-rule bg-paper px-2 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ink" />
-                <Button size="sm" className="rounded-md bg-ink text-paper shadow-[var(--shadow-key)]" disabled={save.isPending} onClick={() => save.mutate(d)}>Record</Button>
+    <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+      {data.drivers.map((d) => {
+        const first = d.name.split(",")[0];
+        return (
+          <div key={d.account} className="flex gap-4 rounded-[10px] bg-card-paper p-2 shadow-[inset_0_0_0_1px_var(--color-rule)]">
+            {d.vpa && !d.utr && d.rupees > 0 && (
+              <div className="shrink-0 rounded-[8px] bg-paper p-1 shadow-[inset_0_0_0_1px_var(--color-rule)]">
+                <Qr text={`upi://pay?pa=${encodeURIComponent(d.vpa)}&pn=${encodeURIComponent(first)}&am=${d.rupees.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Daak ${code}`)}`} />
               </div>
-            </>
-          ) : (
-            <p className="text-sm text-muted-ink">No UPI ID on file for this driver.</p>
-          )}
-        </div>
-      ))}
+            )}
+            <div className="flex min-w-0 flex-1 flex-col gap-2 py-1 pr-1">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="truncate font-semibold">{first}</p>
+                <p className="font-mono text-lg tabular-nums">₹{d.rupees.toFixed(2)}</p>
+              </div>
+              {d.utr ? (
+                <p className="text-sm text-ok">Paid by UPI · UTR {d.utr}</p>
+              ) : !d.vpa ? (
+                <p className="text-sm text-muted-ink">No UPI ID on file for this driver.</p>
+              ) : d.rupees <= 0 ? (
+                <p className="text-sm text-muted-ink">Nothing to pay yet. This driver is paid after their handover.</p>
+              ) : (
+                <>
+                  <p className="truncate text-xs text-muted-ink">Scan with any UPI app to pay <span className="font-mono text-ink">{d.vpa}</span></p>
+                  <label className="mt-auto text-xs text-muted-ink" htmlFor={`utr-${d.account}`}>UPI reference (UTR) after paying</label>
+                  <div className="flex gap-2">
+                    <input id={`utr-${d.account}`} value={utr[d.account] ?? ""} onChange={(e) => setUtr({ ...utr, [d.account]: e.target.value })} inputMode="numeric" placeholder="12-digit UTR"
+                      className="h-9 min-w-0 flex-1 rounded-[6px] bg-paper px-2.5 font-mono text-sm shadow-[inset_0_0_0_1px_var(--color-rule)] outline-none placeholder:text-muted-ink focus-visible:ring-2 focus-visible:ring-ink" />
+                    <Button size="sm" className="h-9 rounded-[6px] bg-ink px-3 text-paper shadow-[var(--shadow-key)] active:translate-y-px" disabled={save.isPending || !(utr[d.account] ?? "").trim()} onClick={() => save.mutate(d)}>
+                      <Busy busy={save.isPending && save.variables?.account === d.account}>Record</Busy>
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
