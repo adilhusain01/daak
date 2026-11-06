@@ -53,7 +53,7 @@ function TrackForm({ id, dark = false }: { id: string; dark?: boolean }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); if (code.trim()) router.push(`/track/${code.trim().toUpperCase()}`); }} className="flex w-full max-w-md gap-2">
       <label htmlFor={id} className="sr-only">Parcel code</label>
-      <input id={id} value={code} onChange={(e) => setCode(e.target.value)} placeholder="KNP-1204" autoCapitalize="characters"
+      <input id={id} value={code} onChange={(e) => setCode(e.target.value)} placeholder="KNP-3WAE9" autoCapitalize="characters"
         className={`min-w-0 flex-1 rounded-[10px] px-4 py-3 font-mono text-base outline-none ${dark ? "bg-paper/10 text-paper placeholder:text-paper/45 focus-visible:ring-2 focus-visible:ring-lamp" : "bg-card-paper text-ink shadow-[inset_0_0_0_1.5px_var(--color-rule)] placeholder:text-muted-ink focus-visible:shadow-[inset_0_0_0_1.5px_var(--color-ink)]"}`} />
       <button type="submit" className={`rounded-[10px] px-5 py-3 font-bold transition-transform active:scale-[0.97] ${dark ? "bg-lamp text-night" : "bg-ink text-paper shadow-[var(--shadow-key)]"}`}>Track</button>
     </form>
