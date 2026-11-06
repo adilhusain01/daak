@@ -94,7 +94,7 @@ The operator's assistant reads the network through the Hedera Agent Kit (`@hashg
 | dINR token (2% custom fee) | [0.0.11327356](https://hashscan.io/testnet/token/0.0.11327356) |
 | Escrow account | [0.0.11327245](https://hashscan.io/testnet/account/0.0.11327245) |
 | Daak operator and treasury | [0.0.11325722](https://hashscan.io/testnet/account/0.0.11325722) |
-| A shop's agent (Gupta Garments) | [0.0.11331484](https://hashscan.io/testnet/account/0.0.11331484) |
+| A shop's agent (Gupta Garments, before the demo reset; KNP-3WAE9's is above) | [0.0.11331484](https://hashscan.io/testnet/account/0.0.11331484) |
 | The shop's UPI top-up credited (Rs 500, UTR on the log) | [0.0.11325722-1793921478-044156522](https://hashscan.io/testnet/transaction/0.0.11325722-1793921478-044156522) |
 | x402 settlement in dINR: the shop's agent pays exactly Rs 206.64 (Rs 184.50 meter + Rs 22.14 booking fee) to Daak, network fee paid by the facilitator 0.0.9185802 | [0.0.9185802-1793921489-636560474](https://hashscan.io/testnet/transaction/0.0.9185802-1793921489-636560474) |
 | Earlier x402 settlement in HBAR (flat price mode) | [0.0.9185802-1793901050-675202430](https://hashscan.io/testnet/transaction/0.0.9185802-1793901050-675202430) |

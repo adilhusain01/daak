@@ -26,7 +26,7 @@ export const BRIEFS: Brief[] = [
     asks: [
       { ask: "An x402-protected endpoint settling on Hedera through a listed facilitator", how: "POST /api/book answers 402 with the booking's exact price; settled in dINR through facilitator 0.0.9185802", status: "live" },
       { ask: "An agent completes a paid request with no human", how: "Each shop's agent reads /.well-known/x402, books, pays and retries on its own", status: "live" },
-      { ask: "Transaction id in the README, HashScan link in the video", how: "Settlement 0.0.9185802-1793921489-636560474 in the README; the video shows it", status: "partial" },
+      { ask: "Transaction id in the README, HashScan link in the video", how: "KNP-3WAE9's settlement 0.0.9185802-1793986788-181264432 is in the README; the video still has to show it", status: "partial" },
       { ask: "Spending controls", how: "Only dINR, at most Rs 2,000 a booking, only to Daak's account; a booking cap per hour", status: "live" },
       { ask: "Agent identity (HCS-14 or ERC-8004)", how: "Both sides carry an HCS-14 UAID, checked against Hashgraph Online's SDK; the agent checks Daak's before paying", status: "live" },
       { ask: "HCS audit topic", how: "Topic 0.0.11327109: every booking, handoff, check, payout and assistant question", status: "live" },
@@ -37,9 +37,9 @@ export const BRIEFS: Brief[] = [
       { ask: "No Solidity", how: "Hedera JavaScript SDK only: HTS, HCS, scheduled transactions, mirror node", status: "live" },
     ],
     uses: [
-      { what: "x402 booking", how: "The 402 quotes the meter for the distance and the parcel's charged weight, plus a 12% booking fee", where: "web/lib/x402.ts, web/app/api/book", proof: { label: "x402 settlement, Rs 206.64", href: HS("transaction", "0.0.9185802-1793921489-636560474") } },
+      { what: "x402 booking", how: "The 402 quotes the meter for the distance and the parcel's charged weight, plus a 12% booking fee", where: "web/lib/x402.ts, web/app/api/book", proof: { label: "KNP-3WAE9 settlement, Rs 599.26", href: HS("transaction", "0.0.9185802-1793986788-181264432") } },
       { what: "Catalogue discovery", how: "/.well-known/x402 lists the endpoint, the meter and Daak's UAID; the agent reads it before paying", where: "web/app/.well-known/x402" },
-      { what: "Per-shop agent accounts", how: "A Hedera account per shop holding prepaid dINR, topped up when the shop pays by UPI (the UTR goes on the log)", where: "web/lib/agent.ts", proof: { label: "Gupta Garments' agent", href: HS("account", "0.0.11331484") } },
+      { what: "Per-shop agent accounts", how: "A Hedera account per shop holding prepaid dINR, topped up when the shop pays by UPI (the UTR goes on the log)", where: "web/lib/agent.ts", proof: { label: "Gupta Garments' agent", href: HS("account", "0.0.11342762") } },
       { what: "dINR, the rupee credit", how: "An HTS token with a 2% fractional custom fee to Daak", where: "web/scripts/setup-money.mts", proof: { label: "Token 0.0.11327356", href: HS("token", "0.0.11327356") } },
       { what: "Escrow and advances", how: "The fee is locked in escrow; each driver gets 50, 70 or 90% of their stretch when the next person confirms", where: "web/lib/split.ts", proof: { label: "Escrow 0.0.11327245", href: HS("account", "0.0.11327245") } },
       { what: "Holdbacks that release themselves", how: "All held pay in one long-term scheduled transfer (waitForExpiry); no server sends it", where: "web/lib/split.ts", proof: { label: "KNP-3WAE9, released itself at 00:34:05", href: HS("schedule", "0.0.11344027") } },

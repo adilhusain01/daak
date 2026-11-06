@@ -91,6 +91,8 @@ class MainActivity : ComponentActivity() {
     private var screen by mutableStateOf<Screen>(Screen.SignIn)
     private var me by mutableStateOf<Person?>(null)
     private var note by mutableStateOf<String?>(null)
+    /** The join form asks for a second Back before it throws the answers away. */
+    private var backArmed by mutableStateOf(false)
     private var queued by mutableStateOf(0)
     private var work by mutableStateOf<Work?>(null)
     private var todo by mutableStateOf<List<Todo>?>(null)
@@ -759,6 +761,26 @@ class MainActivity : ComponentActivity() {
         // Back goes to the first tab before it leaves the app.
         androidx.activity.compose.BackHandler(enabled = tabs != null && current != null && current != tabs.first().id) { selectTab(tabs!!.first().id) }
         (screen as? Screen.Parcel)?.let { p -> androidx.activity.compose.BackHandler { screen = p.from } }
+        // Back steps back inside a task; it never closes the app while something is half done.
+        when (val s = screen) {
+            is Screen.Join -> androidx.activity.compose.BackHandler {
+                when {
+                    s.sending -> Unit
+                    s.form != JoinForm() && !backArmed -> { backArmed = true; note = pick("वापस फिर दबाएँ तो जुड़ना रद्द होगा; भरी जानकारी मिट जाएगी।", "Press Back again to cancel joining; your answers will be lost.") }
+                    else -> { backArmed = false; note = null; screen = Screen.SignIn }
+                }
+            }
+            is Screen.Handoff -> if (s.parcel != null) androidx.activity.compose.BackHandler {
+                if (!s.sending) { screen = Screen.Handoff(); note = pick("हैंडओवर रद्द। पार्सल लगाकर फिर शुरू करें।", "Handover cancelled. Tap the parcel to start again.") }
+            }
+            is Screen.Pack -> when {
+                s.paying || s.loading -> androidx.activity.compose.BackHandler { }
+                s.parcel != null && s.booking == null -> androidx.activity.compose.BackHandler { screen = Screen.Pack(); note = pick("बुकिंग हटाई गई।", "Booking cleared. Tap a new parcel to start again.") }
+                else -> Unit
+            }
+            is Screen.Result -> androidx.activity.compose.BackHandler { screen = Screen.Handoff() }
+            else -> Unit
+        }
         val scroll = rememberScrollState()
         androidx.compose.runtime.LaunchedEffect(current, screen is Screen.Parcel) { scroll.scrollTo(0) }
         // "My parcels" loads its next page by itself when the list nears the end of the screen.
