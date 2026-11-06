@@ -184,7 +184,7 @@ export async function putConsignment(c: { code: string; parcel: string; label: s
   ));
 }
 
-type ConsignmentRow = { code: string; parcel: string; label: string; route: Leg[]; feeRupees: number; createdAt: number; schedule?: string; weight?: string };
+export type ConsignmentRow = { code: string; parcel: string; label: string; route: Leg[]; feeRupees: number; createdAt: number; schedule?: string; weight?: string };
 
 function toConsignment(e: { code: { value: string }; parcel: { value: string }; label: { value: string }; route: { value: Uint8Array | `0x${string}` }; feeRupees: { value: number }; createdAt: { value: bigint }; schedule?: { value: string }; feePaise?: { value: number }; weight?: { value: string } }): ConsignmentRow {
   return { code: e.code.value, parcel: e.parcel.value, label: e.label.value, route: JSON.parse(dec(e.route.value)), feeRupees: e.feePaise?.value ? Number(e.feePaise.value) / 100 : Number(e.feeRupees.value), createdAt: Number(e.createdAt.value), schedule: e.schedule?.value || undefined, weight: e.weight?.value || undefined };
@@ -207,6 +207,32 @@ export async function recentConsignments() {
   const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true, weight: true })
     .from(Consignments).ownedBy(owner()).orderBy(desc("createdAt")).limit(20).fetch();
   return r.entities.map(toConsignment);
+}
+
+/** Every consignment since a time, newest first, read from Arkiv a page of 100 at a time. */
+export async function allConsignments(since = 0): Promise<ConsignmentRow[]> {
+  const out: ConsignmentRow[] = [];
+  for (let offset = 0; offset < 5000; offset += 100) {
+    const r = await arkivRead().select({ code: true, parcel: true, label: true, route: true, feeRupees: true, createdAt: true, schedule: true, feePaise: true, weight: true })
+      .from(Consignments).ownedBy(owner()).orderBy(desc("createdAt")).limit(100).offset(offset).fetch();
+    const rows = r.entities.map(toConsignment);
+    out.push(...rows.filter((c) => c.createdAt >= since));
+    // Newest first: once a page reaches before `since`, nothing older matters.
+    if (r.entities.length + r.skipped < 100 || rows.some((c) => c.createdAt < since)) break;
+  }
+  return out;
+}
+
+/** The verdict of every handoff still on Arkiv (they expire after a day), for list views: one query, not one per parcel. */
+export async function allVerdicts(): Promise<{ code: string; hop: number; verdict: string; at: number }[]> {
+  const out: { code: string; hop: number; verdict: string; at: number }[] = [];
+  for (let offset = 0; offset < 5000; offset += 100) {
+    const r = await arkivRead().select({ code: true, hop: true, verdict: true, at: true })
+      .from(Handoffs).ownedBy(owner()).orderBy(desc("at")).limit(100).offset(offset).fetch();
+    out.push(...r.entities.map((e) => ({ code: e.code.value, hop: Number(e.hop.value), verdict: e.verdict.value, at: Number(e.at.value) })));
+    if (r.entities.length + r.skipped < 100) break;
+  }
+  return out;
 }
 
 export type HandoffRow = {
