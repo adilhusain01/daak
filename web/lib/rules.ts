@@ -137,3 +137,20 @@ export function topUpPlan(s: { available: number; providerLocked: number; wallet
   const toProvider = s.providerLocked < COMPUTE.PROVIDER_LOW && s.available + deposit >= COMPUTE.PROVIDER_FILL ? COMPUTE.PROVIDER_FILL : 0;
   return { deposit: deposit >= 0.01 ? deposit : 0, toProvider };
 }
+
+/** The share of each booking fee that pays for the agent's own sealed checks. */
+export const COMPUTE_SHARE = 0.02;
+
+/**
+ * What one booking puts towards compute: COMPUTE_SHARE of its booking fee, in paise (moved in dINR on Hedera) and the
+ * same value in 0G at the live price (deposited on 0G), inside the daily cap and keeping gas in the wallet.
+ */
+export function computeEarmark(o: { bookingFeeRupees: number; inrPer0g: number; wallet: number; toppedToday: number }) {
+  const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
+  const paiseWanted = Math.round(o.bookingFeeRupees * COMPUTE_SHARE * 100);
+  // The 0G must match the rupees actually moved on Hedera, so it is converted from the rounded paise.
+  const want = r4(paiseWanted / 100 / o.inrPer0g);
+  const zg = r4(Math.min(want, Math.max(0, COMPUTE.DAY_CAP - o.toppedToday), Math.max(0, o.wallet - COMPUTE.WALLET_KEEP)));
+  if (zg < 0.001) return { paise: 0, zg: 0 };
+  return { paise: zg === want ? paiseWanted : Math.round(zg * o.inrPer0g * 100), zg };
+}

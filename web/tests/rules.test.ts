@@ -273,3 +273,17 @@ test("the provider's share is refilled from the account, and the wallet always k
   assert.deepEqual(topUpPlan({ available: 2, providerLocked: 0.3, wallet: 6, toppedToday: 0 }), { deposit: 0, toProvider: 1 });
   assert.deepEqual(topUpPlan({ available: 0.5, providerLocked: 1, wallet: 0.2, toppedToday: 0 }), { deposit: 0, toProvider: 0 });
 });
+
+// Each booking pays for its own share of compute: a slice of its booking fee, moved on Hedera, matched in 0G on 0G.
+import { computeEarmark } from "../lib/rules.ts";
+
+test("a booking earmarks 2% of its booking fee for compute, converted to 0G at the live price", () => {
+  assert.deepEqual(computeEarmark({ bookingFeeRupees: 22.14, inrPer0g: 13.79, wallet: 6, toppedToday: 0 }), { paise: 44, zg: 0.0319 });
+});
+
+test("the earmark stays inside the daily cap and never empties the wallet's gas", () => {
+  const capped = computeEarmark({ bookingFeeRupees: 22.14, inrPer0g: 13.79, wallet: 6, toppedToday: 0.99 });
+  assert.equal(capped.zg, 0.01);
+  assert.equal(capped.paise, 14);
+  assert.deepEqual(computeEarmark({ bookingFeeRupees: 22.14, inrPer0g: 13.79, wallet: 0.5, toppedToday: 0 }), { paise: 0, zg: 0 });
+});

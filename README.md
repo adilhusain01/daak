@@ -136,6 +136,7 @@ cd ../android
 - **New phone by vouch**: a driver signing in with Google on a new phone gets its key accepted when a vouching driver or the operator approves, so a stolen Gmail password alone cannot take over someone's pay.
 - **One human, one driver record** with World ID, for drivers who have it, so nobody escapes a bad record by joining again under a new account. The ID check (driving licence, voter ID, masked Aadhaar) does this today, since few drivers on rural routes can reach an Orb.
 - **Phone number OTP at joining**, so a mobile number is verified, not just collected (needs an SMS sender registered on India's DLT).
+- **Compute bought with fees**: today each booking's 2% compute share moves in dINR on Hedera and the agent deposits the same value from its 0G wallet; in production a payment partner buys that 0G with the rupees.
 - **Opt-in self-custody**: a driver can move Bachat savings to a wallet only they control (Privy), without changing the tap-to-work flow.
 - **Timetables, next steps**: built today are bus times per driver and stretch, connecting plans, ETAs, late flags, day-off and decline handovers. Next: an SMS to the receiving shop when the parcel is one stop away and when it arrives (needs a DLT-registered sender), re-planning a missed connection onto the next bus automatically, public holidays, and real average speeds per corridor from the handoff log instead of 40 km/h.
 - **Stablecoin Studio**: issue dINR through Hedera's Stablecoin Studio for KYC, freeze and role controls and proof of reserve.

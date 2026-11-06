@@ -7,7 +7,6 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] One clean rehearsal from the phone with a new photo per stop that runs each path once, so the public log shows them: green or backup-checked handoffs with signatures, an approval, a 0G recheck, a pay-anyway, a refund to the shop, a KYC check, a UPI UTR. Then set `DATA_SINCE`.
 
 - [x] Repo public with an MIT licence.
-- [ ] 0G Storage log and "Agents That Pay for Themselves" still need real 0G in wallet `0x575F8D53D5bE1d16d4c1eDb8D01C4B68A0D48901` (ask the 0G booth). "Recheck with 0G" on the held KNP-1204 hops from `/ops`.
 - [ ] Demo video: 2:30 to 2:55 (ETHGlobal 2 to 4 minutes, 0G under 3), at least 720p, not recorded on a phone, a real voice (no AI voice, no music over captions in place of speaking), intro under 20 seconds, at most 4 bullets a slide, a settled payment on HashScan, the Swarm moment with its timestamp noted in `arkiv/swarm.md`.
 - [ ] Team: each teammate commits their own real part (video, slides, field test, data) and can explain it to judges.
 - [x] Planning artifacts and prompts committed (the rules require them for spec-driven work): `docs/planning/`.
@@ -51,7 +50,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## From the audit, not done
 
-- [ ] 0G "Agents That Pay for Themselves" needs code: a capped slice of each fee deposited to the compute ledger (once credits exist).
+- [ ] 0G's only sealed vision provider (`0xf4FB…B250`) went unhealthy at about 12:40 on 6 Nov; once it is back, run `scripts/zg-check.mts` for the first self-paid check receipt and put it in `docs/submission.md`.
 - [ ] Read the holdback schedule's inner transaction result, not only "executed".
 - [ ] Cache the HCS log by sequence (every page reads the whole topic).
 - [ ] Speak the held reason in Hindi, not only "payment held".
@@ -66,6 +65,8 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] Final README pass: 0G proof or the outage write-up, the business numbers.
 
 ## Done
+
+- [x] 0G (6 Nov): 10 0G bridged in by Adil; decision records on 0G Storage mainnet; Daak's own compute account (3 0G) pays the sealed provider first with TEE signatures verified, Router credit as fallback; each booking moves 2% of its fee in dINR on Hedera and the same value in 0G into the compute account, both on the HCS log (first: 44 paise and 0.032 0G).
 
 - [x] Identity without stickers (6 Nov): Continue with Google (server checks the token; Daak id is a hash of the Google account id; email sealed); two-signature handoffs by QR code (fresh 2 minutes from the handoff time, single use, both signatures on HCS), badge tap kept as the one-phone fallback; vouching with limits (3 in 30 days, none for 90 days after a vouched driver is found responsible); 0G reads ID photos in a sealed machine for the operator; drivers edit stretches and bus times from the Me tab, signed by their phone. Adil joined with Google.
 - [x] 0G sealed check live through the Router (6 Nov); KNP-1204 rechecked green and its held pay released itself at 11:44.

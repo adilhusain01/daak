@@ -69,8 +69,8 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
     t: "daak.booked", code, legs: b.route.length, weight: weight.id, feeRupees: b.feeRupees, bookingFeeRupees: bookingFee(b.feeRupees),
     split: shares.map((s) => ({ hop: s.hop, pct: s.pct })), poolRupees: pool?.rupees ?? 0, agent: agentUaid,
   }).catch((e) => { console.error("hcs", e); return null; });
-  // The agent keeps its own sealed checks paid for: a booking tops up its 0G compute account when it runs low.
-  after(() => fundCompute(code).catch((e) => console.error("compute", (e as Error).message)));
+  // Each booking pays its share of the agent's sealed checks: a slice of its fee on Hedera, the same value in 0G on 0G.
+  after(() => fundCompute(code, bookingFee(b.feeRupees ?? 0)).catch((e) => console.error("compute", (e as Error).message)));
   return NextResponse.json({
     code,
     feeRupees: b.feeRupees,
