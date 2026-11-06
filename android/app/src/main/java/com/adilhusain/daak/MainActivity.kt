@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -51,7 +53,7 @@ data class JoinForm(
 sealed interface Screen {
     data object SignIn : Screen
     data class Checking(val uid: String) : Screen
-    data class Join(val uid: String, val form: JoinForm = JoinForm(), val net: Network? = null, val sending: Boolean = false, val errors: List<String> = emptyList()) : Screen
+    data class Join(val uid: String, val form: JoinForm = JoinForm(), val net: Network? = null, val sending: Boolean = false, val errors: List<String> = emptyList(), val idToken: String? = null) : Screen
     data object Home : Screen
     data class Handoff(
         val parcel: Tap? = null, val info: ParcelInfo? = null, val loading: Boolean = false,
@@ -272,6 +274,28 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** "Continue with Google": the phone's Google account, no sticker. Known accounts sign in; new ones join. */
+    private fun googleSignIn() {
+        val option = com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption.Builder(Api.GOOGLE_CLIENT_ID).build()
+        val request = androidx.credentials.GetCredentialRequest.Builder().addCredentialOption(option).build()
+        lifecycleScope.launch {
+            val token = runCatching {
+                val r = androidx.credentials.CredentialManager.create(this@MainActivity).getCredential(this@MainActivity, request)
+                com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.createFrom(r.credential.data).idToken
+            }.getOrElse { note = pick("Google से साइन इन नहीं हुआ।", "Google sign-in did not finish.") + " " + (it.message ?: ""); return@launch }
+            screen = Screen.Checking("google")
+            thread {
+                val g = runCatching { Api.google(token) }
+                runOnUiThread {
+                    g.onSuccess { m ->
+                        if (!m.known) startJoin(m.uid, token, m.name)
+                        else { remember(Person(m.uid, m.name, m.role ?: "driver", m.vehicle.orEmpty())); voice.buzz() }
+                    }.onFailure { screen = Screen.SignIn; note = it.message }
+                }
+            }
+        }
+    }
+
     private fun signIn(tap: Tap) {
         screen = Screen.Checking(tap.uid)
         thread {
@@ -303,8 +327,8 @@ class MainActivity : ComponentActivity() {
 
     // ---------- joining ----------
 
-    private fun startJoin(uid: String) {
-        screen = Screen.Join(uid)
+    private fun startJoin(uid: String, idToken: String? = null, name: String = "") {
+        screen = Screen.Join(uid, JoinForm(name = name), idToken = idToken)
         voice.buzz(); voice.say("यह बैज नया है। Daak से जुड़िए।")
         thread { val n = runCatching { Api.network() }.getOrNull(); runOnUiThread { (screen as? Screen.Join)?.let { screen = it.copy(net = n) } } }
     }
@@ -313,7 +337,7 @@ class MainActivity : ComponentActivity() {
         val f = s.form
         screen = s.copy(sending = true, errors = emptyList())
         thread {
-            val r = runCatching { Api.join(s.uid, f.role ?: "", f.name, f.phone, f.upi, f.vehicle, f.legs.toList(), f.stop, f.busOperator, f.idType, f.idLast4, f.idPhoto, f.times.filterKeys { it in f.legs }.filterValues { it.isNotBlank() }) }
+            val r = runCatching { Api.join(s.uid, f.role ?: "", f.name, f.phone, f.upi, f.vehicle, f.legs.toList(), f.stop, f.busOperator, f.idType, f.idLast4, f.idPhoto, f.times.filterKeys { it in f.legs }.filterValues { it.isNotBlank() }, s.idToken) }
             runOnUiThread {
                 r.onSuccess { errs ->
                     if (errs == null) {
@@ -716,9 +740,10 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun SignInScreen() {
         Sheet {
-            Bi("अपना बैज फ़ोन के पीछे लगाइए", "Tap your badge on the back of the phone", size = 24)
-            Body("New here? Tap a new badge and the phone helps you join. It remembers you until you switch.", Tokens.muted, 16)
+            Bi("Daak में आइए", "Sign in to Daak", size = 24)
+            Body(pick("अपने Google खाते से, या बैज फ़ोन के पीछे लगाकर। नए हैं? यही से जुड़िए।", "With your Google account, or tap your badge on the back of the phone. New here? You join the same way."), Tokens.muted, 16)
         }
+        Action(pick("Google से जारी रखें", "Continue with Google")) { googleSignIn() }
         if (!nfc.enabled) Body("NFC बंद है। Turn on NFC in Settings.", Tokens.red)
         LanguageSwitch()
     }
@@ -783,8 +808,8 @@ class MainActivity : ComponentActivity() {
         val f = s.form
         fun set(next: JoinForm) { screen = s.copy(form = next, errors = emptyList()) }
         Sheet {
-            Bi("Daak से जुड़िए", "Join Daak with this badge", size = 24)
-            Body("Badge ${s.uid.takeLast(8)}. Your phone and UPI ID are kept sealed; only your name, role and route are visible to others.", Tokens.muted, 15)
+            Bi("Daak से जुड़िए", if (s.idToken != null) "Join Daak with your Google account" else "Join Daak with this badge", size = 24)
+            Body((if (s.idToken != null) pick("Google खाते से। ", "Signed in with Google. ") else "Badge ${s.uid.takeLast(8)}. ") + pick("आपका फ़ोन नंबर, UPI और ईमेल छिपे रहते हैं; दूसरों को सिर्फ़ नाम, काम और रास्ता दिखता है।", "Your phone, UPI ID and email are kept sealed; only your name, role and route are visible to others."), Tokens.muted, 15)
         }
         Heading("आप कौन हैं?", "Who are you?")
         Choice("ड्राइवर · Driver", "I carry parcels on a bus route", f.role == "driver") { set(f.copy(role = "driver")) }

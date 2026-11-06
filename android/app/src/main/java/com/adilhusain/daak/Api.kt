@@ -129,6 +129,17 @@ object Api {
         return ParcelDetail(d.getString("code"), d.getString("label"), st.getString("key"), st.getString("text"), d.getDouble("feeRupees"), d.getInt("km"), d.getString("weight"), d.getLong("createdAt"), stops, hb)
     }
 
+    /** Daak's Google web client id; Google issues the ID token for it and the server checks it. Public. */
+    const val GOOGLE_CLIENT_ID = "473227099187-dqh7tnrudf6fma4h03sqr5gpucj90obj.apps.googleusercontent.com"
+
+    data class GoogleMe(val uid: String, val known: Boolean, val name: String, val role: String?, val vehicle: String?)
+
+    fun google(idToken: String): GoogleMe {
+        val (c, j) = post("/api/google", JSONObject().put("idToken", idToken), 30000)
+        if (c != 200) error(j.optString("error", "Google sign-in failed"))
+        return GoogleMe(j.getString("uid"), j.getBoolean("known"), j.optString("name"), j.optString("role").ifEmpty { null }.takeUnless { j.isNull("role") }, j.optString("vehicle").takeUnless { j.isNull("vehicle") })
+    }
+
     fun me(uid: String): Me {
         val (code, j) = get("/api/me/${enc(uid)}")
         if (code == 404) return Me(false, null, null, null)
@@ -175,11 +186,12 @@ object Api {
     fun join(
         uid: String, role: String, name: String, phone: String, upi: String, vehicle: String, legs: List<String>, stop: String?,
         busOperator: String? = null, idType: String? = null, idLast4: String = "", idPhoto: java.io.File? = null,
-        times: Map<String, String> = emptyMap(),
+        times: Map<String, String> = emptyMap(), idToken: String? = null,
     ): List<String>? {
         val body = JSONObject().put("uid", uid).put("role", role).put("name", name).put("phone", phone).put("upi", upi).put("vehicle", vehicle)
             .put("legs", org.json.JSONArray(legs)).apply {
                 if (stop != null) put("stop", stop)
+                if (idToken != null) put("idToken", idToken)
                 if (busOperator != null) put("busOperator", busOperator)
                 if (idType != null) put("idType", idType)
                 if (idLast4.isNotEmpty()) put("idLast4", idLast4)

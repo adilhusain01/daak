@@ -6,6 +6,7 @@ import { network } from "@/lib/network";
 import { seal, sealRef, uploadPhoto } from "@/lib/swarm";
 import { submitLog } from "@/lib/hedera";
 import { badgeHash } from "@/lib/history";
+import { verifyGoogle } from "@/lib/google";
 
 type Join = {
   uid: string; role: "driver" | "sender" | "receiver"; name: string; phone: string; upi?: string; vehicle?: string; legs?: string[]; stop?: string;
@@ -13,6 +14,8 @@ type Join = {
   busOperator?: string; idType?: string; idLast4?: string; idPhoto?: string;
   /** Drivers: when their bus leaves on each stretch, "HH:MM" (days default Monday to Saturday). */
   times?: Record<string, string>;
+  /** People who joined with Google instead of a badge: the token proves the account is theirs. */
+  idToken?: string;
 };
 
 const BUS_OPERATORS = ["UPSRTC", "BSRTC", "Private"];
@@ -53,8 +56,15 @@ export async function POST(req: Request) {
   // Changing a person's details goes through the operator.
   if (!isOperator(req) && (await getBadge(j.uid).catch(() => null))) return NextResponse.json({ ok: false, errors: ["This badge has already joined. Ask Daak to change its details."] }, { status: 409 });
 
+  // A Google identity ("g:...") can only be claimed by the person signed in to that Google account.
+  let email = "";
+  if (j.uid.startsWith("g:")) {
+    const g = j.idToken ? await verifyGoogle(j.idToken).catch(() => null) : null;
+    if (!g || g.uid !== j.uid) return NextResponse.json({ ok: false, errors: ["Sign in with Google again, then join."] }, { status: 401 });
+    email = g.email;
+  }
   const phone = j.phone.replace(/\D/g, "").slice(-10);
-  const sealed = seal(JSON.stringify({ phone, upi: j.upi ?? "" }), "person");
+  const sealed = seal(JSON.stringify({ phone, upi: j.upi ?? "", ...(email ? { email } : {}) }), "person");
   // The ID photo is encrypted on Swarm; its reference, the ID type and last 4 are sealed again before Arkiv.
   // Only the last 4 characters are kept, never the full number (and Aadhaar only masked).
   let kyc: string | undefined;
