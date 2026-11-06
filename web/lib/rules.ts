@@ -206,3 +206,20 @@ export function recheckable(verdict: string, reason: string): boolean {
 export function tappedPerson(b: { name: string; role: string } | null): { name: string; role: string } | null {
   return b ? { name: b.name.split(",")[0].trim(), role: b.role } : null;
 }
+
+/**
+ * The log with each handover's verdict replaced by its latest recheck, if 0G looked again: a held handover that a
+ * recheck cleared is green on the driver's record. Recheck messages are kept as they are.
+ */
+export function afterRechecks<T extends { t: string; code?: string; hop?: number; verdict?: string; ts: number }>(log: T[]): T[] {
+  const latest = new Map<string, { verdict?: string; ts: number }>();
+  for (const m of log) {
+    if (m.t !== "daak.recheck") continue;
+    const k = `${m.code}#${m.hop}`, seen = latest.get(k);
+    if (!seen || m.ts >= seen.ts) latest.set(k, { verdict: m.verdict, ts: m.ts });
+  }
+  return log.map((m) => {
+    const r = m.t === "daak.handoff" ? latest.get(`${m.code}#${m.hop}`) : undefined;
+    return r && r.ts >= m.ts ? { ...m, verdict: r.verdict } : m;
+  });
+}

@@ -1214,7 +1214,7 @@ class MainActivity : ComponentActivity() {
     private fun PackScreen(s: Screen.Pack) {
         val plan = s.plan
         Bi("पार्सल बुक करें", "Book a parcel", size = 24)
-        Step(1, "नया पार्सल लगाइए", "Tap the new parcel", when { s.parcel != null -> "Parcel ${s.parcel.uid.uppercase()}"; else -> null }, s.parcel == null && s.problem == null)
+        Step(1, "नया पार्सल लगाइए", "Tap the new parcel", when { s.loading && s.receivers == null -> pick("पढ़ रहे हैं…", "Reading the tag…"); s.parcel != null -> "Parcel ${s.parcel.uid.uppercase()}"; else -> null }, s.parcel == null && s.problem == null)
         if (s.dailyCode != null && s.booking == null) {
             Sheet {
                 Body("रोज़ का पार्सल · Today's daily order", Tokens.green, 16, FontWeight.SemiBold)

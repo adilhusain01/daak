@@ -3,7 +3,7 @@ import { chain } from "./hedera";
 import { mergeBySeq } from "./rules";
 import { accountFor } from "./payout";
 import { consignmentByCode } from "./arkiv";
-import { advanceFor, tierFor } from "./rules";
+import { advanceFor, tierFor, afterRechecks } from "./rules";
 
 /**
  * A driver's work history, read from the public Hedera log only: anyone can recompute it, which is
@@ -57,7 +57,7 @@ export type WorkHistory = {
 export async function workHistory(uid: string, preloaded?: LogMsg[]): Promise<WorkHistory> {
   const me = badgeHash(uid);
   const acct = await accountFor(uid);
-  const log = preloaded ?? (await readLog());
+  const log = afterRechecks(preloaded ?? (await readLog()));
   const reviewed = new Set(log.filter((m) => m.t === "daak.reviewed").map((m) => m.code));
   // A driver's record counts the stretches they carried; the 0 km pickup is the shop handing over.
   const mine = log.filter((m) => m.t === "daak.handoff" && m.from === me && m.km !== 0);
