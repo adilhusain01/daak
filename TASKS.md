@@ -53,7 +53,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Done
 
-- [x] Backup check for 0G outages: Cloudflare Workers AI or Gemini, labelled and unsealed, can only hold a payment (a pass still waits for 0G); 0G recheck covers backup-held hops; wrong badges or place hold regardless. Needs `GEMINI_API_KEY` (or Cloudflare) in `.env.local` and Vercel to switch on.
+- [x] Backup check for 0G outages: Cloudflare Workers AI or Gemini, labelled and unsealed, can only hold a payment (a pass still waits for 0G); 0G recheck covers backup-held hops; wrong badges or place hold regardless. Live on Cloudflare Workers AI (Llama 4 Scout): tested locally and on the live site (KNP-1204: wrong code held, right code passed and waits for 0G).
 
 - [x] HCS-14 agent identity: Daak and every shop agent have a UAID (matches Hashgraph Online's SDK byte for byte); the agent verifies Daak before paying; each booking records the paying agent's UAID on HCS (messages 56 to 58).
 
