@@ -62,7 +62,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Done
 
-- [x] Hardening (6 Nov): job answers and day-off signed by the driver's phone; operator passcode locks after 5 wrong tries in 15 minutes (per server instance); held reasons spoken and shown in Hindi; the HCS log cached by sequence; a refused handoff (expired code, wrong person) is shown, not queued as offline. Still open: the operator cookie is a fixed hash.
+- [x] Hardening (6 Nov): job answers and day-off signed by the driver's phone; operator passcode locks after 5 wrong tries in 15 minutes (per server instance); held reasons spoken and shown in Hindi; the HCS log cached by sequence; a refused handoff (expired code, wrong person) is shown, not queued as offline. Operator sessions are signed with the server secret, tied to the passcode and expire after 3 days.
 
 - [x] 0G (6 Nov): 10 0G bridged in by Adil; decision records on 0G Storage mainnet; Daak's own compute account (3 0G) pays the sealed provider first with TEE signatures verified, Router credit as fallback; each booking moves 2% of its fee in dINR on Hedera and the same value in 0G into the compute account, both on the HCS log (first: 44 paise and 0.032 0G).
 

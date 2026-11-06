@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 /**
@@ -8,8 +8,23 @@ import { NextResponse } from "next/server";
  */
 export const OP_COOKIE = "daak_op";
 
-export function operatorToken(): string {
-  return createHash("sha256").update(`operator:${process.env.OPERATOR_PASSCODE ?? ""}:${process.env.DAAK_MASTER_SECRET ?? ""}`).digest("hex");
+/** How long an operator sign-in lasts. */
+export const OP_SESSION_MS = 3 * 86_400_000;
+
+const sessionMac = (issuedAt: number) =>
+  createHmac("sha256", `${process.env.DAAK_MASTER_SECRET ?? ""}`).update(`operator:${issuedAt}:${process.env.OPERATOR_PASSCODE ?? ""}`).digest("hex");
+
+/** A new operator session, "issuedAt.mac": signed with the server secret, tied to the passcode, expiring after 3 days. */
+export function operatorToken(now = Date.now()): string {
+  return `${now}.${sessionMac(now)}`;
+}
+
+/** True for a session this server issued, not altered, not expired, under the current passcode. */
+export function verifyOperatorToken(token: string, now = Date.now()): boolean {
+  const [at, mac] = token.split(".");
+  const issuedAt = Number(at);
+  if (!Number.isFinite(issuedAt) || !mac || now - issuedAt > OP_SESSION_MS || issuedAt - now > 60_000) return false;
+  return same(mac, sessionMac(issuedAt));
 }
 
 const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -22,7 +37,7 @@ function cookie(req: Request, name: string): string | null {
 
 export function isOperator(req: Request): boolean {
   const c = cookie(req, OP_COOKIE);
-  return Boolean(process.env.OPERATOR_PASSCODE) && c !== null && same(c, operatorToken());
+  return Boolean(process.env.OPERATOR_PASSCODE) && c !== null && verifyOperatorToken(c);
 }
 
 export function isApp(req: Request): boolean {

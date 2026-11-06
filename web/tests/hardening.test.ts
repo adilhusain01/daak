@@ -42,3 +42,18 @@ test("the cached log takes only new messages and never repeats one", () => {
   const a = [{ seq: 1, t: "a" }, { seq: 2, t: "b" }];
   assert.deepEqual(mergeBySeq(a, [{ seq: 2, t: "b" }, { seq: 3, t: "c" }]).map((m) => m.seq), [1, 2, 3]);
 });
+
+// The operator's sign-in: a session that expires and cannot be altered, not one fixed value forever.
+import { operatorToken, verifyOperatorToken } from "../lib/auth.ts";
+
+test("an operator session is signed, expires after 3 days, and ends when the passcode changes", () => {
+  process.env.OPERATOR_PASSCODE = "test-pass"; process.env.DAAK_MASTER_SECRET = "test-secret";
+  const t = 1793950000000;
+  const tok = operatorToken(t);
+  assert.notEqual(operatorToken(t), operatorToken(t + 1000));
+  assert.equal(verifyOperatorToken(tok, t + 60_000), true);
+  assert.equal(verifyOperatorToken(tok, t + 4 * 86_400_000), false);
+  assert.equal(verifyOperatorToken(tok.replace(/^\d+/, String(t + 86_400_000)), t + 60_000), false);
+  process.env.OPERATOR_PASSCODE = "new-pass";
+  assert.equal(verifyOperatorToken(tok, t + 60_000), false);
+});
