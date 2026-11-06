@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +32,36 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+/** The app's one language, Hindi or English, chosen on the Me tab (and at sign-in); it starts as the phone's own. */
+object Lang { var hindi by androidx.compose.runtime.mutableStateOf(java.util.Locale.getDefault().language == "hi") }
+fun pick(hi: String, en: String) = if (Lang.hindi) hi else en
+
+private val deva = Regex("[\\u0900-\\u097F]")
+private val latin = Regex("[A-Za-z]")
+/**
+ * Keeps one language of a line written in both: "हिंदी · English" pairs, or "हिंदी वाक्य। English sentence."
+ * Parts in neither pair (a code, a number, an English-only line) stay as they are.
+ */
+fun t(s: String): String {
+    val parts = s.split(" · ")
+    if (parts.size >= 2) {
+        val out = mutableListOf<String>()
+        var i = 0
+        while (i < parts.size) {
+            val p = parts[i]
+            if (deva.containsMatchIn(p) && i + 1 < parts.size && latin.containsMatchIn(parts[i + 1]) && !deva.containsMatchIn(parts[i + 1])) { out += pick(p, parts[i + 1]); i += 2 }
+            else { out += p; i++ }
+        }
+        return out.joinToString(" · ")
+    }
+    val k = s.lastIndexOf("।")
+    if (k in 0 until s.length - 1) {
+        val en = s.substring(k + 1).trim()
+        if (latin.containsMatchIn(en) && !deva.containsMatchIn(en)) return pick(s.substring(0, k + 1).trim(), en)
+    }
+    return s
+}
 
 /** One set of tokens for every screen: the same paper and ink as the website. */
 object Tokens {
@@ -54,16 +85,11 @@ fun Title(text: String) =
 
 @Composable
 fun Body(text: String, color: Color = Tokens.ink, size: Int = 18, weight: FontWeight = FontWeight.Normal) =
-    BasicText(text, style = TextStyle(fontSize = size.sp, lineHeight = (size * 1.35).sp, color = color, fontWeight = weight))
+    BasicText(t(text), style = TextStyle(fontSize = size.sp, lineHeight = (size * 1.35).sp, color = color, fontWeight = weight))
 
-/** Hindi first, English under it, for every line a driver needs to read. */
+/** A line in the chosen language. */
 @Composable
-fun Bi(hi: String, en: String, color: Color = Tokens.ink, size: Int = 20) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Body(hi, color, size, FontWeight.SemiBold)
-        Body(en, if (color == Tokens.ink) Tokens.muted else color.copy(alpha = 0.8f), size - 4)
-    }
-}
+fun Bi(hi: String, en: String, color: Color = Tokens.ink, size: Int = 20) = Body(pick(hi, en), color, size, FontWeight.SemiBold)
 
 /** A key: casts a shadow, so it can be pressed. Shrinks a little on press, at once. */
 @Composable
@@ -79,8 +105,7 @@ fun Action(hi: String, en: String? = null, color: Color = Tokens.ink, enabled: B
             .padding(horizontal = Tokens.pad, vertical = 18.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            BasicText(hi, style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Tokens.paper))
-            if (en != null) BasicText(en, style = TextStyle(fontSize = 16.sp, color = Tokens.paper.copy(alpha = 0.8f)))
+            BasicText(if (en != null) pick(hi, en) else t(hi), style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Tokens.paper))
         }
     }
 }
@@ -97,7 +122,7 @@ fun Secondary(text: String, onClick: () -> Unit) {
             .background(Tokens.sheet, RoundedCornerShape(Tokens.radius))
             .clickable(interactionSource = source, indication = null, onClick = onClick)
             .padding(horizontal = Tokens.pad, vertical = 14.dp),
-    ) { BasicText(text, style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Medium, color = Tokens.ink)) }
+    ) { BasicText(t(text), style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Medium, color = Tokens.ink)) }
 }
 
 /** A sheet: read, never pressed. Flat, an edge, no shadow. */
@@ -126,8 +151,8 @@ fun Step(n: Int, hi: String, en: String, done: String?, active: Boolean) {
             contentAlignment = Alignment.Center,
         ) { BasicText(if (done != null) "✓" else "$n", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Tokens.paper)) }
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Body(hi, if (done == null && !active) Tokens.muted else Tokens.ink, 19, FontWeight.SemiBold)
-            Body(done ?: en, if (done != null) Tokens.green else Tokens.muted, 15)
+            Body(pick(hi, en), if (done == null && !active) Tokens.muted else Tokens.ink, 19, FontWeight.SemiBold)
+            if (done != null) Body(done, Tokens.green, 15)
         }
     }
 }
@@ -139,9 +164,8 @@ fun Verdict(color: Color, hi: String, en: String, detail: String?) {
         Modifier.fillMaxWidth().background(color, RoundedCornerShape(Tokens.radius)).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        BasicText(hi, style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Tokens.paper))
-        BasicText(en, style = TextStyle(fontSize = 18.sp, color = Tokens.paper.copy(alpha = 0.9f)))
-        if (!detail.isNullOrBlank()) BasicText(detail, style = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, color = Tokens.paper.copy(alpha = 0.85f)))
+        BasicText(pick(hi, en), style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Tokens.paper))
+        if (!detail.isNullOrBlank()) BasicText(t(detail), style = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, color = Tokens.paper.copy(alpha = 0.85f)))
     }
 }
 
@@ -186,10 +210,7 @@ fun Choice(title: String, sub: String?, chosen: Boolean, onClick: () -> Unit) {
 /** A section's heading inside a sheet: Hindi, with English beside it in a lighter tone. */
 @Composable
 fun Heading(hi: String, en: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-        Body(hi, Tokens.ink, 19, FontWeight.SemiBold)
-        Body(en, Tokens.muted, 15)
-    }
+    Body(pick(hi, en), Tokens.ink, 19, FontWeight.SemiBold)
 }
 
 /** A row of numbers that matter at a glance; each sits in a tray, read and never pressed. */
@@ -318,8 +339,7 @@ fun SegmentedTabs(items: List<TabItem>, selected: String, onSelect: (TabItem) ->
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        BasicText(item.hi, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (on) Tokens.paper else Tokens.ink))
-                        BasicText(item.en, style = TextStyle(fontSize = 11.sp, fontWeight = if (on) FontWeight.Medium else FontWeight.Normal, color = if (on) Tokens.paper.copy(alpha = 0.85f) else Tokens.muted))
+                        BasicText(pick(item.hi, item.en), style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (on) Tokens.paper else Tokens.ink))
                     }
                 }
             }
@@ -367,7 +387,7 @@ fun SmallKey(text: String, modifier: Modifier = Modifier, color: Color = Tokens.
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            BasicText(text, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (filled) Tokens.paper else Tokens.ink))
+            BasicText(t(text), style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (filled) Tokens.paper else Tokens.ink))
             if (sub != null) BasicText(sub, style = TextStyle(fontSize = 13.sp, color = if (filled) Tokens.paper.copy(alpha = 0.8f) else Tokens.muted))
         }
     }
@@ -382,7 +402,7 @@ fun Brand() {
         }
         Column {
             BasicText("Daak", style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = Tokens.ink, lineHeight = 26.sp))
-            BasicText("डाक · हर पार्सल का हिसाब", style = TextStyle(fontSize = 13.sp, color = Tokens.muted))
+            BasicText(pick("डाक · हर पार्सल का हिसाब", "Every parcel handoff on record"), style = TextStyle(fontSize = 13.sp, color = Tokens.muted))
         }
     }
 }

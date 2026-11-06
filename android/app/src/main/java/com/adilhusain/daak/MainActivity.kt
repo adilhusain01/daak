@@ -140,6 +140,7 @@ class MainActivity : ComponentActivity() {
         outbox = Outbox(this)
         where = Where(this)
         queued = outbox.size()
+        prefs.getString("lang", null)?.let { Lang.hindi = it == "hi" }
         nfc = Nfc(this, ::onTap)
         askLocation.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION))
         restore()
@@ -699,6 +700,23 @@ class MainActivity : ComponentActivity() {
             Body("New here? Tap a new badge and the phone helps you join. It remembers you until you switch.", Tokens.muted, 16)
         }
         if (!nfc.enabled) Body("NFC बंद है। Turn on NFC in Settings.", Tokens.red)
+        LanguageSwitch()
+    }
+
+    /** Hindi or English, for the whole app; remembered on the phone. */
+    @Composable
+    private fun LanguageSwitch() {
+        Sheet {
+            Heading("भाषा", "Language")
+            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(true to "हिंदी", false to "English").forEach { (hindi, label) ->
+                    SmallKey(label, Modifier.weight(1f), filled = Lang.hindi == hindi) {
+                        Lang.hindi = hindi
+                        prefs.edit().putString("lang", if (hindi) "hi" else "en").apply()
+                    }
+                }
+            }
+        }
     }
 
     @Composable
@@ -800,7 +818,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun MeScreen(p: Person) {
-        val role = when (p.role) { "driver" -> "Driver"; "sender" -> "Shop sending parcels"; else -> "Shop receiving parcels" }
+        val role = when (p.role) { "driver" -> pick("ड्राइवर", "Driver"); "sender" -> pick("पार्सल भेजने वाली दुकान", "Shop sending parcels"); else -> pick("पार्सल लेने वाली दुकान", "Shop receiving parcels") }
         Sheet {
             Heading("मैं", "Me")
             Line("नाम · Name", p.name.ifBlank { "Not set" })
@@ -809,6 +827,7 @@ class MainActivity : ComponentActivity() {
             Line("बैज · Badge", "…${p.uid.takeLast(8)}")
             Body("Handoffs from this phone are signed with a key kept in its secure hardware, so nobody can record one in your name.", Tokens.muted, 14)
         }
+        LanguageSwitch()
         if (p.role == "driver") work?.let { w ->
             val edit = timesEdit ?: w.times
             Sheet {
@@ -1029,6 +1048,16 @@ class MainActivity : ComponentActivity() {
         if (s.parcel == null) MyParcels("Parcels coming to you show here once a shop books one.")
     }
 
+    /** A parcel's state in the chosen language; the server words it in English. */
+    private fun statusText(key: String, english: String, handed: Int, stops: Int) = if (!Lang.hindi) english else when (key) {
+        "paid" -> "पहुँच गया, ड्राइवरों को पूरा भुगतान"
+        "releasing" -> "पहुँच गया, बाकी भुगतान जल्द"
+        "refunded" -> "दावा निपटा, दुकान को पैसे वापस"
+        "held" -> "भुगतान रुका है"
+        "review" -> "पहुँच गया, जाँच बाकी"
+        else -> "रास्ते में, $stops में से $handed पड़ाव"
+    }
+
     private fun statusColor(key: String) = when (key) { "paid", "releasing" -> Tokens.green; "held", "refunded" -> Tokens.red; "review" -> Tokens.amber; else -> Tokens.ink }
 
     /** Every parcel this person sends, carries or receives, newest first; more load at the end of the list. */
@@ -1039,7 +1068,7 @@ class MainActivity : ComponentActivity() {
         androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(Triple("transit", "चल रहे", "Active"), Triple("paid", "पहुँचे", "Delivered"), Triple("all", "सब", "All")).forEach { (id, hi, en) ->
                 val n = l?.counts?.get(id)
-                SmallKey("$hi${n?.let { " · $it" } ?: ""}", Modifier.weight(1f), filled = mineFilter == id, sub = en) {
+                SmallKey(pick(hi, en) + (n?.let { " $it" } ?: ""), Modifier.weight(1f), filled = mineFilter == id) {
                     if (mineFilter != id) { mineFilter = id; mine = null; loadMine(reset = true) }
                 }
             }
@@ -1049,7 +1078,7 @@ class MainActivity : ComponentActivity() {
             l.rows.isEmpty() -> Body(empty, Tokens.muted, 15)
             else -> {
                 l.rows.forEach { r ->
-                    ParcelItem(r.code, "₹${"%.2f".format(r.fee)}", r.status, statusColor(r.statusKey),
+                    ParcelItem(r.code, "₹${"%.2f".format(r.fee)}", statusText(r.statusKey, r.status, r.handed, r.stops), statusColor(r.statusKey),
                         "${r.label.removePrefix("Parcel from ")} · ${dayTime(r.createdAt)}") { openParcel(r.code) }
                 }
                 if (l.page < l.pages) Secondary(if (mineBusy) "Loading more…" else "और दिखाएँ · Show more (${l.total - l.rows.size} left)") { loadMine() }
@@ -1069,7 +1098,7 @@ class MainActivity : ComponentActivity() {
                 Sheet {
                     Body(d.code, Tokens.ink, 30, FontWeight.Bold)
                     Body(d.label.removePrefix("Parcel from "), Tokens.muted, 15)
-                    Body(d.status, statusColor(d.statusKey), 18, FontWeight.SemiBold)
+                    Body(statusText(d.statusKey, d.status, d.stops.count { it.verdict != null }, d.stops.size), statusColor(d.statusKey), 18, FontWeight.SemiBold)
                     Line("Fee", "₹${"%.2f".format(d.fee)}")
                     Line("Distance", "${d.km} km · ${d.weight}")
                     Line("Booked", dayTime(d.createdAt))
