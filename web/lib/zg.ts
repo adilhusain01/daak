@@ -41,9 +41,9 @@ export function parseAnswer(content: string) {
 }
 
 /** The driver never waits on 0G for more than this; past it, the handoff takes the safe-stop path. */
-export const ZG_BUDGET_MS = Number(process.env.ZG_BUDGET_MS ?? 12000);
+export const ZG_BUDGET_MS = Number(process.env.ZG_BUDGET_MS ?? 20000);
 
-/** After 0G fails, handoffs skip it for a while (the driver should not wait 12 s each time); rechecks always try. */
+/** After 0G fails, handoffs skip it for a while (the driver should not wait 20 s each time); rechecks always try. */
 let zgDownUntil = 0;
 export const ZG_RETRY_MS = Number(process.env.ZG_RETRY_MS ?? 10 * 60 * 1000);
 
@@ -87,7 +87,49 @@ async function pickVisionProvider(b: Awaited<ReturnType<typeof createZGComputeNe
   throw new Error("No sealed (TeeML) vision provider is live on 0G right now");
 }
 
+/** The Router is 0G's API-key gateway (pc.0g.ai); with a key set, checks go through it to a sealed provider. */
+export const ROUTER = process.env.ZG_ROUTER_URL ?? "https://router-api.0g.ai/v1";
+const routerModel = () => process.env.ZG_ROUTER_MODEL ?? "0gm-1.0-35b-a3b";
+
+/** A healthy, TEE-acknowledged provider for the vision model, pinned so the Router never falls back to an unsealed one. */
+let routed: { address: string; at: number } | null = null;
+async function sealedRouterProvider() {
+  if (routed && Date.now() - routed.at < 10 * 60 * 1000) return routed.address;
+  const r = await fetch(`${ROUTER}/providers?model=${encodeURIComponent(routerModel())}`, { signal: AbortSignal.timeout(8000) });
+  if (!r.ok) throw new Error(`0G Router ${r.status} listing providers`);
+  const list = ((await r.json()).data ?? []) as { address: string; is_healthy?: boolean; tee_acknowledged?: boolean; architecture?: { input_modalities?: string[] } }[];
+  const p = list.find((x) => x.is_healthy && x.tee_acknowledged && x.architecture?.input_modalities?.includes("image"));
+  if (!p) throw new Error("No sealed (TEE) vision provider is live on the 0G Router right now");
+  routed = { address: p.address, at: Date.now() };
+  return p.address;
+}
+
+async function routerCheck(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Check> {
+  const provider = await sealedRouterProvider();
+  const res = await fetch(`${ROUTER}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.ZG_ROUTER_KEY}`, "X-0G-Provider-Address": provider, "X-0G-Provider-Trust-Mode": "private" },
+    signal: AbortSignal.timeout(40_000),
+    body: JSON.stringify({
+      model: routerModel(),
+      temperature: 0,
+      max_tokens: 400,
+      chat_template_kwargs: { enable_thinking: false },
+      messages: [{ role: "user", content: [
+        { type: "text", text: parcelPrompt(expectedCode, hopLabel) },
+        { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photo.toString("base64")}` } },
+      ] }],
+    }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`0G Router ${res.status}: ${text.slice(0, 200)}`);
+  const data = JSON.parse(text);
+  const content: string = data.choices?.[0]?.message?.content ?? "";
+  return { ...parseAnswer(content), requestId: data.id ?? res.headers.get("x-request-id") ?? undefined, verified: null, model: `${data.model ?? routerModel()} via 0G Router, provider ${provider}` };
+}
+
 async function checkParcelInner(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Check> {
+  if (process.env.ZG_ROUTER_KEY) return routerCheck(photo, expectedCode, hopLabel);
   const b = await broker();
   const { provider, model: wanted } = await pickVisionProvider(b);
   const { endpoint, model } = await b.inference.getServiceMetadata(provider, wanted);

@@ -28,7 +28,7 @@ Shop's phone ──tap parcel──> /api/pack ──> shop's agent (Hedera acco
 /api/book: record on Arkiv ──> meter locked in escrow (dINR) ──> 1 point to the protection pool ──> HCS "booked"
 
 Driver's phone ──tap parcel, tap badge, photo, GPS, P-256 signature──> /api/handoff
-   ├─ 0G sealed vision check (12 s budget; safe-stop "not checked by AI" if 0G cannot answer)
+   ├─ 0G sealed vision check through the 0G Router, private (TEE-only) mode (20 s budget; safe-stop "not checked by AI" if 0G cannot answer)
    ├─ HCS message (hashes only) ── Arkiv handoff entity ── lid photo encrypted on Swarm
    └─ green: escrow pays that driver's advance (2% to Daak via the token's custom fee) ──> redeemed ──> UPI
 
