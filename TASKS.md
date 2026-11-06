@@ -4,7 +4,6 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Blockers: each one can cost a prize on its own
 
-- [ ] Set `STAND_RADIUS_M=0` in Vercel for the Mumbai demo (the stand check is now real, and the stands are in UP), and redeploy.
 - [ ] One clean rehearsal from the phone with a new photo per stop that runs each path once, so the public log shows them: green or backup-checked handoffs with signatures, an approval, a 0G recheck, a pay-anyway, a refund to the shop, a KYC check, a UPI UTR. Then set `DATA_SINCE`.
 
 - [x] Repo public with an MIT licence.
@@ -35,7 +34,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 - [x] Public read-only view of deliveries at `/live` (no photos, KYC, UPI or bank details), so partner judges see it without a passcode.
 - [x] Drivers accept or decline a job from the app; the answer goes on the HCS log and shows on `/live` and the dashboard. Reassigning a declined stretch is still the operator (refund or rebook).
-- [ ] Verify Ramesh's and Suresh's IDs before the demo (they show "ID not checked").
+- [ ] Verify Ramesh's, Suresh's and Adil's IDs before the demo: in /ops, "Ask 0G to read it" first, then Verify (0G's sealed provider was failing its price quote after 12:40 on 6 Nov; retry).
 
 ## The team
 
@@ -46,7 +45,9 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] Reset `DATA_SINCE` to the start of the clean demo run (hides today's test bookings).
 - [x] `CRON_SECRET` and `DATA_SINCE` set in Vercel.
 - [ ] NFC stickers (Amazon, Friday 8 am to 12 pm). Each new sticker joins from the app as a person: a shop, a second driver, the receiving shop.
-- [ ] Run and film a real three-hop delivery with the stickers.
+- [ ] Run and film a real three-hop delivery with the stickers, one handoff by code with two phones ("both phones signed").
+- [ ] Adil's driver record: switch to Lucknow to Gorakhpur from the Me tab, so Ramesh hands over to him at Lucknow.
+- [ ] Film one vouch: Ramesh (ID verified) scans Adil's code from the Me tab.
 
 ## From the audit, not done
 
@@ -54,7 +55,8 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] Read the holdback schedule's inner transaction result, not only "executed".
 - [ ] Cache the HCS log by sequence (every page reads the whole topic).
 - [ ] Speak the held reason in Hindi, not only "payment held".
-- [ ] Job answers, day off and daily-order pauses accept any badge with the app key; sign them like handoffs.
+- [ ] Job answers, day off and daily-order pauses accept any badge with the app key; sign them like handoffs (stretch changes are signed now).
+- [ ] A new phone for an existing Google account: accept its key only after a vouch or the operator (today it goes through the operator).
 - [ ] Operator cookie is a fixed hash; rate-limit the passcode.
 
 ## Story and submission
@@ -64,6 +66,11 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] Final README pass: 0G proof or the outage write-up, the business numbers.
 
 ## Done
+
+- [x] Identity without stickers (6 Nov): Continue with Google (server checks the token; Daak id is a hash of the Google account id; email sealed); two-signature handoffs by QR code (fresh 2 minutes from the handoff time, single use, both signatures on HCS), badge tap kept as the one-phone fallback; vouching with limits (3 in 30 days, none for 90 days after a vouched driver is found responsible); 0G reads ID photos in a sealed machine for the operator; drivers edit stretches and bus times from the Me tab, signed by their phone. Adil joined with Google.
+- [x] 0G sealed check live through the Router (6 Nov); KNP-1204 rechecked green and its held pay released itself at 11:44.
+- [x] Parcel lists paged on the server with filters and search on /ops, /live and in the app, each parcel with its own page; Ask Daak as a floating chat; one Daak mark (ड) everywhere; the app in one language at a time; the landing page told as KNP-1204's journey with each integration and its proof.
+- [x] `STAND_RADIUS_M=0` set in Vercel.
 
 - [x] 0G sealed check live (6 Nov): $1 Router credit, key in private (TEE-only) trust mode, `0gm-1.0-35b-a3b` on Intel TDX, pinned to a TEE-acknowledged provider; first checks matched KNP-7115 and refused KNP-9999 (ids in `docs/submission.md`); budget 20 s; key in Vercel.
 - [x] Audit fixes (Fable audit, 6 Nov): signatures required when a party has a registered phone; the 500 m stand check is real (stands' coordinates on every leg, accuracy capped at 200 m); the same photo never records or pays twice; random checked booking codes; refunds go to the shop's agent account and a delivery settles once; re-joining a badge refused, ID added from the Me tab signed by the phone; driver earnings need the app key, the public drivers page shows record and tier, public tracking carries no GPS; latest attempt per stop counts; 0G outages remembered for 10 minutes; booking never fails after escrow is funded; cash-out references unique; claims name the responsible stop and declared value; honest landing copy (2% fee, "redeemed").
