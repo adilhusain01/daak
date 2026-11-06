@@ -16,3 +16,26 @@ export function verifyHandoff(devicePubB64: string, message: string, sigB64: str
     return false;
   }
 }
+
+/** What a taker's phone signs for its code: who, when, and a one-time value. */
+export const receiveMessage = (t: { uid: string; issuedAt: number; nonce: string }) => `daak.receive|${t.uid}|${t.issuedAt}|${t.nonce}`;
+
+/** A taker's code lasts two minutes; the phone shows a new one every 30 seconds. */
+export const RECEIVE_MAX_AGE_MS = 2 * 60_000;
+
+/**
+ * The taker's code, "DAAK1|uid|issuedAt|nonce|sig", scanned by the giver: it proves the taker's own phone was there
+ * just now. Refused if it names someone else, is not signed by the taker's registered phone, is stale, or was used.
+ */
+export function checkReceiveProof(code: string, o: { to: string; devicePub?: string; now: number; used: Set<string> }): { ok: true; nonce: string } | { ok: false; why: string } {
+  const parts = code.split("|");
+  if (parts.length < 5 || parts[0] !== "DAAK1") return { ok: false, why: "That is not a Daak code." };
+  const sig = parts.at(-1)!, nonce = parts.at(-2)!, issuedAt = Number(parts.at(-3));
+  const uid = parts.slice(1, -3).join("|");
+  if (uid !== o.to) return { ok: false, why: "This code belongs to someone else." };
+  if (!o.devicePub) return { ok: false, why: "The taker has no registered phone." };
+  if (!Number.isFinite(issuedAt) || o.now - issuedAt > RECEIVE_MAX_AGE_MS || issuedAt - o.now > 30_000) return { ok: false, why: "This code has expired; ask for the new one on their screen." };
+  if (o.used.has(nonce)) return { ok: false, why: "This code was already used." };
+  if (!verifyHandoff(o.devicePub, receiveMessage({ uid, issuedAt, nonce }), sig)) return { ok: false, why: "This code was not signed by the taker's phone." };
+  return { ok: true, nonce };
+}

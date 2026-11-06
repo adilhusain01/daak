@@ -11,7 +11,7 @@ import { isSplit, payAdvance, settleDelivered } from "@/lib/split";
 import { sealRef, uploadPhoto } from "@/lib/swarm";
 import { logDecision } from "@/lib/zgstore";
 import { getBadge } from "@/lib/arkiv";
-import { handoffMessage, verifyHandoff } from "@/lib/signing";
+import { checkReceiveProof, handoffMessage, verifyHandoff } from "@/lib/signing";
 import { placeCheck } from "@/lib/rules";
 import { readLog } from "@/lib/history";
 
@@ -51,6 +51,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ verdict: "held", message: "Signature check failed. This handoff did not come from the giver's or the taker's registered phone." }, { status: 401 });
     }
     signed = "valid";
+  }
+  // How the taker confirmed: their own phone's fresh code, scanned by the giver (both phones signed), or a badge tap.
+  const takerCode = String(form.get("takerCode") ?? "");
+  let confirm: { by: "code"; nonce: string; issuedAt: number; sig: string } | { by: "badge" } = { by: "badge" };
+  if (takerCode) {
+    const used = new Set((await readLog().catch(() => [])).map((m) => (m as { confirm?: { nonce?: string } }).confirm?.nonce).filter((n): n is string => Boolean(n)));
+    const proof = checkReceiveProof(takerCode, { to, devicePub: taker?.devicePub, now: Date.now(), used });
+    if (!proof.ok) return NextResponse.json({ verdict: "held", message: proof.why }, { status: 401 });
+    // The taker's own signature goes on the public log too, so anyone can check both people signed.
+    const parts = takerCode.split("|");
+    confirm = { by: "code", nonce: proof.nonce, issuedAt: Number(parts.at(-3)), sig: parts.at(-1)! };
   }
   if (Math.abs(at - Date.now()) > 48 * 3600_000) return NextResponse.json({ verdict: "held", message: "The handoff time is not plausible." }, { status: 400 });
 
@@ -128,7 +139,7 @@ export async function POST(req: Request) {
       t: "daak.handoff", code: consignment.code, hop: leg.hop, km: leg.km ?? null, from: short(from), to: short(to),
       verdict, zg: check?.requestId ?? null, photo: photoSha256, at,
       geo: spot ? [Number(spot.lat.toFixed(4)), Number(spot.lng.toFixed(4))] : null,
-      signer: signer ? short(signer) : null, sig: signed === "valid" ? sig : null,
+      signer: signer ? short(signer) : null, sig: signed === "valid" ? sig : null, confirm,
       backup: backup && { provider: backup.provider, model: backup.model, match: backup.match, condition: backup.condition },
     });
   } catch (e) {

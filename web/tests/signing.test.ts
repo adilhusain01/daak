@@ -28,3 +28,33 @@ test("another phone's key does not verify, and garbage does not crash", () => {
 test("a phone's public key fits Arkiv's 128-byte text column", () => {
   assert.ok(pub.length <= 128);
 });
+
+// The taker's code: a QR their phone signs ("I am here, now"), which the giver scans instead of tapping a badge.
+import { receiveMessage, checkReceiveProof } from "../lib/signing.ts";
+
+const now = 1793950000000;
+const taker = { uid: "g:3f9a01", issuedAt: now - 20_000, nonce: "n8x2k4q1" };
+const proof = (t = taker, key = phone.privateKey) =>
+  `DAAK1|${t.uid}|${t.issuedAt}|${t.nonce}|${sign("sha256", Buffer.from(receiveMessage(t)), key).toString("base64")}`;
+
+test("a fresh code signed by the taker's phone proves the taker was there", () => {
+  assert.deepEqual(checkReceiveProof(proof(), { to: taker.uid, devicePub: pub, now, used: new Set() }), { ok: true, nonce: taker.nonce });
+});
+
+test("a code for someone else, from another phone, or tampered with is refused", () => {
+  assert.equal(checkReceiveProof(proof(), { to: "g:other", devicePub: pub, now, used: new Set() }).ok, false);
+  const stranger = generateKeyPairSync("ec", { namedCurve: "prime256v1" }).privateKey;
+  assert.equal(checkReceiveProof(proof(taker, stranger), { to: taker.uid, devicePub: pub, now, used: new Set() }).ok, false);
+  assert.equal(checkReceiveProof(proof().replace(String(taker.issuedAt), String(now)), { to: taker.uid, devicePub: pub, now, used: new Set() }).ok, false);
+  assert.equal(checkReceiveProof("not a code", { to: taker.uid, devicePub: pub, now, used: new Set() }).ok, false);
+});
+
+test("a code older than two minutes, or used before, is refused", () => {
+  const old = { ...taker, issuedAt: now - 3 * 60_000 };
+  assert.equal(checkReceiveProof(proof(old), { to: taker.uid, devicePub: pub, now, used: new Set() }).ok, false);
+  assert.equal(checkReceiveProof(proof(), { to: taker.uid, devicePub: pub, now, used: new Set([taker.nonce]) }).ok, false);
+});
+
+test("a taker with no registered phone cannot give a code", () => {
+  assert.equal(checkReceiveProof(proof(), { to: taker.uid, devicePub: undefined, now, used: new Set() }).ok, false);
+});
