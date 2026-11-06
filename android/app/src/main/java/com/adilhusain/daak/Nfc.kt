@@ -6,6 +6,8 @@ import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.Ndef
+import android.nfc.tech.NdefFormatable
+import android.util.Log
 import android.os.Bundle
 
 /** One tap: the chip's serial number and the text or link written on it, if any. */
@@ -57,12 +59,23 @@ class Nfc(private val activity: Activity, private val onTap: (Tap) -> Unit) : Nf
                     if (writable) {
                         ndef.writeNdefMessage(NdefMessage(NdefRecord.createUri(link)))
                         pendingWrite = null
+                        text = link // some phones read back the old contents right after a write; the write did not throw, so it holds
                     }
                 }
-                text = ndef.ndefMessage?.records?.firstOrNull()?.let(::recordText)
-            }
+                if (text == null) text = ndef.ndefMessage?.records?.firstOrNull()?.let(::recordText)
+            }.onFailure { Log.w("Daak", "NFC read/write failed: ${it.message}") }
             runCatching { ndef.close() }
+        } else NdefFormatable.get(tag)?.let { f ->
+            // A blank sticker that was never formatted: format it with the link, or just report it can take one.
+            writable = true
+            pendingWrite?.let { link ->
+                runCatching { f.connect(); f.format(NdefMessage(NdefRecord.createUri(link))); pendingWrite = null; text = link }
+                    .onFailure { Log.w("Daak", "NFC format failed: ${it.message}") }
+                runCatching { f.close() }
+            }
         }
+        val line = "tap ${uid.takeLast(8)} ndef=${ndef != null} formatable=${NdefFormatable.get(tag) != null} writable=$writable link=${text ?: "-"} techs=${tag.techList.joinToString(",") { it.substringAfterLast('.') }}"
+        Log.d("Daak", line)
         activity.runOnUiThread { onTap(Tap(uid, text, writable)) }
     }
 

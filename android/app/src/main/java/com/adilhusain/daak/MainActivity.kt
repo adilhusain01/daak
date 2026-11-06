@@ -533,6 +533,13 @@ class MainActivity : ComponentActivity() {
                 when {
                     waiting?.waitingCode != null -> { screen = Screen.Pack(parcel = tap, receivers = receivers, dailyCode = waiting.waitingCode, dailyTo = waiting.waitingReceiver); voice.buzz(); voice.say("आज का रोज़ का पार्सल बुक है। इसे जोड़िए।") }
                     known?.registered == true && known.delivered -> { screen = Screen.Pack(problem = "${known.code} was already delivered. Use a new sticker for a new parcel."); voice.buzz(false) }
+                    known?.registered == true && known.code != null && tap.writable && tap.text != "${Api.base}/track/${known.code}" -> {
+                        // Booked, but the sticker never got its tracking link: write it now, then the next tap starts the pickup.
+                        val b = Booking(known.code, "${Api.base}/track/${known.code}", emptyList())
+                        nfc.pendingWrite = b.trackUrl
+                        screen = Screen.Pack(parcel = tap, booking = b)
+                        voice.buzz(); voice.say("पार्सल दोबारा लगाइए।")
+                    }
                     known?.registered == true -> { startHandoff(tap) } // already booked: the shop's next job is the pickup handoff
                     receivers == null -> { screen = Screen.Pack(problem = "इंटरनेट नहीं मिला। No internet; booking needs signal."); voice.buzz(false) }
                     receivers.isEmpty() -> { screen = Screen.Pack(problem = "No receivers have joined Daak yet. The receiving shop taps a new badge to join."); voice.buzz(false) }
@@ -568,7 +575,7 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 r.onSuccess { b ->
                     nfc.pendingWrite = b.trackUrl
-                    screen = s.copy(paying = false, booking = b, drivers = drivers)
+                    screen = s.copy(paying = false, booking = b, drivers = drivers, problem = null)
                     loadBalance()
                     voice.buzz(); voice.say("बुकिंग हो गई। कोड ढक्कन पर लिखिए, फिर पार्सल दोबारा लगाइए।")
                 }.onFailure { screen = s.copy(paying = false, problem = "बुकिंग नहीं हुई: ${it.message}. Nothing was charged.") ; voice.buzz(false) }
@@ -607,8 +614,14 @@ class MainActivity : ComponentActivity() {
     private fun finishPack(s: Screen.Pack, tap: Tap) {
         if (tap.uid != s.parcel?.uid) { note = "यह दूसरा टैग है। That is a different tag; tap the same parcel."; voice.buzz(false); return }
         val ok = tap.text == s.booking?.trackUrl
+        if (!ok && tap.writable) {
+            // The write did not finish (a quick tap, or the sticker moved). Keep it queued: the next tap tries again.
+            nfc.pendingWrite = s.booking?.trackUrl
+            screen = s.copy(problem = "The link did not save. Hold the parcel still on the back of the phone and tap again.")
+            voice.buzz(false); return
+        }
         nfc.pendingWrite = null
-        screen = s.copy(written = true, problem = if (ok) null else "The tag could not take the link; the booking still stands and the code on the lid is enough.")
+        screen = s.copy(written = true, problem = if (ok) null else "This sticker cannot take a link; the booking still stands and the code on the lid is enough.")
         voice.buzz(ok); voice.say("पार्सल तैयार है। ड्राइवर को सौंपते समय पार्सल और उनका बैज लगाइए।")
     }
 
