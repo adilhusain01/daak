@@ -1,19 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { SiteNav } from "@/components/site-nav";
-import { JourneyCaption, JourneyRoad, JourneySteps, useJourney } from "@/components/landing/journey-hero";
+import { JourneyCaption, JourneySteps, useJourney } from "@/components/landing/journey-hero";
+import { HeroFilm, FILM_ALT } from "@/components/landing/hero-film";
 import { MorphStory } from "@/components/landing/morph-story";
 import { Architecture } from "@/components/landing/architecture";
 import { PhoneFrame } from "@/components/phone-frame";
 import { Market } from "@/components/landing/market";
 
-// WebGL, so it only runs in the browser.
-const Dither = dynamic(() => import("@/components/dither"), { ssr: false });
 
 type Stats = { topicId?: string; bookings: number; handoffs: number; km: number; paidOut: number; people: number; last: number | null };
 
@@ -96,18 +94,18 @@ function MoneyBar() {
 /** The public face of Daak: one real parcel's day in the hero, then why, how, the money and the stack, each as a picture. */
 export default function Landing() {
   const j = useJourney();
+  // The film reads the hero's clock every frame without re-rendering the page.
+  const filmClock = useRef({ beat: j.beat, pos: j.pos, fill: j.fill });
+  filmClock.current = { beat: j.beat, pos: j.pos, fill: j.fill };
   const { data: s } = useQuery<Stats>({ queryKey: ["stats"], queryFn: () => fetch("/api/stats").then((r) => r.json()), refetchInterval: 30000 });
 
   return (
     <main className="w-full">
       {/* The one bold thing: night on the road, full screen, dithered, with KNP-1204's real day replayed on it. */}
       <section className="relative isolate flex min-h-svh flex-col bg-night text-paper">
-        {/* Ink falls darker behind the words, so the dither never fights the headline. */}
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(90deg,var(--color-night)_15%,rgb(28_26_20/0.55)_55%,transparent_85%)] max-lg:bg-[linear-gradient(180deg,var(--color-night)_30%,rgb(28_26_20/0.5)_70%,transparent)]" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 -z-20 opacity-40" aria-hidden>
-          <Dither waveColor={[0.26, 0.22, 0.14]} backgroundColor="transparent" colorNum={3} pixelSize={3} waveSpeed={0.02} waveFrequency={1.6} waveAmplitude={0.22} contrast={0.8}
-            enableMouseInteraction={false} clickRipple={false} intro={false} ditherMode="bayer" />
-        </div>
+        {/* The film: dawn on the road, drawn live, following KNP-1204's real day. Ink falls darker behind the words. */}
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgb(20_18_14/0.92)_10%,rgb(20_18_14/0.55)_42%,transparent_70%)] max-lg:hidden" aria-hidden />
+        <p className="sr-only">{FILM_ALT}</p>
         <div className={`${X} pt-6 sm:pt-8`}><SiteNav dark className="" /></div>
         <div className={`${X} grid flex-1 grid-cols-1 content-center gap-12 py-14 lg:grid-cols-12 lg:items-center lg:gap-16`}>
           <div className="lg:col-span-5">
@@ -116,8 +114,10 @@ export default function Landing() {
             <p className="mt-6 max-w-md text-lg text-paper/70">Proof at every bus stand. Drivers paid by the kilometre the moment they hand over.</p>
             <div className="mt-10"><TrackForm id="code" dark /></div>
           </div>
-          <div className="lg:col-span-7"><JourneyRoad pos={j.pos} /></div>
+
         </div>
+        {/* Behind everything on a wide screen; on a phone, a band of its own between the words and the caption. */}
+        <div className="relative h-[44svh] lg:absolute lg:inset-0 lg:-z-20 lg:h-auto"><HeroFilm clock={filmClock} /></div>
         <div className={`${X} grid grid-cols-1 gap-8 border-t border-paper/10 py-8 sm:py-10 lg:grid-cols-12 lg:items-end lg:gap-16`}>
           <div className="lg:col-span-6"><JourneyCaption j={j} /></div>
           <div className="lg:col-span-6"><JourneySteps j={j} /></div>
