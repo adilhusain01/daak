@@ -24,7 +24,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [x] x402 price equals the booking (meter plus booking fee for the chosen weight), settled in dINR (KNP-5021, tx 0.0.9185802-1793921489-636560474).
 - [x] Endpoint discovery: the agent reads `/.well-known/x402` first, then books.
 - [x] Each shop has its own agent account with prepaid dINR, topped up by UPI (operator enters the UTR on the dashboard; the app opens the UPI app); spend controls per shop.
-- [ ] Set `DAAK_UPI_ID` in Vercel (the UPI ID shops pay top-ups to) and make sure `X402_ASSET` is not set (default is dINR).
+- [x] `DAAK_UPI_ID` set in Vercel; `X402_ASSET` unset (dINR).
 - [ ] Optional: dINR rebuilt on Stablecoin Studio (KYC, freeze, roles) for the Tokenize track.
 - [x] Agent identity (HCS-14), phone number login, self-custody, timetables, ETAs and SMS: moved to the README roadmap as milestones.
 
@@ -39,7 +39,8 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] Each teammate joins with their own badge and real UPI ID (the real ₹ UPI moment).
 - [ ] One real conversation or 20-second clip with a bus parcel booking office or a sender.
 - [ ] Real paid deliveries during the hackathon (see `docs/business.md`, "Traction before Saturday").
-- [ ] Set `HOLDBACK_HOURS=0.25` in Vercel for the demo, so judges see a holdback release itself within 15 minutes.
+- [x] `HOLDBACK_HOURS=0.25` set in Vercel and redeployed.
+- [ ] Reset `DATA_SINCE` to the start of the clean demo run (hides today's test bookings).
 - [x] `CRON_SECRET` and `DATA_SINCE` set in Vercel.
 - [ ] NFC stickers (Amazon, Friday 8 am to 12 pm). Each new sticker joins from the app as a person: a shop, a second driver, the receiving shop.
 - [ ] Run and film a real three-hop delivery with the stickers.
