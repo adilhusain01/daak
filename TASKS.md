@@ -68,6 +68,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 - [x] Identity without stickers (6 Nov): Continue with Google (server checks the token; Daak id is a hash of the Google account id; email sealed); two-signature handoffs by QR code (fresh 2 minutes from the handoff time, single use, both signatures on HCS), badge tap kept as the one-phone fallback; vouching with limits (3 in 30 days, none for 90 days after a vouched driver is found responsible); 0G reads ID photos in a sealed machine for the operator; drivers edit stretches and bus times from the Me tab, signed by their phone. Adil joined with Google.
 - [x] 0G sealed check live through the Router (6 Nov); KNP-1204 rechecked green and its held pay released itself at 11:44.
+- [x] Full end-to-end run KNP-3WAE9 (7 Nov, one phone, five NFC stickers): booked over x402 (Rs 599.26, 24 kg), accepted by both drivers, three handovers checked sealed by 0G, advances Rs 64.83 and Rs 202.69, holdbacks Rs 267.53 released themselves at 00:34:05. It is the showcase in the README, landing receipts and briefs.
 - [x] Parcel lists paged on the server with filters and search on /ops, /live and in the app, each parcel with its own page; Ask Daak as a floating chat; one Daak mark (ड) everywhere; the app in one language at a time; the landing page told as KNP-1204's journey with each integration and its proof.
 - [x] `STAND_RADIUS_M=0` set in Vercel.
 

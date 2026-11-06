@@ -33,12 +33,15 @@ const STEPS = [
   { n: 3, title: "Proven, then paid", line: "0G checks the lid. Half the pay lands at once.", shot: { src: "/shots/app-paid.webp", alt: "KNP-1204 in the app: delivered, drivers paid in full, each stop checked by 0G, and ₹22.35 paid at the Lucknow handover" } },
 ];
 
+/** KNP-3WAE9, the full run on 7 Nov: every receipt is public and checkable. (The film retells KNP-1204, the first run.) */
 const RECEIPTS: [string, string, string][] = [
-  ["Booking on the public log", "topic 0.0.11327109", hashscan("topic", "0.0.11327109")],
-  ["Shop's agent that paid", "0.0.11331484", hashscan("account", "0.0.11331484")],
-  ["Sealed 0G checks", "6eb1ede1, 73f8e8bb, 224ee09e", "/live/KNP-1204"],
-  ["Ramesh paid at Lucknow", "₹22.35", txUrl(SPLIT[0].tx)],
-  ["Held pay released itself", "schedule 0.0.11335076, 11:44:00", hashscan("schedule", "0.0.11335076")],
+  ["Booking paid over x402", "₹599.26 in dINR", hashscan("transaction", "0.0.9185802-1793986788-181264432")],
+  ["Shop's agent that paid", "0.0.11342762", hashscan("account", "0.0.11342762")],
+  ["Sealed 0G checks at three stands", "3213997c, 7b84fb39, 372eff24", "/live/KNP-3WAE9"],
+  ["Ramesh paid at Lucknow", "₹64.83", hashscan("transaction", "0.0.11325722-1793990189-038365707")],
+  ["Suresh paid at Gorakhpur", "₹202.69", hashscan("transaction", "0.0.11325722-1793990932-294148202")],
+  ["Held pay released itself", "schedule 0.0.11344027, 00:34:05", hashscan("schedule", "0.0.11344027")],
+  ["Every handoff on the public log", "topic 0.0.11327109", hashscan("topic", "0.0.11327109")],
 ];
 
 /** The page's side margins, after codos.ai: full width, with room at the edges. */
@@ -183,7 +186,7 @@ export default function Landing() {
         <section aria-labelledby="proof" className="grid grid-cols-1 gap-8 border-t border-rule py-24 sm:py-32 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <h2 id="proof" className="font-display text-4xl font-semibold leading-tight tracking-tight">Check it yourself.</h2>
-            <p className="mt-2 text-lg text-soft-ink">Every receipt for KNP-1204 is public.</p>
+            <p className="mt-2 text-lg text-soft-ink">Every receipt for KNP-3WAE9, a full run on 7 November, is public.</p>
           </div>
           <dl className="divide-y divide-rule border-y border-rule lg:col-span-8">
             {RECEIPTS.map(([label, value, href]) => (

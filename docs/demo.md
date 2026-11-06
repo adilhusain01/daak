@@ -3,7 +3,7 @@
 ## Before recording or going on stage
 
 - Phones: the shop's phone and two drivers' phones (or one phone, switching with Me → Switch badge). App language on English for the video (Me → Language).
-- Tabs open on the laptop: `/live`, `/ops` (signed in), HashScan for topic `0.0.11327109`, and the KNP-1204 page on `/live` as the fallback story if anything stalls.
+- Tabs open on the laptop: `/live`, `/ops` (signed in), HashScan for topic `0.0.11327109`, and the KNP-3WAE9 page on `/live` as the fallback story if anything stalls.
 - `STAND_RADIUS_M=0` is set (the stands are in UP). `DATA_SINCE` set to the start of the clean run, so test bookings do not show.
 - 0G: if the sealed provider is down, a handoff says "waiting for the check" and the money waits. Say so on camera; it is the design. Recheck in `/ops` once it is back.
 - Each stop needs a new lid photo; the server refuses a photo it has seen.
@@ -20,7 +20,7 @@ Rules that shape it: 2 to 4 minutes (0G wants under 3), at least 720p, recorded 
 | 0:50 to 1:00 | Driver's phone: signed in with Google; the job offer with stretch, km and pay; Accept | "The driver joined with his Google account, no sticker needed, and gets the job with what he earns at the handover." |
 | 1:00 to 1:35 | At the stand: tap the parcel; the next driver opens Show my code; scan it; lid photo; the verdict "both phones signed" | "At Lucknow he taps the parcel and scans the next driver's code: both phones sign this handoff. The photo goes to a sealed AI on 0G that checks the code on the lid. If 0G cannot answer, the money waits; we never fake the check." |
 | 1:35 to 1:55 | `/live/<code>`: paid at the handover and held; the advance on HashScan | "He was paid half his stretch the moment the handover was confirmed. The rest is held on Hedera until delivery, so if the parcel arrives torn, his held pay repays the shop." |
-| 1:55 to 2:15 | KNP-1204's holdback schedule executed at 11:44; the `daak.compute` entry on HCS with its Hedera and 0G transactions | "At delivery the held pay releases itself, with no server. And every booking pays its own share of the AI checks: 2% of its fee on Hedera, the same value in 0G into Daak's own compute account." |
+| 1:55 to 2:15 | KNP-3WAE9's holdback schedule executed at 00:34:05; the `daak.compute` entry on HCS with its Hedera and 0G transactions | "At delivery the held pay releases itself, with no server. And every booking pays its own share of the AI checks: 2% of its fee on Hedera, the same value in 0G into Daak's own compute account." |
 | 2:15 to 2:30 | `/ops`: an ID read by 0G; a vouch on a driver's record; the lid photo from Swarm; the Arkiv record | "IDs are read in the same sealed machine. Drivers vouch for each other and stake their own record on it. Photos are encrypted on Swarm, records live on Arkiv." |
 | 2:30 to 2:45 | The driver's record and tier, the network map, the URL | "Every proven handoff builds a record the driver owns: more pay up front, savings, fuel advances. The buses already built the network; we put a meter on it. Daak." |
 

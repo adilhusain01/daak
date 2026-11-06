@@ -1,11 +1,11 @@
 // Clears Daak's Arkiv records for a fresh demo run, keeping one booking (and its handoffs) as the public showcase.
 // Dry run by default: it lists what it would delete. Pass --yes to delete. Deleting an Arkiv entity is permanent.
-//   npx tsx --env-file=.env.local scripts/arkiv-reset.mts [--keep KNP-1204] [--yes]
+//   npx tsx --env-file=.env.local scripts/arkiv-reset.mts [--keep KNP-3WAE9] [--yes]
 // The Hedera log is not touched: it is public and permanent by design.
 import { arkivRead, arkivWrite, owner, Badges, Consignments, Handoffs, Prefs, StandingOrders } from "../lib/arkiv";
 
 const args = process.argv.slice(2);
-const keep = args.includes("--keep") ? args[args.indexOf("--keep") + 1] : "KNP-1204";
+const keep = args.includes("--keep") ? args[args.indexOf("--keep") + 1] : "KNP-3WAE9";
 const go = args.includes("--yes");
 
 type Item = { key: `0x${string}`; what: string };

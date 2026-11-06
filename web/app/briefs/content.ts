@@ -42,7 +42,7 @@ export const BRIEFS: Brief[] = [
       { what: "Per-shop agent accounts", how: "A Hedera account per shop holding prepaid dINR, topped up when the shop pays by UPI (the UTR goes on the log)", where: "web/lib/agent.ts", proof: { label: "Gupta Garments' agent", href: HS("account", "0.0.11331484") } },
       { what: "dINR, the rupee credit", how: "An HTS token with a 2% fractional custom fee to Daak", where: "web/scripts/setup-money.mts", proof: { label: "Token 0.0.11327356", href: HS("token", "0.0.11327356") } },
       { what: "Escrow and advances", how: "The fee is locked in escrow; each driver gets 50, 70 or 90% of their stretch when the next person confirms", where: "web/lib/split.ts", proof: { label: "Escrow 0.0.11327245", href: HS("account", "0.0.11327245") } },
-      { what: "Holdbacks that release themselves", how: "All held pay in one long-term scheduled transfer (waitForExpiry); no server sends it", where: "web/lib/split.ts", proof: { label: "KNP-1204, released 11:44:00", href: HS("schedule", "0.0.11335076") } },
+      { what: "Holdbacks that release themselves", how: "All held pay in one long-term scheduled transfer (waitForExpiry); no server sends it", where: "web/lib/split.ts", proof: { label: "KNP-3WAE9, released itself at 00:34:05", href: HS("schedule", "0.0.11344027") } },
       { what: "Claims", how: "Deleting the schedule; the responsible stop's held pay repays the shop, topped up from a protection pool", where: "web/app/api/resolve", proof: { label: "Pool 0.0.11330722", href: HS("account", "0.0.11330722") } },
       { what: "The public log", how: "One HCS topic; badges appear only as a 12-character hash", where: "web/lib/hedera.ts", proof: { label: "Topic 0.0.11327109", href: HS("topic", "0.0.11327109") } },
       { what: "HCS-14 identity", how: "Daak's UAID published with its fields; each booking records the paying agent's verified UAID", where: "web/lib/uaid.ts", proof: { label: "HCS message 56", href: "https://hashscan.io/testnet/topic/0.0.11327109?sequence=56" } },
@@ -73,7 +73,7 @@ export const BRIEFS: Brief[] = [
     asks: [
       { ask: "A 0G call inside the decision loop", how: "The handoff API sends the lid photo to 0gm-1.0-35b-a3b on Intel TDX and acts on the verdict", status: "live" },
       { ask: "An episode log on 0G Storage with a request id per decision", how: "Each decision (verdict, reason, request id, TEE flag, photo hash, HCS id) is one record on 0G Storage", status: "live" },
-      { ask: "A live hardware demo or a replayable simulation", how: "Live on an Android phone at the stand; KNP-1204's record replays the whole day", status: "live" },
+      { ask: "A live hardware demo or a replayable simulation", how: "Live on an Android phone at the stand; KNP-3WAE9's record replays a full run", status: "live" },
       { ask: "A safe-stop that never fakes a decision", how: "No answer in 20 s means recorded, not checked, and no payment; a labelled backup can only hold, never release", status: "live" },
       { ask: "Money in, credit landing in the agent's compute account", how: "2% of each booking fee in dINR on Hedera, and the same value in 0G into Daak's Direct account, both ids on HCS", status: "live" },
       { ask: "Inference paid from that account, with tx hashes and request ids", how: "Daak asks the sealed provider from its own account first and verifies the TEE signature; Router credit is the fallback", status: "partial" },
@@ -85,7 +85,7 @@ export const BRIEFS: Brief[] = [
       { what: "Decision records on 0G Storage", how: "Every decision at every checkpoint, whatever it was", where: "web/lib/zgstore.ts", proof: { label: "First record, root 0xe803a6bf…", href: ZG("0xa90f5e64ebb33f64510f718c7c298373d6623235e48a52ea1519ed2f35ffb704") } },
       { what: "Daak's own compute account", how: "0G Direct from Daak's wallet 0x575F…8901; each answer's TEE signature verified", where: "web/lib/compute.ts", proof: { label: "Account opened, 3 0G", href: ZG("0xa1135dbf50dae2140d0c1e21aabc7e36fec2e372abc9280bb957dd9987f009d7") } },
       { what: "Bookings pay for the checks", how: "44 paise of dINR on Hedera and 0.032 0G into the compute account for the first booking", where: "computeEarmark in web/lib/rules.ts", proof: { label: "0G top-up tx", href: ZG("0x155619fe0b72df48ac06d0a647a3db260099f451892e937e2ebefbfabe91f6a2") } },
-      { what: "Recheck after an outage", how: "\"Recheck with 0G\" pulls the encrypted photo from Swarm and asks again; a green answer releases the pay", where: "web/app/api/recheck", proof: { label: "KNP-1204: 3 stops rechecked 11:28, paid 11:44" } },
+      { what: "Recheck after an outage", how: "\"Recheck with 0G\" pulls the encrypted photo from Swarm and asks again; a green answer releases the pay", where: "web/app/api/recheck", proof: { label: "KNP-3WAE9: a misread stop rechecked green, then paid; KNP-1204: 3 stops after the outage" } },
       { what: "ID reading, sealed", how: "0G reads a driver's ID photo (type, name, last 4, bus licence class, masking, edits) for the operator; only pass or fail goes public", where: "web/app/api/kyc/[uid]/read" },
     ],
     limits: [
@@ -209,7 +209,7 @@ export const SETUP = {
     "One sticker per parcel: the sticker's serial is the parcel.",
     "If a handoff says \"offline\", it is queued on the phone and sent when there is signal; do not redo it.",
     "Bookings are capped at 12 an hour.",
-    "If anything stalls, open KNP-1204 on /live: the full day, held, rechecked by 0G and paid by its own schedule.",
+    "If anything stalls, open KNP-3WAE9 on /live: booked, handed over three times, checked by 0G and paid by its own schedule.",
     "After the mentors, before the judges' run: set DATA_SINCE in Vercel to that run's start, so test bookings drop out of the lists.",
   ],
 };

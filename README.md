@@ -82,6 +82,14 @@ The operator's assistant reads the network through the Hedera Agent Kit (`@hashg
 
 | What | Id |
 |---|---|
+| **KNP-3WAE9, the full run on 7 Nov:** x402 booking, Rs 599.26 in dINR (24 kg charged, 359 km) | [0.0.9185802-1793986788-181264432](https://hashscan.io/testnet/transaction/0.0.9185802-1793986788-181264432) |
+| KNP-3WAE9: the shop's agent that paid | [0.0.11342762](https://hashscan.io/testnet/account/0.0.11342762) |
+| KNP-3WAE9: sealed 0G checks at Kanpur, Lucknow and Gorakhpur (the last a recheck after a misread lid) | `3213997c…`, `7b84fb39…`, `372eff24…`, all on [/live/KNP-3WAE9](https://daak-ethglobal.vercel.app/live/KNP-3WAE9) |
+| KNP-3WAE9: Ramesh paid Rs 64.83 at the Lucknow handover | [0.0.11325722-1793990189-038365707](https://hashscan.io/testnet/transaction/0.0.11325722-1793990189-038365707) |
+| KNP-3WAE9: Suresh paid Rs 202.69 at delivery | [0.0.11325722-1793990932-294148202](https://hashscan.io/testnet/transaction/0.0.11325722-1793990932-294148202) |
+| KNP-3WAE9: held pay (Rs 267.53) released itself at 00:34:05, no server | [schedule 0.0.11344027](https://hashscan.io/testnet/schedule/0.0.11344027) |
+| KNP-3WAE9: the booking's compute share, in dINR and in 0G | [0.0.11325722-1793986802-845626945](https://hashscan.io/testnet/transaction/0.0.11325722-1793986802-845626945), [0G tx 0x746fe93a…](https://chainscan.0g.ai/tx/0x746fe93aba8158a5883c46bb3dfea2ec1e8b4dcc0b3871bdfab5dc8948f50fba) |
+| KNP-3WAE9: drivers' IDs read by sealed 0G before an operator verified them | `22fb3965…`, `c57a16db…` |
 | HCS handoff log | [0.0.11327109](https://hashscan.io/testnet/topic/0.0.11327109) |
 | dINR token (2% custom fee) | [0.0.11327356](https://hashscan.io/testnet/token/0.0.11327356) |
 | Escrow account | [0.0.11327245](https://hashscan.io/testnet/account/0.0.11327245) |
