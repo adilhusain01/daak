@@ -26,3 +26,9 @@ captures/
 
 # os
 .DS_Store
+
+# The hero film's render master and its working frames (the web copies live in web/public/film)
+video/hero/daak-hero.mp4
+video/hero/frames/
+video/hero/sheet.jpg
+video/hero/styles.gen.ts
