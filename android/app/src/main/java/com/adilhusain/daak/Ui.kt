@@ -367,3 +367,17 @@ fun SmallKey(text: String, modifier: Modifier = Modifier, color: Color = Tokens.
         contentAlignment = Alignment.Center,
     ) { BasicText(text, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (filled) Tokens.paper else Tokens.ink)) }
 }
+
+/** Daak's mark: ड, the first letter of डाक, in amber on a square, beside the name. The same mark as the website. */
+@Composable
+fun Brand() {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(38.dp).background(Tokens.amber, RoundedCornerShape(Tokens.inner)), contentAlignment = Alignment.Center) {
+            BasicText("ड", style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Tokens.paper))
+        }
+        Column {
+            BasicText("Daak", style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = Tokens.ink, lineHeight = 26.sp))
+            BasicText("डाक · हर पार्सल का हिसाब", style = TextStyle(fontSize = 13.sp, color = Tokens.muted))
+        }
+    }
+}

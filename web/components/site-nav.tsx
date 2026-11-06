@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { DaakMark } from "@/components/daak-mark";
 
 /** Everywhere on the site: live deliveries, the network map, drivers, and the operator's dashboard. The current one sits in, the other can be pressed. */
 export function SiteNav({ className = "mb-8" }: { className?: string }) {
@@ -19,7 +20,13 @@ export function SiteNav({ className = "mb-8" }: { className?: string }) {
   };
   return (
     <nav className={`${className} flex flex-wrap items-center justify-between gap-3`}>
-      <Link href="/" className="text-2xl font-semibold tracking-tight">Daak</Link>
+      <Link href="/" className="group flex items-center gap-2.5" aria-label="Daak, home">
+        <DaakMark className="size-9 text-xl transition-transform duration-200 ease-out group-hover:-rotate-6 group-active:scale-95" />
+        <span className="flex flex-col leading-none">
+          <span className="text-2xl font-semibold tracking-tight">Daak</span>
+          <span className="mt-0.5 text-xs text-muted-ink">डाक · every handoff on record</span>
+        </span>
+      </Link>
       <div className="flex flex-wrap gap-1.5 sm:gap-2">{item("/live", "Live")}{item("/network", "Network")}{item("/drivers", "Drivers")}{item("/ops", "Operator")}</div>
     </nav>
   );

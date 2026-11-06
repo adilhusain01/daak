@@ -679,13 +679,8 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun Header() {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Title("Daak")
-            me?.let {
-                val role = when (it.role) { "driver" -> "Driver"; "sender" -> "Shop"; else -> "Receiver" }
-                Body("${it.name.ifBlank { "Badge ${it.uid.takeLast(8)}" }} · $role${if (it.vehicle.isNotBlank()) " · ${it.vehicle}" else ""}", Tokens.muted, 15)
-            }
-        }
+        // Who is signed in lives on the Me tab; every other screen starts with the mark.
+        Brand()
     }
 
     @Composable
