@@ -360,6 +360,23 @@ class MainActivity : ComponentActivity() {
         goHome()
     }
 
+    /**
+     * A step that finishes in the background lands where it started: on screen if the person is still on that tab,
+     * otherwise in the tab's saved place, so a slow booking or check never pulls them away from another tab.
+     */
+    private fun land(next: Screen) {
+        val here = when (screen) {
+            is Screen.Pack -> next is Screen.Pack
+            is Screen.Handoff, is Screen.Result -> next is Screen.Handoff || next is Screen.Result
+            else -> false
+        }
+        when {
+            here -> screen = next
+            next is Screen.Pack -> { savedPack = next; nfc.pendingWrite = null }
+            else -> savedHandoff = next
+        }
+    }
+
     private fun signOut() {
         prefs.edit().clear().apply()
         // Nothing of the last person's stays on the phone for the next badge: lists, filters, half-done tasks, edits.
@@ -436,23 +453,23 @@ class MainActivity : ComponentActivity() {
                 val info = r.getOrNull()
                 val mine = me?.let { badgeHash(it.uid) }
                 when {
-                    info == null -> { screen = Screen.Handoff(parcel = tap, problem = "No signal: the handoff will be saved on the phone and sent later."); voice.buzz() }
+                    info == null -> { land(Screen.Handoff(parcel = tap, problem = "No signal: the handoff will be saved on the phone and sent later.")); voice.buzz() }
                     tap.uid == me?.uid || info.person != null -> {
                         val who = if (tap.uid == me?.uid) pick("आपका अपना बैज", "your own badge") else pick("${info.person} का बैज", "${info.person}'s badge")
-                        screen = Screen.Handoff(problem = pick("यह $who है। पहले पार्सल लगाइए।", "That is $who. Tap the parcel first."))
+                        land(Screen.Handoff(problem = pick("यह $who है। पहले पार्सल लगाइए।", "That is $who. Tap the parcel first.")))
                         voice.buzz(false); voice.say("पहले पार्सल लगाइए।")
                     }
-                    !info.registered -> { screen = Screen.Handoff(problem = "यह पार्सल बुक नहीं है। This parcel is not booked yet. The shop books it by tapping it."); voice.buzz(false); voice.say("यह पार्सल बुक नहीं है।") }
-                    info.delivered -> { screen = Screen.Handoff(problem = "${info.code} पहुँच चुका है। ${info.code} is already delivered."); voice.buzz(false) }
+                    !info.registered -> { land(Screen.Handoff(problem = "यह पार्सल बुक नहीं है। This parcel is not booked yet. The shop books it by tapping it.")); voice.buzz(false); voice.say("यह पार्सल बुक नहीं है।") }
+                    info.delivered -> { land(Screen.Handoff(problem = "${info.code} पहुँच चुका है। ${info.code} is already delivered.")); voice.buzz(false) }
                     info.next!!.fromHash != mine && info.next.toHash != mine -> {
                         val n = info.next
-                        screen = Screen.Handoff(problem = "${info.code}: the next handoff is ${n.fromName} to ${n.toName} at ${n.place}. It is not yours.")
+                        land(Screen.Handoff(problem = "${info.code}: the next handoff is ${n.fromName} to ${n.toName} at ${n.place}. It is not yours."))
                         voice.buzz(false); voice.say("यह हैंडऑफ़ आपका नहीं है।")
                     }
                     else -> {
                         val n = info.next
                         val iGive = n.fromHash == mine
-                        screen = Screen.Handoff(parcel = tap, info = info, iGive = iGive)
+                        land(Screen.Handoff(parcel = tap, info = info, iGive = iGive))
                         voice.buzz()
                         voice.say(if (iGive) "पार्सल ${info.code}। इसे ${n.toName} को दीजिए। उनका बैज लगाइए।" else "पार्सल ${info.code}। ${n.fromName} से लीजिए। उनका बैज लगाइए।")
                     }
@@ -524,7 +541,7 @@ class MainActivity : ComponentActivity() {
             val result = runCatching { Api.handoff(h) }
             runOnUiThread {
                 result.onSuccess { v ->
-                    screen = Screen.Result(v, place = s.info?.next?.place)
+                    land(Screen.Result(v, place = s.info?.next?.place))
                     voice.buzz(v.verdict == "green")
                     voice.say(when (v.verdict) {
                         "green" -> "सौंप दिया गया। भुगतान जारी।"
@@ -534,7 +551,7 @@ class MainActivity : ComponentActivity() {
                     if (me?.role == "driver") loadWork()
                 }.onFailure {
                     outbox.add(h); queued = outbox.size()
-                    screen = Screen.Result(Verdict("unchecked", "", null, null), offline = true, place = s.info?.next?.place)
+                    land(Screen.Result(Verdict("unchecked", "", null, null), offline = true, place = s.info?.next?.place))
                     voice.buzz(false); voice.say("नेटवर्क नहीं है। हैंडऑफ़ फ़ोन में सेव है। भुगतान जाँच तक रुका है।")
                 }
             }
@@ -602,9 +619,9 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 plan.onSuccess { p ->
                     val missing = p.stretches.firstOrNull { it.drivers.isEmpty() }
-                    screen = if (missing != null) s.copy(receiver = r, loading = false, problem = "No driver runs ${missing.from} › ${missing.to} yet.")
-                    else s.copy(receiver = r, loading = false, plan = p, picks = p.stretches.map { 0 })
-                }.onFailure { screen = s.copy(receiver = r, loading = false, problem = it.message) }
+                    land(if (missing != null) s.copy(receiver = r, loading = false, problem = "No driver runs ${missing.from} › ${missing.to} yet.")
+                    else s.copy(receiver = r, loading = false, plan = p, picks = p.stretches.map { 0 }))
+                }.onFailure { land(s.copy(receiver = r, loading = false, problem = it.message)) }
             }
         }
     }
@@ -621,10 +638,10 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 r.onSuccess { b ->
                     nfc.pendingWrite = b.trackUrl
-                    screen = s.copy(paying = false, booking = b, drivers = drivers, problem = null)
+                    land(s.copy(paying = false, booking = b, drivers = drivers, problem = null))
                     loadBalance()
                     voice.buzz(); voice.say("बुकिंग हो गई। कोड ढक्कन पर लिखिए, फिर पार्सल दोबारा लगाइए।")
-                }.onFailure { screen = s.copy(paying = false, problem = "बुकिंग नहीं हुई: ${it.message}. Nothing was charged.") ; voice.buzz(false) }
+                }.onFailure { land(s.copy(paying = false, problem = "बुकिंग नहीं हुई: ${it.message}. Nothing was charged.")) ; voice.buzz(false) }
             }
         }
     }
@@ -638,9 +655,9 @@ class MainActivity : ComponentActivity() {
                 r.onSuccess { code ->
                     val b = Booking(code, "${Api.base}/track/$code", emptyList())
                     nfc.pendingWrite = b.trackUrl
-                    screen = s.copy(paying = false, booking = b, dailySaved = true)
+                    land(s.copy(paying = false, booking = b, dailySaved = true))
                     voice.buzz(); voice.say("जुड़ गया। कोड ढक्कन पर लिखिए, फिर पार्सल दोबारा लगाइए।")
-                }.onFailure { screen = s.copy(paying = false, problem = it.message); voice.buzz(false) }
+                }.onFailure { land(s.copy(paying = false, problem = it.message)); voice.buzz(false) }
             }
         }
     }
@@ -1283,7 +1300,8 @@ class MainActivity : ComponentActivity() {
                 Body("बुक हो गया · Booked", Tokens.green, 16, FontWeight.SemiBold)
                 Body(b.code, size = 44, weight = FontWeight.Bold)
                 Bi("यह कोड ढक्कन पर मोटे अक्षरों में लिखिए", "Write this code in big letters on the lid. The AI checks it at every stop.", size = 19)
-                Body("Drivers get ₹${b.shares.joinToString(" + ₹") { "%.2f".format(it) }} by kilometre", Tokens.muted, 15)
+                // Only a booking made on this screen knows the shares; one picked up again from the sticker does not.
+                if (b.shares.any { it > 0 }) Body("Drivers get ₹${b.shares.filter { it > 0 }.joinToString(" + ₹") { "%.2f".format(it) }} by kilometre", Tokens.muted, 15)
             }
             Step(2, "पार्सल दोबारा लगाइए", "Tap the parcel again to attach its tracking link", if (s.written && s.problem == null) "Link attached" else null, !s.written)
             if (s.written) Sheet { Bi("अब ड्राइवर को सौंपिए", "Next: when the driver comes, tap this parcel and the driver's badge to hand it over.", size = 18) }
