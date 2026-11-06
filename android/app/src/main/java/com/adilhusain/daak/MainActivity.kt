@@ -1365,7 +1365,7 @@ class MainActivity : ComponentActivity() {
             }, Tokens.muted, 15)
             else -> {
                 l.rows.forEach { r ->
-                    ParcelItem(r.code, "₹${"%.2f".format(r.fee)}", statusText(r.statusKey, r.status, r.handed, r.stops), statusColor(r.statusKey),
+                    ParcelItem(r.code, "₹${"%.2f".format(if (me?.role == "sender") r.paid else r.fee)}", statusText(r.statusKey, r.status, r.handed, r.stops), statusColor(r.statusKey),
                         "${r.label.removePrefix("Parcel from ")} · ${dayTime(r.createdAt)}") { openParcel(r.code) }
                 }
                 if (l.page < l.pages) Secondary("और दिखाएँ · Show more (${l.total - l.rows.size} left)", busy = mineBusy) { loadMine() }
@@ -1386,7 +1386,11 @@ class MainActivity : ComponentActivity() {
                     Body(d.code, Tokens.ink, 30, FontWeight.Bold)
                     Body(d.label.removePrefix("Parcel from "), Tokens.muted, 15)
                     Body(statusText(d.statusKey, d.status, d.stops.count { it.verdict != null }, d.stops.size), statusColor(d.statusKey), 18, FontWeight.SemiBold)
-                    Line("Fee", "₹${"%.2f".format(d.fee)}")
+                    // The shop sees what it paid; drivers and the receiver see the drivers' meter.
+                    if (me?.role == "sender") {
+                        Line(pick("भुगतान", "Paid"), "₹${"%.2f".format(d.paid)}")
+                        Line(pick("ड्राइवरों को", "Drivers get"), "₹${"%.2f".format(d.fee)}")
+                    } else Line(pick("ड्राइवरों का किराया", "Drivers' pay"), "₹${"%.2f".format(d.fee)}")
                     Line("Distance", "${d.km} km · ${d.weight}")
                     Line("Booked", dayTime(d.createdAt))
                 }

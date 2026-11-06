@@ -28,11 +28,11 @@ data class Work(
 )
 
 /** One parcel in "My parcels": its state in a word ("paid", "held", "transit"…) and in a sentence. */
-data class ParcelRow(val code: String, val label: String, val statusKey: String, val status: String, val handed: Int, val stops: Int, val fee: Double, val km: Int, val createdAt: Long)
+data class ParcelRow(val code: String, val label: String, val statusKey: String, val status: String, val handed: Int, val stops: Int, val fee: Double, val km: Int, val createdAt: Long, val paid: Double = fee)
 data class ParcelList(val rows: List<ParcelRow>, val page: Int, val pages: Int, val total: Int, val filter: String = "transit", val counts: Map<String, Int> = emptyMap())
 /** One stop of a parcel: its latest check and the driver's pay for the stretch into it. */
 data class StopView(val hop: Int, val place: String, val km: Int, val verdict: String?, val at: Long?, val reason: String?, val etaAt: Long?, val departsAt: Long?, val paid: Double, val held: Double?, val pct: Int?)
-data class ParcelDetail(val code: String, val label: String, val statusKey: String, val status: String, val fee: Double, val km: Int, val weight: String, val createdAt: Long, val stops: List<StopView>, val holdback: String?, val holdReleased: Boolean = false)
+data class ParcelDetail(val code: String, val label: String, val statusKey: String, val status: String, val fee: Double, val km: Int, val weight: String, val createdAt: Long, val stops: List<StopView>, val holdback: String?, val holdReleased: Boolean = false, val paid: Double = fee)
 
 /** "6 Nov, 11:28 am" in India time. */
 fun dayTime(ms: Long): String =
@@ -125,7 +125,7 @@ object Api {
         val a = j.getJSONArray("rows")
         return ParcelList(List(a.length()) { a.getJSONObject(it).let { o ->
             val st = o.getJSONObject("status")
-            ParcelRow(o.getString("code"), o.getString("label"), st.getString("key"), st.getString("text"), o.getInt("handed"), o.getInt("stops"), o.getDouble("feeRupees"), o.getInt("km"), o.getLong("createdAt"))
+            ParcelRow(o.getString("code"), o.getString("label"), st.getString("key"), st.getString("text"), o.getInt("handed"), o.getInt("stops"), o.getDouble("feeRupees"), o.getInt("km"), o.getLong("createdAt"), o.optDouble("paidRupees", o.getDouble("feeRupees")))
         } }, j.getInt("page"), j.getInt("pages"), j.getInt("total"), filter,
             j.optJSONObject("counts")?.let { c -> c.keys().asSequence().associateWith { k -> c.getInt(k) } } ?: emptyMap())
     }
@@ -158,7 +158,7 @@ object Api {
         }
         val released = d.optJSONObject("holdback")?.let { !it.optBoolean("deleted") && !it.isNull("executedAt") } ?: false
         val st = d.getJSONObject("status")
-        return ParcelDetail(d.getString("code"), d.getString("label"), st.getString("key"), st.getString("text"), d.getDouble("feeRupees"), d.getInt("km"), d.getString("weight"), d.getLong("createdAt"), stops, hb, released)
+        return ParcelDetail(d.getString("code"), d.getString("label"), st.getString("key"), st.getString("text"), d.getDouble("feeRupees"), d.getInt("km"), d.getString("weight"), d.getLong("createdAt"), stops, hb, released, d.optDouble("paidRupees", d.getDouble("feeRupees")))
     }
 
     /** Daak's Google web client id; Google issues the ID token for it and the server checks it. Public. */

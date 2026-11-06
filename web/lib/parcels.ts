@@ -1,7 +1,7 @@
 import { allConsignments, allVerdicts, handoffsFor, type ConsignmentRow } from "./arkiv";
 import { readLog, type LogMsg } from "./history";
 import { accountFor } from "./payout";
-import { weightSpec } from "./network";
+import { weightSpec, paidFor } from "./network";
 import { holdbackStatus, isSplit } from "./split";
 import { isPlaceholder } from "./standing";
 
@@ -10,7 +10,7 @@ const MIRROR = "https://testnet.mirrornode.hedera.com/api/v1";
 export type Filter = "all" | "attention" | "transit" | "paid";
 export type StatusKey = "refunded" | "paid" | "releasing" | "held" | "review" | "transit";
 export type Summary = {
-  code: string; label: string; createdAt: number; feeRupees: number; km: number; weight: string;
+  code: string; label: string; createdAt: number; feeRupees: number; paidRupees: number; km: number; weight: string;
   stops: number; handed: number; status: { key: StatusKey; text: string }; needsYou: boolean;
 };
 
@@ -40,7 +40,7 @@ export function summarise(c: ConsignmentRow, verdicts: Verdict[], log: LogMsg[],
   // Split payout: each unchecked stop can be approved as it comes in; older bookings only once every stop is in.
   const needsYou = !done && (values.includes("held") || (isSplit(c) ? values.includes("unchecked") : status.key === "review"));
   return {
-    code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, km: c.route.reduce((s, l) => s + (l.km ?? 0), 0),
+    code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, paidRupees: paidFor(c.feeRupees), km: c.route.reduce((s, l) => s + (l.km ?? 0), 0),
     weight: weightSpec(c.weight ?? "s").label, stops: c.route.length, handed: latest.size, status, needsYou,
   };
 }
@@ -121,7 +121,7 @@ export async function publicDetail(c: ConsignmentRow, log?: LogMsg[]) {
   });
   const { status } = summarise(c, handoffs.map((h) => ({ code: c.code, hop: h.hop, verdict: h.verdict, at: h.at })), log);
   return {
-    code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, weight: weightSpec(c.weight ?? "s").label, status,
+    code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, paidRupees: paidFor(c.feeRupees), weight: weightSpec(c.weight ?? "s").label, status,
     km: c.route.reduce((s, l) => s + (l.km ?? 0), 0), route: c.route.map((l) => ({ hop: l.hop, place: l.place, km: l.km ?? 0, departsAt: l.departsAt ?? null, etaAt: l.etaAt ?? null })),
     handoffs, money, holdback: isSplit(c) ? await holdbackStatus(c.code, log) : null,
   };

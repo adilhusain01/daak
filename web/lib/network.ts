@@ -13,6 +13,9 @@ export const BOOKING_FEE = { percent: Number(process.env.BOOKING_FEE_PERCENT ?? 
 export const bookingFee = (meterRupees: number) =>
   Math.max(BOOKING_FEE.minRupees, Math.round(meterRupees * BOOKING_FEE.percent) / 100);
 
+/** What the shop paid for a booking: the drivers' meter plus Daak's booking fee (the x402 total). */
+export const paidFor = (meterRupees: number) => Math.round((meterRupees + bookingFee(meterRupees)) * 100) / 100;
+
 export function network(): { stops: Stop[]; legs: NetLeg[] } {
   return JSON.parse(readFileSync(path.join(process.cwd(), "data", "network.json"), "utf8"));
 }
