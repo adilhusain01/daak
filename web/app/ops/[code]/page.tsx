@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SiteNav, ProofButton } from "@/components/site-nav";
 import { UpiPay } from "@/components/upi-pay";
+import { AssistantChat } from "@/components/assistant-panel";
 import { Suspense, useState } from "react";
 import { arkivEntity, clock, hashscanTopic, isLate, verdictText, when, type HandoffView, type LegView } from "@/lib/ui";
 
@@ -251,6 +252,7 @@ function ParcelPage() {
           {data.chain.escrowId && <ProofButton href={`https://hashscan.io/testnet/account/${data.chain.escrowId}`}>Open escrow</ProofButton>}
         </footer>
       )}
+      <AssistantChat />
     </main>
   );
 }

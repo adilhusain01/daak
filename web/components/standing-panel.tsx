@@ -21,7 +21,7 @@ export function StandingPanel() {
       const ok = j.booked.filter((b) => b.code).length;
       toast.success(j.due ? `Booked ${ok} of ${j.due} daily orders for today` : "Nothing due: today's daily orders are already booked");
       qc.invalidateQueries({ queryKey: ["standing"] });
-      qc.invalidateQueries({ queryKey: ["consignments"] });
+      qc.invalidateQueries({ queryKey: ["ops-list"] }); qc.invalidateQueries({ queryKey: ["ops-parcel"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -36,7 +36,7 @@ export function StandingPanel() {
   const orders = data?.orders ?? [];
   if (!orders.length) return null;
   return (
-    <section className="mb-6 rounded-xl border border-rule bg-card-paper p-4 sm:p-5">
+    <section className="rounded-xl border border-rule bg-card-paper p-4 sm:p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">Daily orders ({orders.filter((o) => o.active).length} active)</h2>
@@ -46,7 +46,7 @@ export function StandingPanel() {
           {run.isPending ? "Booking..." : "Book today's now"}
         </Button>
       </div>
-      <ul className="mt-3 grid gap-2 lg:grid-cols-2">
+      <ul className="mt-3 flex flex-col gap-2">
         {orders.map((o) => (
           <li key={o.id} className="flex items-center justify-between gap-3 rounded-lg border border-rule p-3 text-sm">
             <div className="min-w-0">

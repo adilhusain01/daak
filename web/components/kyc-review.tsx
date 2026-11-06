@@ -25,7 +25,7 @@ export function KycReview() {
   const pending = data?.drivers.filter((d) => d.status === "pending") ?? [];
   if (!pending.length) return null;
   return (
-    <section className="mb-6 rounded-xl border border-rule bg-card-paper p-4 sm:p-5">
+    <section className="rounded-xl border border-rule bg-card-paper p-4 sm:p-5">
       <h2 className="text-lg font-semibold">Driver ID checks ({pending.length})</h2>
       <p className="text-sm text-muted-ink">Open the photo, match the name and the last 4 characters, then decide. Only the last 4 are kept.</p>
       <ul className="mt-3 flex flex-col gap-3">

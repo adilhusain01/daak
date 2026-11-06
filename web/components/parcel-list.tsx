@@ -82,7 +82,7 @@ export function ParcelList({ endpoint, hrefFor, tabs, queryKey, refetchMs, onCha
           {data?.rows.map((r) => (
             <li key={r.code}>
               <Link href={hrefFor(r.code)}
-                className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 px-4 py-3 transition-colors hover:bg-rule/30 active:bg-rule/50 lg:grid-cols-[8rem_minmax(0,1fr)_14rem_5rem_6rem_9rem] lg:items-center">
+                className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 px-4 py-3 transition-colors hover:bg-rule/30 active:bg-rule/50 lg:grid-cols-[8rem_minmax(0,1fr)_20rem_4rem_6rem_9rem] lg:items-center">
                 <span className="font-semibold tabular-nums">{r.code}{r.needsYou && <span className="ml-2 rounded-md bg-held/10 px-1.5 py-0.5 text-xs font-medium text-held lg:hidden">Needs you</span>}</span>
                 <span className="text-right text-sm tabular-nums lg:order-last">{when(r.createdAt)}</span>
                 <span className="col-span-2 truncate text-sm text-muted-ink lg:col-span-1">{r.label.replace(/^Parcel from /, "")}</span>
