@@ -118,3 +118,38 @@ test("an unknown weight band is refused, never priced as the lightest", async ()
   const { meterFee } = await import("../lib/network.ts");
   assert.throws(() => meterFee(100, "huge"));
 });
+
+test("the next departure is today's bus if it has not left, else the next day it runs", async () => {
+  const { nextDeparture } = await import("../lib/timetable.ts");
+  const fri5am = new Date("2026-11-06T05:00:00+05:30");
+  assert.equal(nextDeparture({ dep: "06:30", days: "1111110" }, fri5am)?.toISOString(), new Date("2026-11-06T06:30:00+05:30").toISOString());
+  const fri7am = new Date("2026-11-06T07:00:00+05:30");
+  assert.equal(nextDeparture({ dep: "06:30", days: "1111110" }, fri7am)?.toISOString(), new Date("2026-11-07T06:30:00+05:30").toISOString());
+  // Saturday 7 am: no bus on Sunday, so Monday.
+  assert.equal(nextDeparture({ dep: "06:30", days: "1111110" }, new Date("2026-11-07T07:00:00+05:30"))?.toISOString(), new Date("2026-11-09T06:30:00+05:30").toISOString());
+  // The driver marked Friday as a day off.
+  assert.equal(nextDeparture({ dep: "06:30", days: "1111110" }, fri5am, ["2026-11-06"])?.toISOString(), new Date("2026-11-07T06:30:00+05:30").toISOString());
+  assert.equal(nextDeparture({ dep: "06:30", days: "0000000" }, fri5am), null);
+});
+
+test("a plan only chains buses that connect, with time to change at the stand", async () => {
+  const { planStretches } = await import("../lib/timetable.ts");
+  const at = new Date("2026-11-06T05:00:00+05:30");
+  const plan = planStretches([
+    { km: 80, candidates: [{ uid: "A", tt: { dep: "06:30", days: "1111111" } }] },                // reaches Lucknow 08:30
+    { km: 120, candidates: [{ uid: "B", tt: { dep: "08:40", days: "1111111" } }, { uid: "C", tt: { dep: "09:30", days: "1111111" } }] },
+  ], at);
+  assert.equal(plan[0].options[0].uid, "A");
+  assert.equal(plan[0].options[0].arr?.toISOString(), new Date("2026-11-06T08:30:00+05:30").toISOString());
+  // B leaves 10 minutes after A arrives, too tight for the 20-minute change, so tomorrow; C connects today.
+  assert.equal(plan[1].options[0].uid, "C");
+  assert.equal(plan[1].options[0].arr?.toISOString(), new Date("2026-11-06T12:30:00+05:30").toISOString());
+  assert.equal(plan[1].options[1].uid, "B");
+});
+
+test("drivers without bus times stay bookable, after those with times, with no ETA", async () => {
+  const { planStretches } = await import("../lib/timetable.ts");
+  const plan = planStretches([{ km: 80, candidates: [{ uid: "X", tt: null }, { uid: "A", tt: { dep: "06:30", days: "1111111" } }] }], new Date("2026-11-06T05:00:00+05:30"));
+  assert.deepEqual(plan[0].options.map((o) => o.uid), ["A", "X"]);
+  assert.equal(plan[0].options[1].dep, null);
+});

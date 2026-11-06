@@ -24,7 +24,7 @@ export async function GET() {
     const booked = log.find((m) => m.t === "daak.booked" && m.code === c.code);
     return {
       code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, weight: band(c.weight ?? "s").label,
-      km: c.route.reduce((s, l) => s + (l.km ?? 0), 0), route: c.route.map((l) => ({ hop: l.hop, place: l.place, km: l.km ?? 0 })),
+      km: c.route.reduce((s, l) => s + (l.km ?? 0), 0), route: c.route.map((l) => ({ hop: l.hop, place: l.place, km: l.km ?? 0, departsAt: l.departsAt ?? null, etaAt: l.etaAt ?? null })),
       handoffs, money, holdback: isSplit(c) ? await holdbackStatus(c.code, log) : null, bookedAt: booked?.ts ?? null,
     };
   }));

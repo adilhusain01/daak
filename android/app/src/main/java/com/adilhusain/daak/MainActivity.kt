@@ -39,6 +39,8 @@ data class JoinForm(
     val legs: Set<String> = emptySet(), val stop: String? = null,
     /** Drivers: who runs the bus, and a government ID for KYC (only its type, last 4 and a photo are sent). */
     val busOperator: String? = null, val idType: String? = null, val idLast4: String = "", val idPhoto: File? = null,
+    /** When the driver's bus leaves on each chosen stretch, "HH:MM". */
+    val times: Map<String, String> = emptyMap(),
 )
 
 /** Where the person is in the app. */
@@ -75,6 +77,15 @@ class MainActivity : ComponentActivity() {
     private var daily by mutableStateOf<DailyList?>(null)
     private var shopBal by mutableStateOf<ShopBal?>(null)
     private var answering by mutableStateOf<String?>(null)
+    private var awayBusy by mutableStateOf(false)
+    private var timesEdit by mutableStateOf<Map<String, String>?>(null)
+    private var timesBusy by mutableStateOf(false)
+
+    /** Digits typed into a time field become "HH:MM". */
+    private fun timeInput(v: String): String {
+        val d = v.filter(Char::isDigit).take(4)
+        return if (d.length <= 2) d else "${d.take(2)}:${d.drop(2)}"
+    }
 
     // ---------- tabs ----------
     /** The tab shown when the screen is Home; the other tabs are their own screens. */
@@ -241,7 +252,7 @@ class MainActivity : ComponentActivity() {
         val f = s.form
         screen = s.copy(sending = true, errors = emptyList())
         thread {
-            val r = runCatching { Api.join(s.uid, f.role ?: "", f.name, f.phone, f.upi, f.vehicle, f.legs.toList(), f.stop, f.busOperator, f.idType, f.idLast4, f.idPhoto) }
+            val r = runCatching { Api.join(s.uid, f.role ?: "", f.name, f.phone, f.upi, f.vehicle, f.legs.toList(), f.stop, f.busOperator, f.idType, f.idLast4, f.idPhoto, f.times.filterKeys { it in f.legs }.filterValues { it.isNotBlank() }) }
             runOnUiThread {
                 r.onSuccess { errs ->
                     if (errs == null) {
@@ -506,6 +517,39 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun toggleAway() {
+        val uid = me?.uid ?: return
+        val next = !(work?.awayToday ?: false)
+        awayBusy = true
+        thread {
+            val r = runCatching { Api.setAway(uid, next) }
+            val w = runCatching { Api.work(uid) }.getOrNull()
+            val t = runCatching { Api.todo(uid) }.getOrNull()
+            runOnUiThread {
+                awayBusy = false
+                r.onSuccess { n ->
+                    if (w != null) work = w; if (t != null) todo = t
+                    voice.buzz(); voice.say(if (next) "आज की छुट्टी दर्ज हुई।" else "आज चला रहे हैं।")
+                    if (next && n > 0) note = "$n stretch(es) for today handed to other drivers."
+                }.onFailure { note = "सेव नहीं हुआ। Could not save; try again." }
+            }
+        }
+    }
+
+    private fun saveTimes(times: Map<String, String>) {
+        val uid = me?.uid ?: return
+        timesBusy = true
+        thread {
+            val r = runCatching { Api.setTimes(uid, times.filterValues { it.isNotBlank() }) }
+            val w = runCatching { Api.work(uid) }.getOrNull()
+            runOnUiThread {
+                timesBusy = false
+                r.onSuccess { if (w != null) work = w; timesEdit = null; voice.buzz(); note = null }
+                    .onFailure { note = it.message ?: "Could not save the times." }
+            }
+        }
+    }
+
     private fun loadWork() {
         val uid = me?.uid ?: return
         thread { val w = runCatching { Api.work(uid) }.getOrNull(); runOnUiThread { work = w } }
@@ -615,6 +659,7 @@ class MainActivity : ComponentActivity() {
                 Heading("आपका रास्ता", "Stretches you drive")
                 s.net?.legs?.forEach { l ->
                     Choice(l.label, "${l.km} km", l.id in f.legs) { set(f.copy(legs = if (l.id in f.legs) f.legs - l.id else f.legs + l.id)) }
+                    if (l.id in f.legs) Field("बस कब चलती है · Your bus leaves at (HH:MM)", f.times[l.id] ?: "", { v -> set(f.copy(times = f.times + (l.id to timeInput(v)))) }, "06:30", number = true)
                 } ?: Body("Loading routes…", Tokens.muted, 15)
             } else {
                 Heading("आपका बस अड्डा", "Your bus stand")
@@ -634,6 +679,7 @@ class MainActivity : ComponentActivity() {
                 OfferCard((todo ?: emptyList()).filter { it.action == "offer" })
                 Action("पार्सल सौंपें या लें", "Hand over or take a parcel, or just tap it") { selectTab("hand") }
                 TodoCard("Nothing waiting. New jobs and handoffs show here.")
+                work?.let { w -> Toggle("आज छुट्टी · Not driving today", if (w.awayToday) "Today's stretches go to other drivers" else "Turn on if your bus is not running today", w.awayToday, awayBusy) { toggleAway() } }
                 QueuedNote()
             }
             "earn" -> {
@@ -680,6 +726,16 @@ class MainActivity : ComponentActivity() {
             if (p.vehicle.isNotBlank()) Line("बस · Bus", p.vehicle)
             Line("बैज · Badge", "…${p.uid.takeLast(8)}")
             Body("Handoffs from this phone are signed with a key kept in its secure hardware, so nobody can record one in your name.", Tokens.muted, 14)
+        }
+        if (p.role == "driver") work?.let { w ->
+            val edit = timesEdit ?: w.times
+            Sheet {
+                Heading("बस का समय", "Your bus times")
+                Body("When your bus leaves on each stretch, Monday to Saturday. Shops see your ETA and only connecting buses are booked.", Tokens.muted, 14)
+                if (w.legs.isEmpty()) Body("No stretches yet.", Tokens.muted, 15)
+                w.legs.forEach { leg -> Field(leg.replace("-", " to "), edit[leg] ?: "", { v -> timesEdit = edit + (leg to timeInput(v)) }, "06:30", number = true) }
+            }
+            if (timesEdit != null) Action(if (timesBusy) "सेव हो रहा है…" else "समय सेव करें", if (timesBusy) "Saving…" else "Save bus times", enabled = !timesBusy) { saveTimes(edit) }
         }
         QueuedNote()
         TextKey("बैज बदलें · Switch badge") { signOut() }
@@ -805,7 +861,7 @@ class MainActivity : ComponentActivity() {
             }
             plan.stretches.forEachIndexed { i, st ->
                 val d = st.drivers[s.picks[i]]
-                Choice("${st.from.substringBefore(",")} › ${st.to.substringBefore(",")} · ${st.km} km", "${d.name}${if (d.vehicle.isNotBlank()) " · ${d.vehicle}" else ""} · ${d.proven} proven · ${d.cleanPercent}% clean${if (st.drivers.size > 1) "  ·  tap to change" else ""}", true) {
+                Choice("${st.from.substringBefore(",")} › ${st.to.substringBefore(",")} · ${st.km} km", "${d.name}${if (d.vehicle.isNotBlank()) " · ${d.vehicle}" else ""} · ${d.proven} proven · ${d.cleanPercent}% clean${d.departsAt?.let { " · bus ${clock(it)}${d.arrivesAt?.let { a -> " to ${clock(a)}" } ?: ""}" } ?: " · no bus time yet"}${if (st.drivers.size > 1) "  ·  tap to change" else ""}", true) {
                     if (st.drivers.size > 1 && !s.paying) screen = s.copy(picks = s.picks.toMutableList().also { it[i] = (it[i] + 1) % st.drivers.size })
                 }
             }
@@ -815,6 +871,7 @@ class MainActivity : ComponentActivity() {
                 plan.bands.forEach { b -> Choice(b.label, "₹${"%.2f".format(b.fee)}", s.weight == b.id) { if (!s.paying) screen = s.copy(weight = b.id) } }
             }
             Sheet {
+                plan.stretches.lastOrNull()?.drivers?.getOrNull(s.picks.lastOrNull() ?: 0)?.arrivesAt?.let { Line("पहुँचेगा · Arrives", clock(it), Tokens.green) }
                 Line("Daak meter", "${plan.km} km")
                 Body(plan.meter, Tokens.muted, 14)
                 Line("किराया · Fee", "₹${"%.2f".format(fee)}", big = true)

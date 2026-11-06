@@ -21,9 +21,11 @@ export const Badges = defineSchema("daak.badge", {
   devicePub: str().optional(), // the public key of the phone this person signs handoffs with (P-256, SPKI, base64)
   kyc: bytes().optional(), // drivers: ID type, last 4 characters and the sealed Swarm reference of the ID photo, all sealed
   kycStatus: str().optional(), // "pending", "verified" or "rejected"; public, so shops can see the ID was checked
+  timetable: str().optional(), // drivers: when their bus leaves on each stretch, e.g. "KNP-LKO@06:30/1111110"
+  away: str().optional(), // drivers: dates they are not driving, "2026-11-06,2026-11-07"
 });
 
-export type BadgeRow = { uid: string; name: string; role: string; vehicle: string; legs: string[]; stop?: string; private?: string; devicePub?: string; kyc?: string; kycStatus?: string; key: string };
+export type BadgeRow = { uid: string; name: string; role: string; vehicle: string; legs: string[]; stop?: string; private?: string; devicePub?: string; kyc?: string; kycStatus?: string; timetable?: string; away?: string[]; key: string };
 
 export const Consignments = defineSchema("daak.consignment", {
   code: str().indexed(),
@@ -74,6 +76,9 @@ export type Leg = {
   hop: number; from: string; to: string; place: string; km?: number; lat?: number; lng?: number;
   /** Share of this leg's pay released at the confirmed handover, fixed at booking from the driver's record. */
   advancePct?: number;
+  /** When this stretch's bus leaves and when the parcel is expected at `place` (ms), from the drivers' bus times. */
+  departsAt?: number;
+  etaAt?: number;
 };
 
 const chainCfg = () => rabdi({ accessKey: env.arkivAccessKey() });
@@ -98,6 +103,23 @@ export async function setDevicePub(uid: string, devicePub: string, replace = fal
   return { entityKey: b.key, txHash: String(txHash) };
 }
 
+/** A driver's bus times and days off, patched in place. */
+export async function setDriverTimes(uid: string, set: { timetable?: string; away?: string[] }) {
+  const b = await getBadge(uid);
+  if (!b) throw new Error("Unknown badge");
+  const values = { ...(set.timetable != null ? { timetable: set.timetable } : {}), ...(set.away != null ? { away: set.away.slice(-6).join(",") } : {}) };
+  const { txHash } = await arkivWrite().patchEntity(Badges, b.key as `0x${string}`, { set: values });
+  return { entityKey: b.key, txHash: String(txHash) };
+}
+
+/** Replaces a booking's route (a declined stretch handed to the next driver, or times re-planned). */
+export async function patchRoute(code: string, route: Leg[]) {
+  const r = await arkivRead().select({ $key: true }).from(Consignments).where(eq("code", code)).ownedBy(owner()).orderBy(desc("createdAt")).limit(1).fetch();
+  const e = r.entities[0];
+  if (!e) throw new Error("Unknown consignment");
+  return keyOf(await arkivWrite().patchEntity(Consignments, String(e.$key) as `0x${string}`, { set: { route: enc(JSON.stringify(route)) } }));
+}
+
 /** The operator's decision on a driver's ID. */
 export async function setKycStatus(uid: string, kycStatus: "verified" | "rejected") {
   const b = await getBadge(uid);
@@ -107,10 +129,11 @@ export async function setKycStatus(uid: string, kycStatus: "verified" | "rejecte
 }
 
 /** Creates the badge, or updates the existing one in place (re-joining, changing stretches or UPI ID). */
-export async function putBadge(b: { uid: string; name: string; role: string; vehicle?: string; legs?: string[]; stop?: string; private?: string; kyc?: string }) {
+export async function putBadge(b: { uid: string; name: string; role: string; vehicle?: string; legs?: string[]; stop?: string; private?: string; kyc?: string; timetable?: string }) {
   const values = {
     uid: b.uid, name: b.name, role: b.role, vehicle: b.vehicle ?? "", legs: (b.legs ?? []).join(","), stop: b.stop ?? "", private: enc(b.private ?? ""),
     ...(b.kyc ? { kyc: enc(b.kyc), kycStatus: "pending" } : {}),
+    ...(b.timetable ? { timetable: b.timetable } : {}),
   };
   const existing = await getBadge(b.uid).catch(() => null);
   if (existing) {
@@ -120,7 +143,7 @@ export async function putBadge(b: { uid: string; name: string; role: string; veh
   return keyOf(await arkivWrite().createEntity(Badges, values, { expiration: ExpirationTime.fromDays(30) }));
 }
 
-type BadgeEntity = { $key: unknown; uid: { value: string }; name: { value: string }; role: { value: string }; vehicle: { value: string }; legs?: { value: string }; stop?: { value: string }; private?: { value: Uint8Array | `0x${string}` }; devicePub?: { value: string }; kyc?: { value: Uint8Array | `0x${string}` }; kycStatus?: { value: string } };
+type BadgeEntity = { $key: unknown; uid: { value: string }; name: { value: string }; role: { value: string }; vehicle: { value: string }; legs?: { value: string }; stop?: { value: string }; private?: { value: Uint8Array | `0x${string}` }; devicePub?: { value: string }; kyc?: { value: Uint8Array | `0x${string}` }; kycStatus?: { value: string }; timetable?: { value: string }; away?: { value: string } };
 const toBadge = (b: BadgeEntity): BadgeRow => ({
   key: String(b.$key), uid: b.uid.value, name: b.name.value, role: b.role.value, vehicle: b.vehicle.value,
   legs: (b.legs?.value ?? "").split(",").filter(Boolean), stop: b.stop?.value || undefined,
@@ -128,16 +151,18 @@ const toBadge = (b: BadgeEntity): BadgeRow => ({
   devicePub: b.devicePub?.value || undefined,
   kyc: b.kyc ? dec(b.kyc.value) || undefined : undefined,
   kycStatus: b.kycStatus?.value || undefined,
+  timetable: b.timetable?.value || undefined,
+  away: (b.away?.value ?? "").split(",").filter(Boolean),
 });
 
 export async function badgesByRole(role: string): Promise<BadgeRow[]> {
-  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true, kyc: true, kycStatus: true }).from(Badges)
+  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true, kyc: true, kycStatus: true, timetable: true, away: true }).from(Badges)
     .where(eq("role", role)).ownedBy(owner()).limit(100).fetch();
   return r.entities.map((b) => toBadge(b as BadgeEntity));
 }
 
 export async function getBadge(uid: string): Promise<BadgeRow | null> {
-  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true, kyc: true, kycStatus: true }).from(Badges)
+  const r = await arkivRead().select({ $key: true, uid: true, name: true, role: true, vehicle: true, legs: true, stop: true, private: true, devicePub: true, kyc: true, kycStatus: true, timetable: true, away: true }).from(Badges)
     .where(eq("uid", uid)).ownedBy(owner()).limit(1).fetch();
   const b = r.entities[0];
   return b ? toBadge(b as BadgeEntity) : null;

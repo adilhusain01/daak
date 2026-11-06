@@ -52,6 +52,8 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Done
 
+- [x] Bus times and ETAs: drivers publish bus times, plans chain connecting buses, ETAs on every stop and screen, running-late flags, decline and day-off hand the stretch to the next connecting driver (tested on testnet: KNP-0324). Next: HCS-14 agent identity.
+
 - [x] App tab bar: a segmented switch pinned at the bottom, tabs by role (driver: Jobs, Hand over, Earnings, Me; shop: Book, Parcels, Balance, Me; receiver: Receive, Track, Me), each tab keeps its place, Back returns to the first tab.
 
 - [x] Split payout with a holdback: 50, 70 or 90% at the confirmed handover by record; holdbacks in one Hedera schedule that releases itself after `HOLDBACK_HOURS`; the liable leg repays the shop; protection pool from 1 point of the booking fee.

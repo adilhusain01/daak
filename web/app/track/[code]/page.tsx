@@ -3,10 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { use } from "react";
 import Link from "next/link";
-import { arkivEntity, when, type HandoffView, type LegView } from "@/lib/ui";
+import { arkivEntity, clock, isLate, when, type HandoffView, type LegView } from "@/lib/ui";
 import { ProofButton } from "@/components/site-nav";
 
-type Track = { code: string; label: string; feeRupees: number; route: LegView[]; handoffs: HandoffView[] };
+type Track = { code: string; label: string; feeRupees: number; route: (LegView & { etaAt?: number | null })[]; handoffs: HandoffView[] };
 
 const ago = (ms: number) => {
   const m = Math.max(1, Math.round((Date.now() - ms) / 60000));
@@ -51,7 +51,7 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
     : delivered
       ? { tone: "bg-ok", hi: "पहुँच गया", en: "Delivered", sub: lastH ? `Handed over at ${last!.place}, ${ago(lastH.at)}.` : "" }
       : last
-        ? { tone: "bg-ink", hi: `रास्ते में: ${next!.place.split(",")[0]} की ओर`, en: `On the way to ${next!.place}`, sub: `Last handed over at ${last.place}, ${ago(lastH!.at)}.` }
+        ? { tone: "bg-ink", hi: `रास्ते में: ${next!.place.split(",")[0]} की ओर`, en: `On the way to ${next!.place}`, sub: `Last handed over at ${last.place}, ${ago(lastH!.at)}.${data.route.at(-1)?.etaAt ? ` Expected at ${data.route.at(-1)!.place.split(",")[0]} by ${clock(data.route.at(-1)!.etaAt!)}.` : ""}` }
         : { tone: "bg-ink", hi: "बुक हो गया, पिकअप का इंतज़ार", en: "Booked, waiting for pickup", sub: next ? `First stop: ${next.place}.` : "" };
 
   return (
@@ -100,7 +100,10 @@ export default function TrackPage({ params }: { params: Promise<{ code: string }
                     {h.verdict === "held" ? "जाँच के लिए रुका · Stopped for a check" : "पहुँचा · Reached"} · {when(h.at)}
                   </p>
                 ) : (
-                  <p className="text-sm text-muted-ink">{isNext ? "अगला पड़ाव · Next stop" : "बाद में · Later"}</p>
+                  <p className={`text-sm ${isLate(l.etaAt, false) ? "font-medium text-held" : "text-muted-ink"}`}>
+                    {isNext ? "अगला पड़ाव · Next stop" : "बाद में · Later"}
+                    {l.etaAt ? (isLate(l.etaAt, false) ? ` · running late, expected ${clock(l.etaAt)}` : ` · expected ${clock(l.etaAt)}`) : ""}
+                  </p>
                 )}
               </div>
             </li>

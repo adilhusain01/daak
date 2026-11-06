@@ -1,6 +1,7 @@
 import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { putBadge } from "@/lib/arkiv";
+import { encodeTimetables } from "@/lib/timetable";
 import { network } from "@/lib/network";
 import { seal, sealRef, uploadPhoto } from "@/lib/swarm";
 import { submitLog } from "@/lib/hedera";
@@ -10,6 +11,8 @@ type Join = {
   uid: string; role: "driver" | "sender" | "receiver"; name: string; phone: string; upi?: string; vehicle?: string; legs?: string[]; stop?: string;
   /** Drivers: who runs the bus, and a government ID for KYC. */
   busOperator?: string; idType?: string; idLast4?: string; idPhoto?: string;
+  /** Drivers: when their bus leaves on each stretch, "HH:MM" (days default Monday to Saturday). */
+  times?: Record<string, string>;
 };
 
 const BUS_OPERATORS = ["UPSRTC", "BSRTC", "Private"];
@@ -42,7 +45,10 @@ export async function POST(req: Request) {
   const idPhoto = j.role === "driver" && j.idPhoto ? Buffer.from(j.idPhoto, "base64") : null;
   if (j.role === "driver" && (!idPhoto || idPhoto.length < 10_000 || idPhoto.length > 3_000_000)) errors.push("Take a clear photo of the ID");
   if (j.role !== "driver" && !net.stops.some((s) => s.id === j.stop)) errors.push("Choose your bus stand");
-  if (errors.length) return NextResponse.json({ ok: false, errors }, { status: 400 });
+  for (const [leg, t] of Object.entries(j.times ?? {})) {
+    if (!(j.legs ?? []).includes(leg) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) errors.push("Enter each bus time as HH:MM, like 06:30");
+  }
+  if (errors.length) return NextResponse.json({ ok: false, errors: [...new Set(errors)] }, { status: 400 });
 
   const phone = j.phone.replace(/\D/g, "").slice(-10);
   const sealed = seal(JSON.stringify({ phone, upi: j.upi ?? "" }), "person");
@@ -57,6 +63,7 @@ export async function POST(req: Request) {
   const arkiv = await putBadge({
     uid: j.uid, role: j.role, name: j.name.trim(), vehicle,
     legs: j.role === "driver" ? j.legs : [], stop: j.role === "driver" ? undefined : j.stop, private: sealed, kyc,
+    timetable: j.role === "driver" ? encodeTimetables(Object.fromEntries(Object.entries(j.times ?? {}).map(([leg, dep]) => [leg, { dep, days: "1111110" }]))) || undefined : undefined,
   });
   const log = await submitLog({ t: "daak.joined", role: j.role, id: badgeHash(j.uid), legs: j.legs ?? null, stop: j.stop ?? null, kyc: kyc ? "pending" : null }).catch(() => null);
   return NextResponse.json({ ok: true, arkiv, hcs: log?.txId ?? null });

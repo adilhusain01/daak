@@ -19,3 +19,12 @@ export const hashscanTopic = (hcs: string) => {
   return `https://hashscan.io/testnet/topic/${topic}${seq ? `?sequence=${seq}` : ""}`;
 };
 export const arkivEntity = (key: string) => `https://rabdi.explorer.arkiv.network/entity/${key}`;
+
+/** India-time clock for ETAs: "16:00" today, "Sat 06:30" another day. */
+export function clock(ms: number) {
+  const d = new Date(ms), now = new Date();
+  const opts = { timeZone: "Asia/Kolkata" } as const;
+  const hm = d.toLocaleTimeString("en-IN", { ...opts, hour: "2-digit", minute: "2-digit", hour12: false });
+  return d.toLocaleDateString("en-IN", opts) === now.toLocaleDateString("en-IN", opts) ? hm : `${d.toLocaleDateString("en-IN", { ...opts, weekday: "short" })} ${hm}`;
+}
+export const isLate = (etaAt: number | undefined | null, handed: boolean) => Boolean(etaAt && !handed && Date.now() > etaAt + 30 * 60_000);

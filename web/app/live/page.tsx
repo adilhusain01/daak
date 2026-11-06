@@ -2,13 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { SiteNav, ProofButton } from "@/components/site-nav";
-import { arkivEntity, hashscanTopic, verdictText, when } from "@/lib/ui";
+import { arkivEntity, clock, hashscanTopic, isLate, verdictText, when } from "@/lib/ui";
 
 type H = { key: string; hop: number; verdict: string; place: string; at: number; reason: string; hcs: string; zgRequestId: string };
 type M = { hop: number; km: number; pct: number | null; advanceRupees: number; heldRupees: number | null; tx: string | null; answer: string | null };
 type D = {
   code: string; label: string; createdAt: number; feeRupees: number; weight: string; km: number;
-  route: { hop: number; place: string; km: number }[]; handoffs: H[]; money: M[];
+  route: { hop: number; place: string; km: number; departsAt: number | null; etaAt: number | null }[]; handoffs: H[]; money: M[];
   holdback: { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean } | null;
 };
 
@@ -77,7 +77,9 @@ export default function Live() {
                           {m && <span className={m.answer === "accept" ? "text-ok" : m.answer === "decline" ? "text-held" : ""}> · {m.answer === "accept" ? "driver accepted" : m.answer === "decline" ? "driver declined" : "waiting for the driver"}</span>}
                         </span>
                       </div>
-                      {h ? <p className={`mt-1 ${v?.tone}`}>{v?.en}, {when(h.at)}</p> : <p className="mt-1 text-muted-ink">Not handed over yet</p>}
+                      {h ? <p className={`mt-1 ${v?.tone}`}>{v?.en}, {when(h.at)}</p>
+                        : isLate(l.etaAt, false) ? <p className="mt-1 font-medium text-held">Running late: expected {clock(l.etaAt!)}</p>
+                        : <p className="mt-1 text-muted-ink">{l.etaAt ? `Expected ${clock(l.etaAt)}` : "Not handed over yet"}{l.departsAt ? `, bus leaves ${clock(l.departsAt)}` : ""}</p>}
                       {h?.reason && <p className="text-muted-ink">{h.reason}</p>}
                       {m && (m.advanceRupees > 0
                         ? <p className="mt-1">Paid ₹{m.advanceRupees.toFixed(2)} at the handover ({m.pct}%), ₹{(m.heldRupees ?? 0).toFixed(2)} held until delivery</p>

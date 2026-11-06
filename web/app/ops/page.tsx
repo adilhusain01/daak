@@ -10,13 +10,13 @@ import { KycReview } from "@/components/kyc-review";
 import { StandingPanel } from "@/components/standing-panel";
 import { ShopsPanel } from "@/components/shops-panel";
 import { useState } from "react";
-import { arkivEntity, hashscanTopic, verdictText, when, type HandoffView, type LegView } from "@/lib/ui";
+import { arkivEntity, clock, hashscanTopic, isLate, verdictText, when, type HandoffView, type LegView } from "@/lib/ui";
 
 type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number; advanceRupees: number; advancePct: number | null; heldRupees: number | null; answer: string | null };
 type Holdback = { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean };
 type Row = {
   code: string; label: string; feeRupees: number; createdAt: number; schedule?: string; paidAt: number | null; km: number; meter: string; money: Money[]; holdback: Holdback | null;
-  route: (LegView & { from: string; to: string; advancePct?: number })[]; handoffs: HandoffView[];
+  route: (LegView & { from: string; to: string; advancePct?: number; departsAt?: number; etaAt?: number })[]; handoffs: HandoffView[];
 };
 type Data = { chain: { topicId?: string; feeTokenId?: string; escrowId?: string }; consignments: Row[] };
 
@@ -169,7 +169,9 @@ export default function Dashboard() {
                           </span>
                         </div>
                       ) : (
-                        <span className="mt-1 block text-sm text-muted-ink">Not handed over yet</span>
+                        <span className={`mt-1 block text-sm ${isLate(l.etaAt, false) ? "font-medium text-held" : "text-muted-ink"}`}>
+                          {isLate(l.etaAt, false) ? `Running late: expected ${clock(l.etaAt!)}` : l.etaAt ? `Expected ${clock(l.etaAt)}` : "Not handed over yet"}{l.departsAt ? `, bus leaves ${clock(l.departsAt)}` : ""}
+                        </span>
                       )}
                     </li>
                   );

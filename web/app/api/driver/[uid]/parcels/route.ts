@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { recentConsignments, handoffsFor, getBadge } from "@/lib/arkiv";
 import { badgeHash, readLog } from "@/lib/history";
 import { legPay } from "@/lib/split";
+import { clock } from "@/lib/timetable";
 
 /** What a person should do next: parcels where they are the giver or the taker of the next handoff. */
 export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }> }) {
@@ -24,7 +25,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
       const start = c.route.find((l) => l.to === uid)?.place ?? "";
       offers.push({
         code: c.code, label: c.label, place: mine.place, action: "offer", hop: mine.hop,
-        text: `${start.split(",")[0]} to ${mine.place.split(",")[0]}, ${mine.km} km, ₹${((pay?.units ?? 0) / 100).toFixed(2)} (${pay?.pct ?? 50}% at handover)`,
+        text: `${start.split(",")[0]} to ${mine.place.split(",")[0]}, ${mine.km} km, ₹${((pay?.units ?? 0) / 100).toFixed(2)} (${pay?.pct ?? 50}% at handover)${mine.departsAt ? `, bus ${clock(mine.departsAt)}` : ""}`,
       });
     }
     const leg = c.route.find((l) => !done.has(l.hop));
@@ -34,7 +35,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
     out.push({
       code: c.code, label: c.label, place: leg.place,
       action: leg.from === uid ? "give" : "take",
-      text: leg.from === uid ? `Hand ${c.code} to ${who} at ${leg.place}` : `Take ${c.code} from ${who} at ${leg.place}`,
+      text: (leg.from === uid ? `Hand ${c.code} to ${who} at ${leg.place}` : `Take ${c.code} from ${who} at ${leg.place}`) + (leg.etaAt ? `, expected ${clock(leg.etaAt)}` : ""),
     });
   }
   return NextResponse.json({ parcels: [...offers, ...out] });

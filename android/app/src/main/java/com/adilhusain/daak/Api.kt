@@ -19,6 +19,8 @@ data class Work(
     val cleanPercent: Int, val advance: Int, val advanceReason: String, val savePercent: Int,
     /** Share of each leg's pay at the handover (50, 70 or 90), and what lifts it. */
     val atHandover: Int = 50, val nextTier: String? = null,
+    /** Stretches the driver runs, their bus time on each ("HH:MM"), and whether they marked today off. */
+    val legs: List<String> = emptyList(), val times: Map<String, String> = emptyMap(), val awayToday: Boolean = false,
 )
 
 data class Me(val known: Boolean, val name: String?, val role: String?, val vehicle: String?)
@@ -27,9 +29,17 @@ data class StopOpt(val id: String, val name: String)
 data class LegOpt(val id: String, val label: String, val km: Int)
 data class Network(val stops: List<StopOpt>, val legs: List<LegOpt>)
 data class Receiver(val uid: String, val name: String, val stopName: String)
-data class DriverOpt(val uid: String, val name: String, val vehicle: String, val proven: Int, val km: Int, val cleanPercent: Int)
+data class DriverOpt(val uid: String, val name: String, val vehicle: String, val proven: Int, val km: Int, val cleanPercent: Int, val departsAt: Long? = null, val arrivesAt: Long? = null)
+
+/** India-time clock: "16:00" today, "Sat 06:30" another day. */
+fun clock(ms: Long): String {
+    val zone = java.time.ZoneId.of("Asia/Kolkata")
+    val t = java.time.Instant.ofEpochMilli(ms).atZone(zone)
+    val hm = "%02d:%02d".format(t.hour, t.minute)
+    return if (t.toLocalDate() == java.time.LocalDate.now(zone)) hm else "${t.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)} $hm"
+}
 data class Stretch(val id: String, val from: String, val to: String, val km: Int, val drivers: List<DriverOpt>)
-data class Plan(val from: String, val to: String, val km: Int, val fee: Double, val meter: String, val stretches: List<Stretch>, val bands: List<Band> = emptyList())
+data class Plan(val from: String, val to: String, val km: Int, val fee: Double, val meter: String, val stretches: List<Stretch>, val bands: List<Band> = emptyList(), val etaAt: Long? = null)
 /** A weight band and what the whole booking costs in it. */
 data class Band(val id: String, val label: String, val fee: Double)
 data class Todo(val code: String, val text: String, val action: String)
@@ -108,6 +118,7 @@ object Api {
     fun join(
         uid: String, role: String, name: String, phone: String, upi: String, vehicle: String, legs: List<String>, stop: String?,
         busOperator: String? = null, idType: String? = null, idLast4: String = "", idPhoto: java.io.File? = null,
+        times: Map<String, String> = emptyMap(),
     ): List<String>? {
         val body = JSONObject().put("uid", uid).put("role", role).put("name", name).put("phone", phone).put("upi", upi).put("vehicle", vehicle)
             .put("legs", org.json.JSONArray(legs)).apply {
@@ -115,6 +126,7 @@ object Api {
                 if (busOperator != null) put("busOperator", busOperator)
                 if (idType != null) put("idType", idType)
                 if (idLast4.isNotEmpty()) put("idLast4", idLast4)
+                if (times.isNotEmpty()) put("times", JSONObject(times as Map<*, *>))
                 if (idPhoto != null) put("idPhoto", android.util.Base64.encodeToString(idPhoto.readBytes(), android.util.Base64.NO_WRAP))
             }
         val (code, j) = post("/api/join", body, 60000)
@@ -127,6 +139,20 @@ object Api {
     fun job(code: String, uid: String, accept: Boolean) {
         val (c, j) = post("/api/job", JSONObject().put("code", code).put("uid", uid).put("decision", if (accept) "accept" else "decline"))
         if (c !in 200..299) error(j.optString("error", "server $c"))
+    }
+
+    /** A driver's bus times on their stretches, "HH:MM", running Monday to Saturday. */
+    fun setTimes(uid: String, times: Map<String, String>) {
+        val t = JSONObject().apply { times.forEach { (leg, dep) -> put(leg, JSONObject().put("dep", dep).put("days", "1111110")) } }
+        val (c, j) = post("/api/driver/${enc(uid)}/timetable", JSONObject().put("timetable", t), 60000)
+        if (c !in 200..299) error(j.optString("error", "server $c"))
+    }
+
+    /** Not driving today (or driving again); returns how many stretches were handed to other drivers. */
+    fun setAway(uid: String, away: Boolean): Int {
+        val (c, j) = post("/api/driver/${enc(uid)}/away", JSONObject().put("away", away), 90000)
+        if (c !in 200..299) error(j.optString("error", "server $c"))
+        return j.optJSONArray("handedOn")?.length() ?: 0
     }
 
     fun shopBalance(sender: String): ShopBal {
@@ -181,9 +207,11 @@ object Api {
             List(st.length()) { i -> st.getJSONObject(i).let { o ->
                 val d = o.getJSONArray("drivers")
                 Stretch(o.getString("id"), o.getString("from"), o.getString("to"), o.getInt("km"),
-                    List(d.length()) { k -> d.getJSONObject(k).let { x -> DriverOpt(x.getString("uid"), x.getString("name"), x.optString("vehicle"), x.getInt("proven"), x.getInt("km"), (x.getDouble("cleanRate") * 100).toInt()) } })
+                    List(d.length()) { k -> d.getJSONObject(k).let { x -> DriverOpt(x.getString("uid"), x.getString("name"), x.optString("vehicle"), x.getInt("proven"), x.getInt("km"), (x.getDouble("cleanRate") * 100).toInt(),
+                        if (x.isNull("departsAt")) null else x.optLong("departsAt"), if (x.isNull("arrivesAt")) null else x.optLong("arrivesAt")) } })
             } },
-            j.optJSONArray("bands")?.let { b -> List(b.length()) { b.getJSONObject(it).let { o -> Band(o.getString("id"), o.getString("label"), o.getDouble("feeRupees")) } } } ?: emptyList())
+            j.optJSONArray("bands")?.let { b -> List(b.length()) { b.getJSONObject(it).let { o -> Band(o.getString("id"), o.getString("label"), o.getDouble("feeRupees")) } } } ?: emptyList(),
+            if (j.isNull("etaAt")) null else j.optLong("etaAt"))
     }
 
     fun todo(uid: String): List<Todo> {
@@ -216,6 +244,9 @@ object Api {
             adv.getString("reason"), j.getInt("savePercent"),
             j.optJSONObject("tier")?.optInt("advancePct", 50) ?: 50,
             j.optJSONObject("tier")?.let { if (it.isNull("next")) null else it.optString("next") },
+            j.optJSONArray("legs")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList(),
+            j.optJSONObject("timetable")?.let { t -> t.keys().asSequence().associateWith { k -> t.getJSONObject(k).getString("dep") } } ?: emptyMap(),
+            j.optBoolean("awayToday", false),
         )
     }
 
