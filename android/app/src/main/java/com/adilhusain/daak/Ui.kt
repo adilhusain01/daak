@@ -397,9 +397,7 @@ fun SmallKey(text: String, modifier: Modifier = Modifier, color: Color = Tokens.
 @Composable
 fun Brand() {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(38.dp).background(Tokens.amber, RoundedCornerShape(Tokens.inner)), contentAlignment = Alignment.Center) {
-            BasicText("ड", style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Tokens.paper))
-        }
+        androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.daak_mark), contentDescription = null, modifier = Modifier.size(40.dp))
         Column {
             BasicText("Daak", style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = Tokens.ink, lineHeight = 26.sp))
             BasicText(pick("डाक · हर पार्सल का हिसाब", "Every parcel handoff on record"), style = TextStyle(fontSize = 13.sp, color = Tokens.muted))

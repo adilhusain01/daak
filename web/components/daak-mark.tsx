@@ -1,9 +1,11 @@
-/** Daak's mark: ड, the first letter of डाक, in amber on a square whose corners sit inside whatever holds it. */
-export function DaakMark({ className = "size-9 text-xl" }: { className?: string }) {
+import { MARK_GLYPH } from "@/components/landing/mark-glyph";
+
+/** Daak's mark: ड, the first letter of डाक, drawn from Baloo 2 in paper on an amber square. One source for the nav, the chat key and the favicon. */
+export function DaakMark({ className = "size-9" }: { className?: string }) {
   return (
-    <span aria-hidden className={`inline-grid shrink-0 place-items-center rounded-lg bg-wait font-semibold leading-none text-paper ${className}`}
-      style={{ fontFamily: '"Noto Sans Devanagari", "Kohinoor Devanagari", "Devanagari Sangam MN", sans-serif' }}>
-      ड
-    </span>
+    <svg viewBox="0 0 64 64" aria-hidden className={`shrink-0 ${className}`}>
+      <rect width="64" height="64" rx="14" className="fill-wait" />
+      <path d={MARK_GLYPH.d} transform={MARK_GLYPH.transform} className="fill-paper" />
+    </svg>
   );
 }

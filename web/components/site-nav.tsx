@@ -21,7 +21,7 @@ export function SiteNav({ className = "mb-8" }: { className?: string }) {
   return (
     <nav className={`${className} flex flex-wrap items-center justify-between gap-3`}>
       <Link href="/" className="group flex items-center gap-2.5" aria-label="Daak, home">
-        <DaakMark className="size-9 text-xl transition-transform duration-200 ease-out group-hover:-rotate-6 group-active:scale-95" />
+        <DaakMark className="size-9 transition-transform duration-200 ease-out group-hover:-rotate-6 group-active:scale-95" />
         <span className="flex flex-col leading-none">
           <span className="text-2xl font-semibold tracking-tight">Daak</span>
           <span className="mt-0.5 text-xs text-muted-ink">डाक · every handoff on record</span>

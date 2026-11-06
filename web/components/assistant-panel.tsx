@@ -79,7 +79,7 @@ export function AssistantChat() {
       <button onClick={() => { setOpen((o) => !o); setSeen(true); }} aria-expanded={open} aria-controls="ask-daak" aria-label={open ? "Close Ask Daak" : "Ask Daak"}
         className="group fixed right-4 bottom-4 z-40 flex items-center gap-3 rounded-xl bg-ink py-2 pr-4 pl-2 text-left text-paper shadow-lg transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.97] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-500 sm:right-6 sm:bottom-6">
         <span className="relative">
-          <DaakMark className="size-9 text-xl transition-transform duration-300 ease-out group-hover:-rotate-6" />
+          <DaakMark className="size-9 transition-transform duration-300 ease-out group-hover:-rotate-6" />
           {/* A live dot: it pings a few times to say the assistant is there, then rests. */}
           {!seen && <span className="absolute -top-1 -right-1 size-3 rounded-full bg-ok motion-safe:animate-ping motion-safe:[animation-iteration-count:5]" />}
           <span className="absolute -top-1 -right-1 size-3 rounded-full border-2 border-ink bg-ok" />
@@ -93,7 +93,7 @@ export function AssistantChat() {
       <section id="ask-daak" role="dialog" aria-label="Ask Daak" inert={!open}
         className={`fixed right-4 bottom-22 z-40 flex h-[min(36rem,calc(100dvh-7rem))] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-rule bg-card-paper shadow-xl transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none sm:right-6 sm:bottom-24 sm:w-[28rem] ${open ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}>
         <header className="flex items-start gap-3 border-b border-rule px-4 py-3">
-          <DaakMark className="size-8 text-lg" />
+          <DaakMark className="size-8" />
           <div className="min-w-0">
           <h2 className="font-semibold">Ask Daak</h2>
           <p className="text-xs text-muted-ink">Reads Daak&apos;s records and Hedera through the Hedera Agent Kit. It never moves money; suggestions come back as buttons you confirm.</p>
