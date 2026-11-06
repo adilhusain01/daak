@@ -645,7 +645,9 @@ class MainActivity : ComponentActivity() {
             val fresh = runCatching { Api.todo(uid) }.getOrNull()
             runOnUiThread {
                 answering = null
-                r.onSuccess { if (fresh != null) todo = fresh; voice.buzz(); voice.say(if (accept) "काम स्वीकार किया।" else "काम मना किया।") }
+                r.onSuccess {
+                    // The answer reaches the public log a few seconds after it is saved, so the fresh list can still offer it: drop it here.
+                    todo = (fresh ?: todo)?.filterNot { it.action == "offer" && it.code == t.code }; voice.buzz(); voice.say(if (accept) "काम स्वीकार किया।" else "काम मना किया।") }
                     .onFailure { note = "जवाब नहीं गया। Could not send; try again." }
             }
         }
@@ -760,8 +762,14 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun Header() {
-        // Who is signed in lives on the Me tab; every other screen starts with the mark.
-        Brand()
+        // The mark, and who this phone is signed in as (first name and role); the full details live on the Me tab.
+        val p = me
+        Brand(
+            name = p?.name?.trim()?.substringBefore(" ")?.takeIf { it.isNotEmpty() },
+            role = when (p?.role) {
+                "driver" -> pick("ड्राइवर", "Driver"); "sender" -> pick("भेजने वाली दुकान", "Sending shop"); "receiver" -> pick("पाने वाली दुकान", "Receiving shop"); else -> null
+            },
+        )
     }
 
     @Composable

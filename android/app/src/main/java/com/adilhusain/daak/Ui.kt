@@ -432,12 +432,20 @@ fun SmallKey(text: String, modifier: Modifier = Modifier, color: Color = Tokens.
 
 /** Daak's mark: ड, the first letter of डाक, in amber on a square, beside the name. The same mark as the website. */
 @Composable
-fun Brand() {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+fun Brand(name: String? = null, role: String? = null) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.daak_mark), contentDescription = null, modifier = Modifier.size(40.dp))
-        Column {
+        Column(Modifier.weight(1f)) {
             BasicText("Daak", style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Tokens.ink, lineHeight = 28.sp, fontFamily = Type.display))
             pick("डाक · हर पार्सल का हिसाब", "Every parcel handoff on record").let { x -> BasicText(x, style = TextStyle(fontSize = 13.sp, color = Tokens.muted, fontFamily = Type.body(x))) }
+        }
+        // Who this phone is signed in as, so anyone watching knows whose view it is. It sits in: you read it, you do not press it.
+        if (name != null) Column(
+            Modifier.background(Tokens.tray, RoundedCornerShape(Tokens.inner)).border(1.dp, Tokens.line, RoundedCornerShape(Tokens.inner)).padding(horizontal = 12.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.End,
+        ) {
+            BasicText(name, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Tokens.ink, fontFamily = Type.body(name)), maxLines = 1)
+            if (role != null) BasicText(role, style = TextStyle(fontSize = 12.sp, color = Tokens.muted, fontFamily = Type.body(role)), maxLines = 1)
         }
     }
 }

@@ -5,7 +5,8 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { fundCompute } from "@/lib/compute";
 import { withX402 } from "@x402/next";
 import { x402Server, bookingPrice, routeKm } from "@/lib/x402";
-import { putConsignment, getBadge, consignmentByCode, type Leg } from "@/lib/arkiv";
+import { putConsignment, getBadge, consignmentByCode, arkivWrite, type Leg } from "@/lib/arkiv";
+import { orUndo } from "@/lib/undo";
 import { randomBytes } from "node:crypto";
 import { lockFee, hashscan, accountFor } from "@/lib/payout";
 import { shopAgentData, verifyUaid } from "@/lib/uaid";
@@ -50,7 +51,10 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   }
   // The record goes first: if it fails, no money has moved yet.
   const arkiv = await putConsignment({ code, parcel: b.parcel, label: b.label ?? "", route: b.route, feeRupees: b.feeRupees, weight: b.weight ?? "s" });
-  const money = await lockFee(code, b.feeRupees, b.route.filter((l) => (l.km ?? 0) > 0).map((l) => ({ badge: l.from, km: l.km! })));
+  // If the fee cannot be locked, the shop is not charged (x402 settles only on success), so the record goes too.
+  const fee = b.feeRupees, legs = b.route;
+  const money = await orUndo(arkiv.entityKey, () => lockFee(code, fee, legs.filter((l) => (l.km ?? 0) > 0).map((l) => ({ badge: l.from, km: l.km! }))),
+    (entityKey) => arkivWrite().deleteEntity({ entityKey: entityKey as `0x${string}` }));
   const pool = await fundPool(code, b.feeRupees).catch((e) => { console.error("pool", e); return null; });
   const shares = legPay({ code, feeRupees: b.feeRupees, route: b.route });
   // HCS-14: the paying agent's identity, recomputed from the shop on the route and its agent account.
