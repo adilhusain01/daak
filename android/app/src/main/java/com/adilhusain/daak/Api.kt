@@ -21,6 +21,8 @@ data class Work(
     val atHandover: Int = 50, val nextTier: String? = null,
     /** Stretches the driver runs, their bus time on each ("HH:MM"), and whether they marked today off. */
     val legs: List<String> = emptyList(), val times: Map<String, String> = emptyMap(), val awayToday: Boolean = false,
+    /** "missing", "pending", "verified" or "rejected". */
+    val idStatus: String = "missing",
 )
 
 data class Me(val known: Boolean, val name: String?, val role: String?, val vehicle: String?)
@@ -155,6 +157,16 @@ object Api {
         return j.optJSONArray("handedOn")?.length() ?: 0
     }
 
+    /** A driver adds their government ID after joining; the phone's registered key signs it. */
+    fun submitId(uid: String, idType: String, last4: String, photo: java.io.File) {
+        val bytes = photo.readBytes()
+        val sig = DeviceKey.sign("daak.kyc|$uid|${DeviceKey.sha256Hex(bytes)}")
+        val body = JSONObject().put("uid", uid).put("idType", idType).put("idLast4", last4)
+            .put("idPhoto", android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)).put("sig", sig)
+        val (c, j) = post("/api/kyc/submit", body, 90000)
+        if (c !in 200..299) error(j.optString("error", "server $c"))
+    }
+
     fun shopBalance(sender: String): ShopBal {
         val (code, j) = get("/api/shop/${enc(sender)}")
         if (code !in 200..299) error(j.optString("error", "server $code"))
@@ -247,6 +259,7 @@ object Api {
             j.optJSONArray("legs")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList(),
             j.optJSONObject("timetable")?.let { t -> t.keys().asSequence().associateWith { k -> t.getJSONObject(k).getString("dep") } } ?: emptyMap(),
             j.optBoolean("awayToday", false),
+            j.optString("idStatus", "missing"),
         )
     }
 

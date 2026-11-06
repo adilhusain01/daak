@@ -80,6 +80,12 @@ class MainActivity : ComponentActivity() {
     private var awayBusy by mutableStateOf(false)
     private var timesEdit by mutableStateOf<Map<String, String>?>(null)
     private var timesBusy by mutableStateOf(false)
+    /** Adding an ID from the Me tab: type, last 4, photo, sending. */
+    private var idType by mutableStateOf<String?>(null)
+    private var idLast4 by mutableStateOf("")
+    private var idPhoto by mutableStateOf<File?>(null)
+    private var idSending by mutableStateOf(false)
+    private var idPhotoForMe = false
     /** Stretch names for display ("Kanpur to Lucknow"), from the published network. */
     private var legNames by mutableStateOf<Map<String, String>>(emptyMap())
 
@@ -112,6 +118,7 @@ class MainActivity : ComponentActivity() {
     private val takePhoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val s = screen
         val file = photoFile
+        if (ok && file != null && idPhotoForMe) { idPhotoForMe = false; idPhoto = shrink(file); return@registerForActivityResult }
         if (ok && file != null && s is Screen.Join) { screen = s.copy(form = s.form.copy(idPhoto = shrink(file)), errors = emptyList()); return@registerForActivityResult }
         if (ok && file != null && s is Screen.Handoff && s.parcel != null && s.other != null) send(s, shrink(file))
         else if (s is Screen.Handoff) note = "फोटो नहीं ली गई। The photo was not taken; press Take the photo."
@@ -547,6 +554,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun sendId() {
+        val uid = me?.uid ?: return
+        val type = idType ?: return
+        val photo = idPhoto ?: return
+        idSending = true
+        thread {
+            val r = runCatching { Api.submitId(uid, type, idLast4, photo) }
+            val w = runCatching { Api.work(uid) }.getOrNull()
+            runOnUiThread {
+                idSending = false
+                r.onSuccess { if (w != null) work = w; idType = null; idLast4 = ""; idPhoto = null; voice.buzz(); voice.say("पहचान पत्र भेजा गया। Daak जाँच करेगा।") }
+                    .onFailure { note = it.message ?: "Could not send the ID." }
+            }
+        }
+    }
+
     private fun saveTimes(times: Map<String, String>) {
         val uid = me?.uid ?: return
         timesBusy = true
@@ -747,6 +770,26 @@ class MainActivity : ComponentActivity() {
                 w.legs.forEach { leg -> Field(legNames[leg] ?: leg.replace("-", " to "), edit[leg] ?: "", { v -> timesEdit = edit + (leg to timeInput(v)) }, "06:30", number = true) }
             }
             if (timesEdit != null) Action(if (timesBusy) "सेव हो रहा है…" else "समय सेव करें", if (timesBusy) "Saving…" else "Save bus times", enabled = !timesBusy) { saveTimes(edit) }
+        }
+        if (p.role == "driver") work?.let { w ->
+            Sheet {
+                Heading("पहचान पत्र", "Your ID")
+                when (w.idStatus) {
+                    "verified" -> Body("Checked by Daak. Shops see \"ID checked\" on your record.", Tokens.green, 16, FontWeight.SemiBold)
+                    "pending" -> Body("Sent. Daak checks it soon.", Tokens.muted, 16)
+                    else -> {
+                        Body(if (w.idStatus == "rejected") "Daak could not accept the last photo. Send it again." else "Add a government ID so shops see your record is checked. Only the last 4 characters are kept.", Tokens.muted, 14)
+                        listOf("dl" to "ड्राइविंग लाइसेंस · Driving licence", "voter" to "वोटर आईडी · Voter ID", "aadhaar_masked" to "आधार (छुपा हुआ) · Masked Aadhaar").forEach { (id, title) ->
+                            Choice(title, if (id == "aadhaar_masked") "Cover the first 8 digits before the photo" else null, idType == id) { idType = id }
+                        }
+                        if (idType != null) {
+                            Field("ID के आखिरी 4 अंक · Last 4 characters", idLast4, { idLast4 = it.filter(Char::isLetterOrDigit).take(4).uppercase() }, "4821")
+                            Secondary(if (idPhoto == null) "ID की फोटो लीजिए · Take a photo of the ID" else "फोटो ली गई · Photo taken, tap to retake") { idPhotoForMe = true; openCamera() }
+                            if (idPhoto != null && idLast4.length == 4) Action(if (idSending) "भेज रहे हैं…" else "ID भेजें", if (idSending) "Sending…" else "Send the ID to Daak", enabled = !idSending) { sendId() }
+                        }
+                    }
+                }
+            }
         }
         QueuedNote()
         TextKey("बैज बदलें · Switch badge") { signOut() }
