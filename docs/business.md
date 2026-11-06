@@ -33,7 +33,7 @@ The corridor: Kanpur to Lucknow to Gorakhpur for the story; the first live pilot
 
 | Stage | Who | How they come in | Why they stay |
 |---|---|---|---|
-| Supply | Bus drivers and conductors on the corridor | Met at the depot or bus stand; join by tapping a badge | Part of the pay at each handover, the rest at delivery; a public work record, Bachat, fuel advances, priority for good records |
+| Supply | Bus drivers and conductors on the corridor | Met at the depot or bus stand; join with their phone's Google account (or a badge), vouched for by drivers they already know | Part of the pay at each handover, the rest at delivery; a public work record, Bachat, fuel advances, priority for good records |
 | Seed demand | Senders with a daily standing order | Through bus booking agents and WhatsApp trade groups | One meter rate, a photo at every handoff, no phone calls to chase drivers |
 | Free side | Receiving shops | Come with each sender; tap the parcel with any phone | Live tracking and proof of condition on arrival |
 | Expansion | Courier franchises (DTDC-style) and bus operators | Use Daak for the bus-carried legs of their own network | Fewer disputes, a record per leg, payouts handled |
@@ -50,9 +50,9 @@ The corridor: Kanpur to Lucknow to Gorakhpur for the story; the first live pilot
 | **Sender pays** | **₹89.60** | |
 | **Daak revenue** | **₹11.20** (about 12.5% of GMV) | |
 | Chain cost (Hedera, Arkiv, Swarm) | under ₹1 | assumption; Hedera fees are fractions of a cent per transaction |
-| 0G check | under ₹1 | assumption, to measure once 0G works |
+| 0G checks | **₹0.19** set aside | 2% of the booking fee, moved on chain into Daak's 0G compute account; measured: about US$0.0001 (about ₹0.01) a sealed check, three checks a parcel |
 | UPI payout and SMS | about ₹3 | assumption; depends on the payout partner |
-| **Contribution per parcel** | **about ₹6.50** | |
+| **Contribution per parcel** | **about ₹7** | |
 
 ## Projection (illustrative, to be replaced by pilot data)
 

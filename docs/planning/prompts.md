@@ -77,3 +77,21 @@ The team's messages to the AI coding assistant, in order, as written (typos kept
 68. great. now again judge everytthing from the perspective of the bounty judges and ethglobal finalist judges so see full workflow where it stands and whats not right or missing from the perspective of them , end users, shopkeepers, vc and all other people included
 69. no see from hackathon page and sposnor pages
 70. great go on with all and have them all as tasks
+71. now is the time to have that segmented switch at the bottom(the tab bar) (see the internet for docs and all to make it perfect)
+72. do we need login etc too ? and we might use privy or something if we want the user to handle their wallets
+73. see cloudflare or any other model for fallback and testing when og is down
+74. get it audited by a fable agent ... judge, people, driver, shop, vc ... lifecycle ... and if the packages also show router etc on map thats cherry on top
+75. in these places can it be like a list of parcels (pagination client server side whichever list grows) and when we click on any parcel then its page opens up
+76. ask thing can be a sidebar overlay on the bottom right side which on clicks float as a chat
+77. have some nice logo in the site and also the header of the mobile app, and the driver name should only show on me page
+78. design the landing page ... it looks so old; use all skills, design in that storytelling way and what integration we use for a part
+79. instead of having things in english and hindi, we should have a toggle in the settings for either english or either hindi
+80. one friction i feel for a new driver is that to log in to the app he needs to have an nfc sticker which is tough in rural areas (parcels keep their stickers)
+81. see if you were a web3 judge what you would have done in this situation; there is something called world id too; every driver has gmail
+82. and who will confirm the kyc is legit or not ? ... digilocker for roadmap, integrate the 0G thing too, vouching (but malpractice can be done by people)
+83. should we allow editing ? (stretches)
+84. use cloudflare one as fallback whenever something fails
+85. what amount of 0G do we need ... [bridged 0G through the 0G Hub and sent it to Daak's wallet]
+86. go with the recommended one (each booking pays its share of compute on both chains)
+87. small hardening: sign job answers and day-off, rate-limit the passcode, held reason in Hindi, cache the Hedera log; fix the fixed operator cookie
+88. enough building now, just update the md files

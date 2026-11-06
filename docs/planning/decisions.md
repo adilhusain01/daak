@@ -36,4 +36,5 @@ Dates are IST. "Team" means Adil Husain and teammates; "assistant" means the AI 
 - 6 Nov, team: drivers change their stretches and bus times themselves; UPI ID, phone and name only through the operator, so pay cannot be redirected from a phone.
 - 6 Nov, team: when 0G fails, the Cloudflare model reads too, labelled as not sealed, and it can only hold money, never release it.
 - 6 Nov, team: real 0G for storage and for the agent to pay for its own checks; each booking's 2% compute share moves on Hedera and is matched in 0G on 0G, both on the public log.
-
+- 6 Nov, team: hardening before the demo: job answers and day-off signed by the phone, a passcode lockout, held reasons in Hindi, the Hedera log cached, operator sessions that expire. Lessons: ship a server check together with the app that satisfies it; a page proxy must check the session itself.
+- 6 Nov, team: building stops; the rest is the demo run, the video and the submission.
