@@ -18,6 +18,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -69,12 +71,20 @@ sealed interface Screen {
         /** Today's daily order waiting for this parcel (code and receiver), and whether this booking now repeats daily. */
         val dailyCode: String? = null, val dailyTo: String? = null, val drivers: List<String> = emptyList(),
         val dailySaved: Boolean = false, val dailyBusy: Boolean = false,
-        /** Weight band chosen before paying: s up to 5 kg, m to 15, l to 30, xl to 50. */
+        /** Weight band, worked out from what the shop measured: s up to 5 kg, m to 15, l to 30, xl to 50. */
         val weight: String = "s",
+        /** What the shop typed: kilograms and the three sides in centimetres. */
+        val kg: String = "", val lengthCm: String = "", val widthCm: String = "", val heightCm: String = "",
     ) : Screen
     data class Look(val parcel: Tap? = null, val info: ParcelInfo? = null, val loading: Boolean = false) : Screen
     /** One parcel opened from "My parcels"; Back returns to where it was opened. */
     data class Parcel(val code: String, val from: Screen, val detail: ParcelDetail? = null, val problem: String? = null) : Screen
+}
+
+/** What the shop typed, as numbers, once all four are filled in. */
+fun Screen.Pack.measured(): Measured? {
+    val n = listOf(kg, lengthCm, widthCm, heightCm).map { it.toDoubleOrNull() ?: return null }
+    return Measured(n[0], n[1], n[2], n[3])
 }
 
 class MainActivity : ComponentActivity() {
@@ -552,7 +562,9 @@ class MainActivity : ComponentActivity() {
         voice.say("बुकिंग हो रही है।")
         thread {
             val drivers = plan.stretches.mapIndexed { i, st -> st.drivers[s.picks[i]].uid }
-            val r = runCatching { Api.pack(s.parcel!!.uid, me!!.uid, s.receiver!!.uid, drivers, s.weight) }
+            val measured = s.measured()
+            val band = measured?.let { m -> charge(plan, m).getOrNull()?.band?.id } ?: s.weight
+            val r = runCatching { Api.pack(s.parcel!!.uid, me!!.uid, s.receiver!!.uid, drivers, band, measured) }
             runOnUiThread {
                 r.onSuccess { b ->
                     nfc.pendingWrite = b.trackUrl
@@ -1123,10 +1135,25 @@ class MainActivity : ComponentActivity() {
                     if (st.drivers.size > 1 && !s.paying) screen = s.copy(picks = s.picks.toMutableList().also { it[i] = (it[i] + 1) % st.drivers.size })
                 }
             }
-            val fee = plan.bands.firstOrNull { it.id == s.weight }?.fee ?: plan.fee
+            // The shop measures; the price follows as it types, on the larger of the weight and the volume weight.
+            val charged = s.measured()?.let { charge(plan, it) }
+            val fee = charged?.getOrNull()?.band?.fee ?: plan.fee
             if (plan.bands.isNotEmpty()) {
-                Heading("वज़न", "Weight")
-                plan.bands.forEach { b -> Choice(b.label, "₹${"%.2f".format(b.fee)}", s.weight == b.id) { if (!s.paying) screen = s.copy(weight = b.id) } }
+                Heading("वज़न और नाप", "Weight and size")
+                Field(pick("वज़न (kg)", "Weight (kg)"), s.kg, { if (!s.paying) screen = s.copy(kg = it.filter { c -> c.isDigit() || c == '.' }) }, "3.5", number = true)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(Triple(pick("लंबाई cm", "Length cm"), s.lengthCm) { v: String -> s.copy(lengthCm = v) },
+                        Triple(pick("चौड़ाई cm", "Width cm"), s.widthCm) { v: String -> s.copy(widthCm = v) },
+                        Triple(pick("ऊँचाई cm", "Height cm"), s.heightCm) { v: String -> s.copy(heightCm = v) }).forEach { (label, value, set) ->
+                        Box(Modifier.weight(1f)) { Field(label, value, { if (!s.paying) screen = set(it.filter { c -> c.isDigit() || c == '.' }) }, "30", number = true) }
+                    }
+                }
+                charged?.onSuccess { c ->
+                    Sheet {
+                        Line(pick("इतने का किराया", "Charged as"), "${"%.1f".format(c.chargeableKg)} kg", Tokens.ink, big = true)
+                        Body(pick("नाप से वज़न ${"%.1f".format(c.volumeKg)} kg (L × W × H ÷ ${plan.volumeDivisor.toInt()})। ${c.band.label}", "Volume weight ${"%.1f".format(c.volumeKg)} kg (L × W × H ÷ ${plan.volumeDivisor.toInt()}). Band: ${c.band.label}"), Tokens.muted, 14)
+                    }
+                }?.onFailure { e -> if (s.kg.isNotBlank() && s.lengthCm.isNotBlank() && s.widthCm.isNotBlank() && s.heightCm.isNotBlank()) Body(e.message ?: "", Tokens.red, 15) }
             }
             Sheet {
                 plan.stretches.lastOrNull()?.drivers?.getOrNull(s.picks.lastOrNull() ?: 0)?.arrivesAt?.let { Line("पहुँचेगा · Arrives", clock(it), Tokens.green) }
@@ -1141,6 +1168,7 @@ class MainActivity : ComponentActivity() {
                 Action("UPI से ₹${maxOf(500, kotlin.math.ceil(short).toInt())} जोड़ें", "Top up ₹${maxOf(500, kotlin.math.ceil(short).toInt())} by UPI") { payByUpi(maxOf(500, kotlin.math.ceil(short).toInt())) }
             }
             if (s.paying) Bi("बुकिंग और भुगतान हो रहा है…", "Booking and paying from the shop's account. Usually 15 to 20 seconds.", Tokens.muted, 18)
+            else if (plan.bands.isNotEmpty() && charged?.isSuccess != true) Body(pick("बुक करने के लिए वज़न और नाप लिखें।", "Enter the weight and size to book."), Tokens.muted, 16)
             else if (short <= 0) Action("₹${"%.2f".format(fee)} में बुक करें", "Book and pay ₹${"%.2f".format(fee)} from your balance") { pay(s) }
         }
         s.booking?.let { b ->

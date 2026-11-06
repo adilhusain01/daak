@@ -114,6 +114,32 @@ test("weight bands multiply the meter: x1 up to 5 kg, x1.5 to 15, x2 to 30, x3 t
   assert.equal(bandFor(51), null); // too heavy for a bus parcel
 });
 
+test("a measured parcel is priced on the larger of its weight and its volume weight (L x W x H cm / 5000)", async () => {
+  const { measure } = await import("../lib/network.ts");
+  // A light box: 3 kg on the scale, 30 x 20 x 15 cm is 1.8 kg by volume. Charged as 3 kg, the lightest band.
+  const small = measure({ kg: 3, lengthCm: 30, widthCm: 20, heightCm: 15 });
+  assert.ok(!("error" in small));
+  if (!("error" in small)) { assert.equal(small.volumeKg, 1.8); assert.equal(small.chargeableKg, 3); assert.equal(small.band.id, "s"); }
+  // A bulky bundle of cloth: 4 kg, but 60 x 50 x 40 cm is 24 kg by volume. Charged as 24 kg: the 15 to 30 kg band.
+  const bulky = measure({ kg: 4, lengthCm: 60, widthCm: 50, heightCm: 40 });
+  assert.ok(!("error" in bulky));
+  if (!("error" in bulky)) { assert.equal(bulky.volumeKg, 24); assert.equal(bulky.chargeableKg, 24); assert.equal(bulky.band.id, "l"); }
+  // Heavy and small: 20 kg in a 30 cm cube (5.4 kg by volume) is charged on its 20 kg.
+  const heavy = measure({ kg: 20, lengthCm: 30, widthCm: 30, heightCm: 30 });
+  assert.ok(!("error" in heavy));
+  if (!("error" in heavy)) assert.equal(heavy.band.id, "l");
+});
+
+test("a parcel too heavy, too big, too long or without real measurements is refused", async () => {
+  const { measure } = await import("../lib/network.ts");
+  assert.ok("error" in measure({ kg: 55, lengthCm: 40, widthCm: 30, heightCm: 30 })); // over 50 kg on the scale
+  assert.ok("error" in measure({ kg: 10, lengthCm: 100, widthCm: 60, heightCm: 50 })); // 60 kg by volume
+  assert.ok("error" in measure({ kg: 2, lengthCm: 130, widthCm: 10, heightCm: 10 })); // longer than a bus rack takes
+  assert.ok("error" in measure({ kg: 0, lengthCm: 30, widthCm: 20, heightCm: 15 }));
+  assert.ok("error" in measure({ kg: 3, lengthCm: 30, widthCm: -2, heightCm: 15 }));
+  assert.ok("error" in measure({ kg: Number.NaN, lengthCm: 30, widthCm: 20, heightCm: 15 }));
+});
+
 test("an unknown weight band is refused, never priced as the lightest", async () => {
   const { meterFee } = await import("../lib/network.ts");
   assert.throws(() => meterFee(100, "huge"));

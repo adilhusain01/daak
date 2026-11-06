@@ -54,9 +54,30 @@ fun clock(ms: Long): String {
     return if (t.toLocalDate() == java.time.LocalDate.now(zone)) hm else "${t.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)} $hm"
 }
 data class Stretch(val id: String, val from: String, val to: String, val km: Int, val drivers: List<DriverOpt>)
-data class Plan(val from: String, val to: String, val km: Int, val fee: Double, val meter: String, val stretches: List<Stretch>, val bands: List<Band> = emptyList(), val etaAt: Long? = null)
-/** A weight band and what the whole booking costs in it. */
-data class Band(val id: String, val label: String, val fee: Double)
+data class Plan(
+    val from: String, val to: String, val km: Int, val fee: Double, val meter: String, val stretches: List<Stretch>, val bands: List<Band> = emptyList(), val etaAt: Long? = null,
+    /** The server's measuring rule, so the price shows as the shop types: volume weight is L x W x H / divisor. */
+    val volumeDivisor: Double = 5000.0, val maxSideCm: Double = 120.0,
+)
+/** A weight band, the heaviest it takes, and what the whole booking costs in it. */
+data class Band(val id: String, val label: String, val fee: Double, val maxKg: Double = 50.0)
+
+/** What the shop measured: the weight on the scale and the three sides. */
+data class Measured(val kg: Double, val lengthCm: Double, val widthCm: Double, val heightCm: Double)
+/** The parcel as Daak will charge it: the larger of its weight and its volume weight, and the band that takes it. */
+data class Charged(val volumeKg: Double, val chargeableKg: Double, val band: Band)
+
+/** The same rule as the server's measure() in lib/network.ts; the server measures again when it books. */
+fun charge(plan: Plan, m: Measured): Result<Charged> {
+    val sides = listOf(m.lengthCm, m.widthCm, m.heightCm)
+    if ((sides + m.kg).any { !it.isFinite() || it <= 0 }) return Result.failure(Exception("वज़न और तीनों नाप लिखें। Enter the weight and all three sides."))
+    if (sides.max() > plan.maxSideCm) return Result.failure(Exception("${plan.maxSideCm.toInt()} cm से लंबा बस में नहीं जाता। Longer than ${plan.maxSideCm.toInt()} cm does not fit a bus parcel rack."))
+    val volumeKg = Math.round(m.lengthCm * m.widthCm * m.heightCm / plan.volumeDivisor * 10) / 10.0
+    val chargeable = maxOf(m.kg, volumeKg)
+    val band = plan.bands.sortedBy { it.maxKg }.firstOrNull { chargeable <= it.maxKg }
+        ?: return Result.failure(Exception("50 kg से ज़्यादा बस पार्सल नहीं है। Charged as $chargeable kg: over 50 kg is not a bus parcel."))
+    return Result.success(Charged(volumeKg, chargeable, band))
+}
 data class Todo(val code: String, val text: String, val action: String)
 data class ParcelInfo(val registered: Boolean, val code: String?, val label: String?, val delivered: Boolean, val next: Next?)
 data class RoutePlan(val label: String, val from: String, val to: String, val stops: List<Pair<String, Int>>, val km: Int, val fee: Double, val meter: String)
@@ -306,8 +327,9 @@ object Api {
                     List(d.length()) { k -> d.getJSONObject(k).let { x -> DriverOpt(x.getString("uid"), x.getString("name"), x.optString("vehicle"), x.getInt("proven"), x.getInt("km"), (x.getDouble("cleanRate") * 100).toInt(),
                         if (x.isNull("departsAt")) null else x.optLong("departsAt"), if (x.isNull("arrivesAt")) null else x.optLong("arrivesAt")) } })
             } },
-            j.optJSONArray("bands")?.let { b -> List(b.length()) { b.getJSONObject(it).let { o -> Band(o.getString("id"), o.getString("label"), o.getDouble("feeRupees")) } } } ?: emptyList(),
-            if (j.isNull("etaAt")) null else j.optLong("etaAt"))
+            j.optJSONArray("bands")?.let { b -> List(b.length()) { b.getJSONObject(it).let { o -> Band(o.getString("id"), o.getString("label"), o.getDouble("feeRupees"), o.optDouble("maxKg", 50.0)) } } } ?: emptyList(),
+            if (j.isNull("etaAt")) null else j.optLong("etaAt"),
+            j.optJSONObject("measure")?.optDouble("volumeDivisor", 5000.0) ?: 5000.0, j.optJSONObject("measure")?.optDouble("maxSideCm", 120.0) ?: 120.0)
     }
 
     fun todo(uid: String): List<Todo> {
@@ -361,7 +383,7 @@ object Api {
     }
 
     /** The shop's agent books and pays for this parcel's delivery; returns the link to write on its tag. */
-    fun pack(parcel: String, sender: String? = null, receiver: String? = null, drivers: List<String> = emptyList(), weight: String = "s"): Booking {
+    fun pack(parcel: String, sender: String? = null, receiver: String? = null, drivers: List<String> = emptyList(), weight: String = "s", measured: Measured? = null): Booking {
         val conn = URL("$base/api/pack").openConnection() as HttpURLConnection
         conn.setRequestProperty("x-daak-app", BuildConfig.APP_KEY)
         conn.requestMethod = "POST"
@@ -370,6 +392,7 @@ object Api {
         conn.doOutput = true
         conn.setRequestProperty("Content-Type", "application/json")
         val body = JSONObject().put("parcel", parcel).put("weight", weight)
+        measured?.let { body.put("kg", it.kg).put("lengthCm", it.lengthCm).put("widthCm", it.widthCm).put("heightCm", it.heightCm) }
         if (sender != null && receiver != null && drivers.isNotEmpty()) body.put("sender", sender).put("receiver", receiver).put("drivers", org.json.JSONArray(drivers))
         conn.outputStream.use { it.write(body.toString().toByteArray()) }
         val text = (if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream).bufferedReader().readText()

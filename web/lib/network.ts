@@ -51,5 +51,24 @@ export const band = (id: string = "s") => {
   return b;
 };
 
+/**
+ * The shop measures the parcel; Daak prices it. Like a courier, the charge is on the larger of the weight on the
+ * scale and the volume weight (length x width x height in cm, divided by 5,000), and that weight picks the band.
+ * Longer than 120 cm does not fit a bus parcel rack. Published in /api/plan so the app can show the price as the
+ * shop types; the server measures again when it books.
+ */
+export const MEASURE = { volumeDivisor: 5000, maxSideCm: 120 } as const;
+export type Measured = { kg: number; lengthCm: number; widthCm: number; heightCm: number };
+export function measure(m: Measured): { volumeKg: number; chargeableKg: number; band: (typeof WEIGHT_BANDS)[number] } | { error: string } {
+  const sides = [m.lengthCm, m.widthCm, m.heightCm];
+  if (![m.kg, ...sides].every((x) => Number.isFinite(x) && x > 0)) return { error: "Enter the weight and all three sides" };
+  if (Math.max(...sides) > MEASURE.maxSideCm) return { error: `Longer than ${MEASURE.maxSideCm} cm does not fit a bus parcel rack` };
+  const volumeKg = Math.round((m.lengthCm * m.widthCm * m.heightCm) / MEASURE.volumeDivisor * 10) / 10;
+  const chargeableKg = Math.max(m.kg, volumeKg);
+  const b = bandFor(chargeableKg);
+  if (!b) return { error: `Charged as ${chargeableKg} kg: over 50 kg is not a bus parcel` };
+  return { volumeKg, chargeableKg, band: b };
+}
+
 export const meterFee = (km: number, bandId: string = "s") =>
   Math.round((METER.baseRupees + METER.perKmRupees * km) * band(bandId).factor * 100) / 100;

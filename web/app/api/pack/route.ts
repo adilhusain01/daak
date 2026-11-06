@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { agentBook } from "@/lib/agent";
 import { recentConsignments, type Leg } from "@/lib/arkiv";
 import { buildRoute } from "@/lib/booking";
-import { band } from "@/lib/network";
+import { band, measure } from "@/lib/network";
 
 /**
  * The shop books a parcel: from its own bus stand to the receiver's, with one chosen driver per stretch.
@@ -12,8 +12,18 @@ import { band } from "@/lib/network";
  */
 export async function POST(req: Request) {
   if (!isApp(req)) return denied("app");
-  const body = (await req.json()) as { parcel: string; sender?: string; receiver?: string; drivers?: string[]; weight?: string };
+  const body = (await req.json()) as {
+    parcel: string; sender?: string; receiver?: string; drivers?: string[]; weight?: string;
+    kg?: number; lengthCm?: number; widthCm?: number; heightCm?: number;
+  };
   if (!body.parcel) return NextResponse.json({ error: "Tap a parcel first" }, { status: 400 });
+  // A measured parcel: the server works out the band from the weight and the sides, whatever the app showed.
+  // An older app still sends a band.
+  if (body.kg != null || body.lengthCm != null) {
+    const m = measure({ kg: Number(body.kg), lengthCm: Number(body.lengthCm), widthCm: Number(body.widthCm), heightCm: Number(body.heightCm) });
+    if ("error" in m) return NextResponse.json({ error: m.error }, { status: 400 });
+    body.weight = m.band.id;
+  }
   try { band(body.weight ?? "s"); } catch { return NextResponse.json({ error: "Choose a weight band" }, { status: 400 }); }
   // A cap so a leaked app key cannot make Daak's agent spend without limit.
   const cap = Number(process.env.BOOKINGS_PER_HOUR ?? 12);
