@@ -197,8 +197,8 @@ export default function Landing() {
 
         <section className="grid grid-cols-1 gap-8 border-t border-rule py-24 sm:py-32 md:grid-cols-3">
           {[
-            ["Drivers", "Paid per km at every handover, and a record of proven work that raises their share."],
-            ["Shops", "One published rate, a photo at every stand, and a refund from the responsible driver's held pay."],
+            ["Drivers", "Paid by the km and the parcel's weight at every handover, and a record of proven work that raises their share."],
+            ["Shops", "One published meter by distance and weight, a photo at every stand, and a refund from the responsible driver's held pay."],
             ["Receiving shops", "Tap the parcel with any phone. No app, no account."],
           ].map(([t, d]) => (
             <div key={t}>

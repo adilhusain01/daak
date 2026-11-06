@@ -13,7 +13,7 @@ export const SHOTS: Shot[] = [
   { t0: 10, t1: 15, place: "Kanpur stand, 9:00", title: "Ramesh's bus pulls in", body: "He took the job in the app: 87 km, ₹44.71.", tech: "Arkiv records", logo: "arkiv" },
   { t0: 15, t1: 21, place: "Kanpur stand", title: "Sticker, badge, lid photo", body: "Ramesh's phone signs the handoff. The photo is stored encrypted.", tech: "Android Keystore, Swarm", logo: "swarm" },
   { t0: 21, t1: 28, place: "Inside a sealed machine", title: "0G reads the lid", body: "Right code, still sealed. Then it goes on the public log.", tech: "0G compute in a TEE, Hedera HCS", logo: "0g" },
-  { t0: 28, t1: 35, place: "On the road, 87 km", title: "Every kilometre on the meter", body: "₹5 plus 50 paise a km, the same rate for every shop." },
+  { t0: 28, t1: 35, place: "On the road, 87 km", title: "Every kilometre on the meter", body: "₹5 plus 50 paise a km, more for a heavier parcel. One rule for every shop." },
   { t0: 35, t1: 41, place: "Lucknow, Charbagh", title: "Ramesh hands it to Suresh", body: "The moment Suresh confirms, Ramesh is paid ₹22.35. The rest waits.", tech: "Hedera token transfer", logo: "hedera" },
   { t0: 41, t1: 48, place: "On to Gorakhpur, 272 km", title: "Suresh carries it on", body: "A second bus, a second driver, the same record." },
   { t0: 48, t1: 53, place: "Ghosh Cloth House, Gorakhpur", title: "Delivered", body: "The receiver confirms. Suresh is paid ₹69.89 at once.", tech: "Hedera token transfer", logo: "hedera" },

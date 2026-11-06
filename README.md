@@ -76,7 +76,7 @@ The operator's assistant reads the network through the Hedera Agent Kit (`@hashg
 
 ## Tests
 
-`cd web && npm test` runs the rules that decide money, trust and privacy, written before the code: the meter, the kilometre split, the advance tiers and holdbacks, the protection pool, Bachat, the fuel advance, route finding, the stand check, sealing, badge hashes, handoff signatures, the other person's code (fresh, single use, their phone), vouching and its limits, Google identities, comparing a 0G ID reading with the claim, and each booking's compute share and top-ups (47 tests).
+`cd web && npm test` runs the rules that decide money, trust and privacy, written before the code: the meter, the kilometre split, the advance tiers and holdbacks, the protection pool, Bachat, the fuel advance, route finding, the stand check, sealing, badge hashes, handoff signatures, the other person's code (fresh, single use, their phone), vouching and its limits, Google identities, comparing a 0G ID reading with the claim, and each booking's compute share and top-ups, and the measured parcel (weight, size and the per-kg meter) (57 tests).
 
 ## Live on testnet
 
@@ -103,7 +103,7 @@ The operator's assistant reads the network through the Hedera Agent Kit (`@hashg
 | The same share in 0G into the compute account (0.032 0G) | [tx 0x155619fe…](https://chainscan.0g.ai/tx/0x155619fe0b72df48ac06d0a647a3db260099f451892e937e2ebefbfabe91f6a2) |
 | Arkiv owner wallet (Rabdi) | `0x610FdB41DA83138615C317c89fd9EB09271a46fe` |
 
-Deployed web app: https://daak-ethglobal.vercel.app (landing at `/`, every delivery read-only at `/live`, operator dashboard at `/ops`, drivers at `/drivers`, the network map at `/network`, tracking at `/track/<code>`).
+Deployed web app: https://daak-ethglobal.vercel.app (landing at `/`, the four pitch slides at `/pitch` and in `docs/pitch.pdf`, every delivery read-only at `/live`, operator dashboard at `/ops`, drivers at `/drivers`, the network map at `/network`, tracking at `/track/<code>`).
 
 The network map draws India Post's 1,43,609 offices (All India Pincode Directory, GODL-India), 6,021 bus stations from OpenStreetMap (ODbL) and Daak's corridor along the road (OSRM), on an OpenFreeMap basemap. The data is baked into `web/public/map/india.json`, so the page calls no outside API except the map tiles.
 
@@ -113,7 +113,7 @@ The network map draws India Post's 1,43,609 offices (All India Pincode Directory
 - `web/`: Next.js. The API (`/api/book`, `/api/pack`, `/api/handoff`, `/api/review`, `/api/recheck`, `/api/google`, `/api/vouch`, `/api/kyc`, `/api/track/[code]`, `/api/live`, `/api/parcels/[uid]`, `/api/driver/[uid]`, `/api/consignments`), the landing page, `/live`, the operator dashboard and the tracking page. All sponsor keys stay here. `web/scripts/zg-direct-setup.mts`, `zg-compute.mts` and `zg-check.mts` open, show and test Daak's 0G compute account.
 - `arkiv/`: how Daak uses Arkiv and Swarm, its schema and the friction we hit. `web/scripts/arkiv-query.mts` is a query anyone can run without keys.
 - `docs/`: the business notes and `planning/` (decisions and the team's prompts).
-- `video/`: the explainer film (HyperFrames).
+- `video/`: the explainer film (HyperFrames), and `video/hero/film.tsx`, the landing's one-minute hero film rendered by raea (the site lays its captions over it from `web/components/landing/film-timeline.ts`).
 
 ## Getting started
 

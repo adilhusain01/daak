@@ -12,7 +12,7 @@ import { ROUTE } from "@/components/landing/route";
 const STEPS = [
   { title: "A parcel in UP changes hands three times.", line: "Two buses, three people, and no receipt at any stand.", tint: "#ece5d3", gold: 0.04 },
   { title: "Daak turns every stand into a receipt.", line: "Tap the sticker, tap the badge, photograph the lid. The phone signs it.", tint: "#e8e0ca", gold: 0.16 },
-  { title: "Every driver is paid by the kilometre.", line: "Half at the handover, the rest on delivery. ₹5 plus 50 paise a km.", tint: "#e5dcc6", gold: 0.34 },
+  { title: "Every driver is paid by the kilometre.", line: "By the km and the parcel's weight. Part at the handover, the rest on delivery.", tint: "#e5dcc6", gold: 0.34 },
   { title: "All of it is on the public record.", line: "Anyone can check a handoff on Hedera. Nobody can quietly change one.", tint: "#eee7d5", gold: 0.62 },
 ] as const;
 

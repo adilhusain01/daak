@@ -57,7 +57,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 ## Story and submission
 
 - [ ] Slides (4, at most four bullets each) and rehearsal with stickers and two phones. Script, video shot list and answers to judges' and VCs' questions are drafted in `docs/demo.md`.
-- [ ] The cinematic film as a 15-second opener at most (it cannot be the submission video: no voice).
+- [ ] The cinematic film as a 15-second opener at most (it cannot be the submission video: no voice). The full one-minute film now plays in the landing hero (`video/hero/film.tsx`, raea).
 - [ ] Final README pass: 0G proof or the outage write-up, the business numbers.
 
 ## Done
@@ -89,6 +89,7 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [x] Split payout with a holdback: 50, 70 or 90% at the confirmed handover by record; holdbacks in one Hedera schedule that releases itself after `HOLDBACK_HOURS`; the liable leg repays the shop; protection pool from 1 point of the booking fee.
 - [x] Bus number checked against the plate format, bus operator, and driver KYC (ID type, last 4, encrypted ID photo, operator verifies, decision on HCS).
 - [x] Weight in the meter: four bands, every price shown before paying, carried into daily orders (KNP-8812).
+- [x] 6 Nov afternoon: the shop enters weight and size; priced on the larger of the weight and L x W x H / 5,000, every kg over 5 adds a tenth of the meter, so driver pay follows the parcel (57 tests). Design pass after Umbra on web and app, the raea hero film, sourced state bus parcel figures on the landing, the four pitch slides at /pitch and docs/pitch.pdf.
 - [x] Standing orders: daily repeat booking, booked and paid at 04:00 IST by Vercel Cron, the day's parcel attaches with a tap (KNP-3047).
 - [x] Booking fee: 12% of the meter, at least ₹5. Meter on road km (87 and 272).
 - [x] Network map (`/network`): India Post offices, OpenStreetMap bus stations, the corridor along the road.

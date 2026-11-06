@@ -12,7 +12,7 @@ What users see, read from Arkiv:
 What Daak writes:
 
 - **People.** Joining writes a `daak.badge`: name, role, bus and stretches in the clear; phone, UPI ID and the ID details sealed. Later patches add the phone's signing key (`devicePub`) and the operator's ID decision (`kycStatus`), in place with `patchEntity`.
-- **The booking.** When the shop's agent pays over x402, the consignment (route, km per leg, each driver's share at handover, fee in paise, weight band) is written before any money moves, so a failed write never strands money in escrow.
+- **The booking.** When the shop's agent pays over x402, the consignment (route, km per leg, each driver's share at handover, fee in paise, weight: a band, or the measured parcel as `kg:24|60x50x40`) is written before any money moves, so a failed write never strands money in escrow.
 - **Each handoff.** The handoff API finds the parcel's newest consignment by its NFC serial (an indexed column), reads which hops are done, and writes the new handoff with the 0G verdict, the HCS sequence, the photo hash, the GPS point and the sealed Swarm reference of the lid photo.
 - **Daily orders.** A `daak.standing` entity per repeat booking. The 04:00 IST run reads the active ones, books those due, and patches `lastRun` and `lastCode`; when the shop taps that day's parcel, the consignment's `parcel` column is patched from a placeholder to the real tag.
 - **Driver preferences.** Bachat on or off; the payout reads the newest one.
