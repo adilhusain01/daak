@@ -104,10 +104,10 @@ export async function setDevicePub(uid: string, devicePub: string, replace = fal
 }
 
 /** A driver's bus times and days off, patched in place. */
-export async function setDriverTimes(uid: string, set: { timetable?: string; away?: string[] }) {
+export async function setDriverTimes(uid: string, set: { timetable?: string; away?: string[]; legs?: string[] }) {
   const b = await getBadge(uid);
   if (!b) throw new Error("Unknown badge");
-  const values = { ...(set.timetable != null ? { timetable: set.timetable } : {}), ...(set.away != null ? { away: set.away.slice(-6).join(",") } : {}) };
+  const values = { ...(set.timetable != null ? { timetable: set.timetable } : {}), ...(set.away != null ? { away: set.away.slice(-6).join(",") } : {}), ...(set.legs != null ? { legs: set.legs.join(",") } : {}) };
   const { txHash } = await arkivWrite().patchEntity(Badges, b.key as `0x${string}`, { set: values });
   return { entityKey: b.key, txHash: String(txHash) };
 }

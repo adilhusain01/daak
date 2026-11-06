@@ -79,3 +79,45 @@ export function placeCheck(spot: { lat: number; lng: number; acc: number } | nul
   const metres = 2 * R * Math.asin(Math.sqrt(h));
   return { ok: metres - Math.min(Math.max(spot.acc, 0), MAX_ACCURACY_M) <= radiusM, metres: Math.round(metres) };
 }
+
+/** What 0G read off a driver's ID photo. */
+export type IdReading = { docType: string; name: string; last4: string; vehicleClasses: string; masked: boolean; edited: boolean };
+
+const letters = (s: string) => s.toUpperCase().replace(/[^A-Z ]/g, " ").split(/\s+/).filter(Boolean);
+/** Licence classes that allow a bus: transport, heavy passenger or heavy goods. */
+const BUS_CLASSES = /\b(TRANS|TR|HPMV|HTV|HGMV|PSV|BUS|HMV)\b/i;
+
+/**
+ * Compares 0G's reading of an ID with what the driver claimed: the ID type, every word of the claimed name present on
+ * the card, the last 4 characters, a licence class that allows a bus, Aadhaar masked, and nothing that looks edited.
+ * A null means the check does not apply to this kind of ID. The operator still decides.
+ */
+export function compareId(read: IdReading, claimed: { idType: string; name: string; last4: string }) {
+  const onCard = new Set(letters(read.name));
+  return {
+    typeOk: read.docType === claimed.idType,
+    nameOk: letters(claimed.name).length > 0 && letters(claimed.name).every((w) => onCard.has(w)),
+    last4Ok: read.last4.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(-4) === claimed.last4.toUpperCase(),
+    busOk: claimed.idType === "dl" ? BUS_CLASSES.test(read.vehicleClasses) : null,
+    maskOk: claimed.idType === "aadhaar_masked" ? read.masked : null,
+    editedOk: !read.edited,
+  };
+}
+
+export const VOUCHES_PER_30_DAYS = 3;
+const DAY = 86_400_000;
+
+/**
+ * Whether someone may vouch now, read from the public log (badges as hashes). At most three vouches in 30 days, and
+ * none for 90 days after someone they vouched for is found responsible for a damaged or lost parcel.
+ */
+export function vouchStanding(log: { t: string; ts: number; [k: string]: unknown }[], voucher: string, now: number): { ok: true; left: number } | { ok: false; why: string } {
+  const mine = log.filter((m) => m.t === "daak.vouched" && m.by === voucher);
+  const vouchedFor = new Set(mine.map((m) => m.who));
+  const responsible = log.filter((m) => m.t === "daak.refunded" && m.liableHop != null && now - m.ts < 90 * DAY).map((r) =>
+    log.find((h) => h.t === "daak.handoff" && h.code === r.code && h.hop === r.liableHop)?.from);
+  if (responsible.some((d) => d && vouchedFor.has(d))) return { ok: false, why: "Someone you vouched for was found responsible for a damaged parcel. You can vouch again after 90 days." };
+  const recent = mine.filter((m) => now - m.ts < 30 * DAY).length;
+  if (recent >= VOUCHES_PER_30_DAYS) return { ok: false, why: `You have vouched for ${VOUCHES_PER_30_DAYS} people in the last 30 days. Wait before vouching again.` };
+  return { ok: true, left: VOUCHES_PER_30_DAYS - recent };
+}

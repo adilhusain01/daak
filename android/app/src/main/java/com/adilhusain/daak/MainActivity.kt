@@ -90,6 +90,8 @@ class MainActivity : ComponentActivity() {
     private var awayBusy by mutableStateOf(false)
     private var timesEdit by mutableStateOf<Map<String, String>?>(null)
     private var timesBusy by mutableStateOf(false)
+    /** Stretches being edited on the Me tab (null when unchanged). */
+    private var legsEdit by mutableStateOf<Set<String>?>(null)
     /** Adding an ID from the Me tab: type, last 4, photo, sending. */
     private var idType by mutableStateOf<String?>(null)
     private var idLast4 by mutableStateOf("")
@@ -659,15 +661,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun saveTimes(times: Map<String, String>) {
+    private fun saveTimes(times: Map<String, String>, legs: Set<String>? = null) {
         val uid = me?.uid ?: return
         timesBusy = true
         thread {
-            val r = runCatching { Api.setTimes(uid, times.filterValues { it.isNotBlank() }) }
+            val r = runCatching { Api.setTimes(uid, times.filterValues { it.isNotBlank() }.filterKeys { legs == null || it in legs }, legs?.toList()) }
             val w = runCatching { Api.work(uid) }.getOrNull()
             runOnUiThread {
                 timesBusy = false
-                r.onSuccess { if (w != null) work = w; timesEdit = null; voice.buzz(); note = null }
+                r.onSuccess { if (w != null) work = w; timesEdit = null; legsEdit = null; voice.buzz(); note = null }
                     .onFailure { note = it.message ?: "Could not save the times." }
             }
         }
@@ -914,13 +916,16 @@ class MainActivity : ComponentActivity() {
         LanguageSwitch()
         if (p.role == "driver") work?.let { w ->
             val edit = timesEdit ?: w.times
+            val legs = legsEdit ?: w.legs.toSet()
             Sheet {
-                Heading("बस का समय", "Your bus times")
-                Body("When your bus leaves on each stretch, Monday to Saturday. Shops see your ETA and only connecting buses are booked.", Tokens.muted, 14)
-                if (w.legs.isEmpty()) Body("No stretches yet.", Tokens.muted, 15)
-                w.legs.forEach { leg -> Field(legNames[leg] ?: leg.replace("-", " to "), edit[leg] ?: "", { v -> timesEdit = edit + (leg to timeInput(v)) }, "06:30", number = true) }
+                Heading("रास्ते और बस का समय", "Your stretches and bus times")
+                Body(pick("आप कौन से रास्ते चलाते हैं और बस कब चलती है, सोमवार से शनिवार। दुकानों को आपका समय दिखता है।", "Which stretches you drive and when your bus leaves, Monday to Saturday. Shops see your ETA and only connecting buses are booked."), Tokens.muted, 14)
+                (legNames.keys.ifEmpty { w.legs }).forEach { leg ->
+                    Choice(legNames[leg] ?: leg.replace("-", " to "), null, leg in legs) { legsEdit = if (leg in legs) legs - leg else legs + leg }
+                    if (leg in legs) Field(pick("बस कब चलती है (HH:MM)", "Your bus leaves at (HH:MM)"), edit[leg] ?: "", { v -> timesEdit = edit + (leg to timeInput(v)) }, "06:30", number = true)
+                }
             }
-            if (timesEdit != null) Action(if (timesBusy) "सेव हो रहा है…" else "समय सेव करें", if (timesBusy) "Saving…" else "Save bus times", enabled = !timesBusy) { saveTimes(edit) }
+            if ((timesEdit != null || legsEdit != null) && legs.isNotEmpty()) Action(if (timesBusy) "सेव हो रहा है…" else "सेव करें", if (timesBusy) "Saving…" else "Save", enabled = !timesBusy) { saveTimes(edit, legsEdit) }
         }
         if (p.role == "driver") work?.let { w -> TrustCard(w) }
         if (p.role == "driver") work?.let { w ->

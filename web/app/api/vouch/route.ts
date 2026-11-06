@@ -5,12 +5,14 @@ import { getBadge } from "@/lib/arkiv";
 import { readLog } from "@/lib/history";
 import { submitLog } from "@/lib/hedera";
 import { checkReceiveProof, verifyHandoff, vouchMessage } from "@/lib/signing";
+import { vouchStanding } from "@/lib/rules";
 
 const short = (uid: string) => createHash("sha256").update(uid).digest("hex").slice(0, 12);
 
 /**
  * A vouch: someone whose ID Daak has checked scans a newcomer's code and signs "I know this person". Both
- * signatures go on the public log; the newcomer's record shows who vouched. One vouch per pair.
+ * signatures go on the public log; the newcomer's record shows who vouched. One vouch per pair, three per voucher in
+ * 30 days, and none for 90 days after someone the voucher vouched for is found responsible for a damaged parcel.
  */
 export async function POST(req: Request) {
   if (!isApp(req)) return denied("app");
@@ -23,6 +25,9 @@ export async function POST(req: Request) {
   if (by.kycStatus !== "verified") return NextResponse.json({ error: "Only someone whose ID Daak has checked can vouch. Add your ID on the Me tab." }, { status: 403 });
   if (!newcomer) return NextResponse.json({ error: "That person has not joined Daak yet." }, { status: 404 });
   const log = await readLog().catch(() => []);
+  // A vouch puts the voucher's own standing on the line: three in 30 days at most, none after a bad one.
+  const standing = vouchStanding(log as never, short(voucher), Date.now());
+  if (!standing.ok) return NextResponse.json({ error: standing.why }, { status: 429 });
   const used = new Set(log.map((m) => (m as { nonce?: string; confirm?: { nonce?: string } }).nonce ?? (m as { confirm?: { nonce?: string } }).confirm?.nonce).filter((n): n is string => Boolean(n)));
   const proof = checkReceiveProof(code, { to: uid, devicePub: newcomer.devicePub, now: Date.now(), used });
   if (!proof.ok) return NextResponse.json({ error: proof.why }, { status: 401 });

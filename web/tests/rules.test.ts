@@ -213,3 +213,48 @@ test("the stand check holds a handoff far from the stand, caps the claimed GPS a
   assert.equal(placeCheck({ lat: 19.0596, lng: 72.8295, acc: 10 }, stand, 0).ok, true);    // check off
   assert.equal(placeCheck(null, null, 500).ok, true);                                         // stand has no coordinates
 });
+
+// The 0G reading of a driver's ID, compared with what the driver claimed when joining.
+import { compareId } from "../lib/rules.ts";
+
+test("an ID read by 0G matches when the type, the name and the last 4 agree", () => {
+  const r = compareId({ docType: "dl", name: "ADIL HUSAIN", last4: "4821", vehicleClasses: "LMV, TRANS", masked: false, edited: false }, { idType: "dl", name: "Adil Husain", last4: "4821" });
+  assert.deepEqual(r, { typeOk: true, nameOk: true, last4Ok: true, busOk: true, maskOk: null, editedOk: true });
+});
+
+test("a different name, wrong last 4 or a car-only licence is flagged", () => {
+  const r = compareId({ docType: "dl", name: "RAJESH KUMAR", last4: "1111", vehicleClasses: "MCWG, LMV", masked: false, edited: false }, { idType: "dl", name: "Adil Husain", last4: "4821" });
+  assert.equal(r.nameOk, false);
+  assert.equal(r.last4Ok, false);
+  assert.equal(r.busOk, false);
+});
+
+test("an Aadhaar must be masked, and an edited-looking photo is flagged", () => {
+  const r = compareId({ docType: "aadhaar_masked", name: "Ramesh Yadav", last4: "9012", vehicleClasses: "", masked: false, edited: true }, { idType: "aadhaar_masked", name: "Ramesh", last4: "9012" });
+  assert.equal(r.maskOk, false);
+  assert.equal(r.editedOk, false);
+  assert.equal(r.busOk, null);
+});
+
+// Vouching puts the voucher's own standing on the line, and nobody can vouch in bulk.
+import { vouchStanding } from "../lib/rules.ts";
+
+const day = 86_400_000, T = 1793950000000;
+const vouch = (by: string, who: string, ts: number) => ({ t: "daak.vouched", by, who, ts });
+
+test("a voucher can vouch for three people in 30 days, not four", () => {
+  const log = [vouch("v1", "a", T - 2 * day), vouch("v1", "b", T - 3 * day), vouch("v1", "c", T - 4 * day)];
+  assert.deepEqual(vouchStanding(log, "v1", T), { ok: false, why: "You have vouched for 3 people in the last 30 days. Wait before vouching again." });
+  assert.deepEqual(vouchStanding([...log.slice(0, 2), vouch("v1", "c", T - 40 * day)], "v1", T), { ok: true, left: 1 });
+});
+
+test("if someone you vouched for is found responsible for a damaged parcel, you cannot vouch for 90 days", () => {
+  const log = [
+    vouch("v1", "d1", T - 50 * day),
+    { t: "daak.handoff", code: "KNP-1", hop: 2, from: "d1", to: "d2", ts: T - 20 * day },
+    { t: "daak.refunded", code: "KNP-1", liableHop: 2, ts: T - 19 * day },
+  ];
+  assert.equal(vouchStanding(log, "v1", T).ok, false);
+  assert.equal(vouchStanding(log, "v1", T + 80 * day).ok, true);
+  assert.equal(vouchStanding(log, "someone-else", T).ok, true);
+});

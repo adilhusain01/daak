@@ -104,19 +104,21 @@ async function sealedRouterProvider() {
   return p.address;
 }
 
-async function routerCheck(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Check> {
+/** Any question about a photo, answered by the sealed vision model through the Router. Returns the text and receipt. */
+export async function askSealed(photo: Buffer, prompt: string, budgetMs = 40_000): Promise<{ content: string; requestId?: string; model: string }> {
+  if (!process.env.ZG_ROUTER_KEY) throw new Error("0G Router key is not set");
   const provider = await sealedRouterProvider();
   const res = await fetch(`${ROUTER}/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.ZG_ROUTER_KEY}`, "X-0G-Provider-Address": provider, "X-0G-Provider-Trust-Mode": "private" },
-    signal: AbortSignal.timeout(40_000),
+    signal: AbortSignal.timeout(budgetMs),
     body: JSON.stringify({
       model: routerModel(),
       temperature: 0,
       max_tokens: 400,
       chat_template_kwargs: { enable_thinking: false },
       messages: [{ role: "user", content: [
-        { type: "text", text: parcelPrompt(expectedCode, hopLabel) },
+        { type: "text", text: prompt },
         { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photo.toString("base64")}` } },
       ] }],
     }),
@@ -124,8 +126,12 @@ async function routerCheck(photo: Buffer, expectedCode: string, hopLabel: string
   const text = await res.text();
   if (!res.ok) throw new Error(`0G Router ${res.status}: ${text.slice(0, 200)}`);
   const data = JSON.parse(text);
-  const content: string = data.choices?.[0]?.message?.content ?? "";
-  return { ...parseAnswer(content), requestId: data.id ?? res.headers.get("x-request-id") ?? undefined, verified: null, model: `${data.model ?? routerModel()} via 0G Router, provider ${provider}` };
+  return { content: data.choices?.[0]?.message?.content ?? "", requestId: data.id ?? res.headers.get("x-request-id") ?? undefined, model: `${data.model ?? routerModel()} via 0G Router, provider ${provider}` };
+}
+
+async function routerCheck(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Check> {
+  const r = await askSealed(photo, parcelPrompt(expectedCode, hopLabel));
+  return { ...parseAnswer(r.content), requestId: r.requestId, verified: null, model: r.model };
 }
 
 async function checkParcelInner(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Check> {

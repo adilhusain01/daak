@@ -211,9 +211,15 @@ object Api {
     }
 
     /** A driver's bus times on their stretches, "HH:MM", running Monday to Saturday. */
-    fun setTimes(uid: String, times: Map<String, String>) {
+    /** Bus times per stretch; with [legs], also which stretches the driver runs (signed by this phone). */
+    fun setTimes(uid: String, times: Map<String, String>, legs: List<String>? = null) {
         val t = JSONObject().apply { times.forEach { (leg, dep) -> put(leg, JSONObject().put("dep", dep).put("days", "1111110")) } }
-        val (c, j) = post("/api/driver/${enc(uid)}/timetable", JSONObject().put("timetable", t), 60000)
+        val body = JSONObject().put("timetable", t)
+        if (legs != null) {
+            val at = System.currentTimeMillis()
+            body.put("legs", org.json.JSONArray(legs)).put("at", at).put("sig", DeviceKey.sign("daak.route|$uid|${legs.joinToString(",")}|$at"))
+        }
+        val (c, j) = post("/api/driver/${enc(uid)}/timetable", body, 60000)
         if (c !in 200..299) error(j.optString("error", "server $c"))
     }
 
