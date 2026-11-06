@@ -22,6 +22,24 @@ function broker() {
  * Asks a sealed (TeeML) vision model on 0G whether this parcel belongs on this hop and is still intact.
  * Throws when 0G cannot be reached or has no credit; the caller must then record the handoff as unchecked.
  */
+/** The one question every vision check answers, sealed on 0G or the labelled backup. */
+export const parcelPrompt = (expectedCode: string, hopLabel: string) =>
+  `You check parcels handed between bus drivers in India. The parcel should carry the consignment code "${expectedCode}" ` +
+  `written on it, and this handoff is ${hopLabel}. Look at the photo and answer only with JSON: ` +
+  `{"code_read": string (the code you can read, or ""), "match": boolean (true only if the code you read is ${expectedCode}), ` +
+  `"condition": "intact" | "damaged" | "opened" | "unclear", "reason": string (one short sentence)}.`;
+
+/** Parses a model's JSON answer into a check (shared by 0G and the backup). */
+export function parseAnswer(content: string) {
+  const json = JSON.parse(content.slice(content.indexOf("{"), content.lastIndexOf("}") + 1));
+  return {
+    match: Boolean(json.match),
+    codeRead: String(json.code_read ?? ""),
+    condition: (["intact", "damaged", "opened"].includes(json.condition) ? json.condition : "unclear") as Check["condition"],
+    reason: String(json.reason ?? ""),
+  };
+}
+
 /** The driver never waits on 0G for more than this; past it, the handoff takes the safe-stop path. */
 export const ZG_BUDGET_MS = Number(process.env.ZG_BUDGET_MS ?? 12000);
 
@@ -62,11 +80,7 @@ async function checkParcelInner(photo: Buffer, expectedCode: string, hopLabel: s
   const { provider, model: wanted } = await pickVisionProvider(b);
   const { endpoint, model } = await b.inference.getServiceMetadata(provider, wanted);
   const headers = await b.inference.getRequestHeaders(provider);
-  const prompt =
-    `You check parcels handed between bus drivers in India. The parcel should carry the consignment code "${expectedCode}" ` +
-    `written on it, and this handoff is ${hopLabel}. Look at the photo and answer only with JSON: ` +
-    `{"code_read": string (the code you can read, or ""), "match": boolean (true only if the code you read is ${expectedCode}), ` +
-    `"condition": "intact" | "damaged" | "opened" | "unclear", "reason": string (one short sentence)}.`;
+  const prompt = parcelPrompt(expectedCode, hopLabel);
   const res = await fetch(`${endpoint}/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...headers },

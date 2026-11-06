@@ -53,6 +53,8 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Done
 
+- [x] Backup check for 0G outages: Cloudflare Workers AI or Gemini, labelled and unsealed, can only hold a payment (a pass still waits for 0G); 0G recheck covers backup-held hops; wrong badges or place hold regardless. Needs `GEMINI_API_KEY` (or Cloudflare) in `.env.local` and Vercel to switch on.
+
 - [x] HCS-14 agent identity: Daak and every shop agent have a UAID (matches Hashgraph Online's SDK byte for byte); the agent verifies Daak before paying; each booking records the paying agent's UAID on HCS (messages 56 to 58).
 
 - [x] Bus times and ETAs: drivers publish bus times, plans chain connecting buses, ETAs on every stop and screen, running-late flags, decline and day-off hand the stretch to the next connecting driver (tested on testnet: KNP-0324). Next: HCS-14 agent identity.

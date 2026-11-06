@@ -2,6 +2,7 @@ import { denied, isApp, isOperator } from "@/lib/auth";
 import { createHash } from "node:crypto";
 import { after, NextResponse } from "next/server";
 import { checkParcel, type Check } from "@/lib/zg";
+import { backupCheck, backupReady, backupVerdict, type Backup } from "@/lib/backup";
 import { submitLog } from "@/lib/hedera";
 import { consignmentByParcel, handoffsFor, writeHandoff } from "@/lib/arkiv";
 import { releaseFee, hashscan } from "@/lib/payout";
@@ -80,6 +81,7 @@ export async function POST(req: Request) {
   let verdict: "green" | "held" | "unchecked" = "unchecked";
   let reason = "Tapped, not checked by AI. Payment waits for a review.";
   let check: Check | null = null;
+  let backup: Backup | null = null;
 
   try {
     check = await checkParcel(photo, consignment.code, `hop ${leg.hop} at ${leg.place}`);
@@ -93,6 +95,22 @@ export async function POST(req: Request) {
           : `Code on the parcel reads "${check.codeRead}", expected ${consignment.code}.`;
   } catch (e) {
     errors.push(`0G: ${(e as Error).message.slice(0, 160)}`);
+    // Safe-stop. Wrong badges or the wrong place hold the payment whatever any model says.
+    if (!rightPeople || !rightPlace) {
+      verdict = "held";
+      reason = !rightPeople ? "These badges are not the drivers booked for this hop." : `Handoff happened ${Math.round(away)} m from ${leg.place}.`;
+    } else if (backupReady()) {
+      // The labelled backup model looks at the photo: a problem holds the payment now; a pass still waits for 0G.
+      try {
+        backup = await backupCheck(photo, consignment.code, `hop ${leg.hop} at ${leg.place}`);
+        verdict = backupVerdict(backup, rightPeople, rightPlace);
+        const seen = backup.match ? (backup.condition === "intact" ? "code matches and the parcel looks intact" : `parcel looks ${backup.condition}`) : `code reads "${backup.codeRead}", expected ${consignment.code}`;
+        reason = `Backup check (${backup.provider}, not sealed): ${seen}. ` +
+          (verdict === "held" ? "Payment held." : verdict === "green" ? "Test mode: paid on the backup check." : "Payment waits for 0G's sealed check.");
+      } catch (b) {
+        errors.push(`backup: ${(b as Error).message.slice(0, 160)}`);
+      }
+    }
   }
 
   const geo = spot ? `${spot.lat.toFixed(5)},${spot.lng.toFixed(5)},${Math.round(spot.acc)}` : undefined;
@@ -103,6 +121,7 @@ export async function POST(req: Request) {
       verdict, zg: check?.requestId ?? null, photo: photoSha256, at,
       geo: spot ? [Number(spot.lat.toFixed(4)), Number(spot.lng.toFixed(4))] : null,
       signer: signer ? short(signer) : null, sig: signed === "valid" ? sig : null,
+      backup: backup && { provider: backup.provider, model: backup.model, match: backup.match, condition: backup.condition },
     });
   } catch (e) {
     errors.push(`Hedera: ${(e as Error).message.slice(0, 160)}`);
@@ -152,11 +171,13 @@ export async function POST(req: Request) {
     : paysAdvance ? `Saunp diya. ${leg.place} tak. ${leg.advancePct ?? 50}% payment abhi, baaki delivery par.`
     : verdict === "green" ? `Saunp diya. ${leg.place} tak. Payment jaari.`
     : verdict === "held" ? `Payment roka gaya. ${reason}`
+    : backup ? `Backup jaanch theek. Payment 0G jaanch tak ruka hai.`
     : "AI jaanch nahi ho payi. Handoff save hai, payment jaanch tak ruka hai.";
   return NextResponse.json({
     verdict, message, code: consignment.code, hop: leg.hop, reason, signed,
     proofs: {
       zg: check && { requestId: check.requestId, verified: check.verified, model: check.model },
+      backup: backup && { provider: backup.provider, model: backup.model, sealed: false },
       hcs: log && { topicId: log.topicId, tx: hashscan("transaction", log.txId) },
       payout: willPay ? "releasing" : paysAdvance ? "advance" : undefined,
     },

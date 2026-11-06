@@ -24,7 +24,9 @@ export async function POST(req: Request) {
   for (const h of [...all].sort((a, b) => a.at - b.at)) latestByHop.set(h.hop, h);
   const results = [];
   for (const h of latestByHop.values()) {
-    if (h.verdict !== "unchecked" || !h.photo) continue;
+    // Unchecked hops, and hops the unsealed backup held: 0G's sealed check has the final word on both.
+    const backupHeld = h.verdict === "held" && h.reason.startsWith("Backup check");
+    if ((h.verdict !== "unchecked" && !backupHeld) || !h.photo) continue;
     const leg = c.route.find((l) => l.hop === h.hop)!;
     try {
       const photo = Buffer.from(await downloadPhoto(openRef(h.photo)));

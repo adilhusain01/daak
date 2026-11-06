@@ -173,3 +173,15 @@ test("UAIDs match Hashgraph Online's reference SDK byte for byte", async () => {
   assert.equal(uaid({ registry: "acme", name: "Support", version: "1.0.0", protocol: "a2a", nativeId: "acme.example", skills: [17, 0] }, "support"),
     "uaid:aid:6tBGtdYtv1buF76s9QLtSZjQfTpqheRXxdktpXZqszjNJiNgvHoeNdwAMpPy6zE2uu;uid=support;registry=acme;proto=a2a;nativeId=acme.example");
 });
+
+test("the backup check can only make a handoff safer: a problem holds it, a pass still waits for 0G", async () => {
+  delete process.env.BACKUP_PAYS;
+  const { backupVerdict } = await import("../lib/backup.ts");
+  const ok = { match: true, codeRead: "KNP-1", condition: "intact" as const, reason: "", model: "m", provider: "gemini" as const };
+  assert.equal(backupVerdict(ok, true, true), "unchecked");
+  assert.equal(backupVerdict({ ...ok, match: false }, true, true), "held");
+  assert.equal(backupVerdict({ ...ok, condition: "damaged" }, true, true), "held");
+  assert.equal(backupVerdict({ ...ok, condition: "opened" }, true, true), "held");
+  assert.equal(backupVerdict(ok, false, true), "held");
+  assert.equal(backupVerdict(ok, true, false), "held");
+});
