@@ -6,7 +6,8 @@ import { releaseFee, keyFor, hashscan, toUnits } from "@/lib/payout";
 import { cashOutAll } from "@/lib/settle";
 import { chain, hedera, submitLog } from "@/lib/hedera";
 import { env } from "@/lib/env";
-import { isSplit, refundLiable, settleDelivered } from "@/lib/split";
+import { isSplit, refundLiable, settleDelivered, settledAlready } from "@/lib/split";
+import { readLog } from "@/lib/history";
 import { handoffsFor } from "@/lib/arkiv";
 
 /**
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
   const { code, action, reviewer, note, hop, valueRupees } = (await req.json()) as { code: string; action: "pay" | "refund"; reviewer?: string; note?: string; hop?: number; valueRupees?: number };
   const c = await consignmentByCode(code);
   if (!c) return NextResponse.json({ error: "Unknown consignment" }, { status: 404 });
+  if (settledAlready(code, await readLog())) return NextResponse.json({ error: "This delivery was already settled" }, { status: 409 });
   if (isSplit(c)) {
     if (action === "pay") {
       const holdback = await settleDelivered(c);

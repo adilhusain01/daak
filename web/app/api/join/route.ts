@@ -1,6 +1,6 @@
 import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { putBadge } from "@/lib/arkiv";
+import { getBadge, putBadge } from "@/lib/arkiv";
 import { encodeTimetables } from "@/lib/timetable";
 import { network } from "@/lib/network";
 import { seal, sealRef, uploadPhoto } from "@/lib/swarm";
@@ -49,6 +49,9 @@ export async function POST(req: Request) {
     if (!(j.legs ?? []).includes(leg) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) errors.push("Enter each bus time as HH:MM, like 06:30");
   }
   if (errors.length) return NextResponse.json({ ok: false, errors: [...new Set(errors)] }, { status: 400 });
+  // A badge that has joined cannot be rewritten from a phone (that would let anyone redirect a driver's UPI).
+  // Changing a person's details goes through the operator.
+  if (!isOperator(req) && (await getBadge(j.uid).catch(() => null))) return NextResponse.json({ ok: false, errors: ["This badge has already joined. Ask Daak to change its details."] }, { status: 409 });
 
   const phone = j.phone.replace(/\D/g, "").slice(-10);
   const sealed = seal(JSON.stringify({ phone, upi: j.upi ?? "" }), "person");

@@ -31,6 +31,9 @@ export function legPay(c: C) {
   return legs.map((l, i) => ({ hop: l.hop, badge: l.from, km: l.km!, pct: l.advancePct ?? 50, units: shares[i].units, ...splitAdvance(shares[i].units, l.advancePct ?? 50) }));
 }
 
+/** A delivery is settled once a refund or a "pay anyway" is on the public log; it is never settled twice. */
+export const settledAlready = (code: string, log: LogMsg[]) => log.some((m) => (m.t === "daak.refunded" || m.t === "daak.resolved") && m.code === code);
+
 const advancesPaid = (code: string, log: LogMsg[]) => new Set(log.filter((m) => m.t === "daak.advance" && m.code === code).map((m) => m.hop));
 const holdbackOf = (code: string, log: LogMsg[]) => log.filter((m) => m.t === "daak.holdback" && m.code === code).at(-1) as (LogMsg & { schedule?: string; releasesAt?: number }) | undefined;
 
@@ -124,6 +127,7 @@ export async function fundPool(code: string, meterRupees: number) {
  */
 export async function refundLiable(c: C, liableHop: number, valueRupees = 0) {
   const log = await readLog();
+  if (settledAlready(c.code, log)) throw new Error("This delivery was already settled; it cannot be refunded or paid twice.");
   const h = holdbackOf(c.code, log);
   if (h?.schedule) {
     const s = await holdbackStatus(c.code, log);
@@ -142,11 +146,13 @@ export async function refundLiable(c: C, liableHop: number, valueRupees = 0) {
     else shopUnits += leg.units;
   }
   const out: { holdbacksTx?: string; refundTx?: string; poolTx?: string } = {};
+  // The refund goes back to the shop's own agent account, its prepaid balance, not to Daak.
+  const shop = await accountFor(`agent:${c.route[0]?.from ?? ""}`);
   if (clean.length) out.holdbacksTx = await escrowPays(c.code, "holdbacks to clean legs", clean);
   const { feeTokenId, escrowId } = chain();
   if (shopUnits > 0) {
     const res = await (await new TransferTransaction()
-      .addTokenTransfer(feeTokenId!, escrowId!, -shopUnits).addTokenTransfer(feeTokenId!, env.hederaOperatorId(), shopUnits)
+      .addTokenTransfer(feeTokenId!, escrowId!, -shopUnits).addTokenTransfer(feeTokenId!, shop, shopUnits)
       .setTransactionMemo(`Daak ${c.code} refund, liable hop ${liableHop}`).freezeWith(hedera()).sign(keyFor("escrow"))).execute(hedera());
     await res.getReceipt(hedera());
     out.refundTx = res.transactionId.toString();
@@ -154,7 +160,7 @@ export async function refundLiable(c: C, liableHop: number, valueRupees = 0) {
   const fromPool = Math.min(toUnits(poolPayout(valueRupees, shopUnits / 100, POOL_CAP_RUPEES)), await poolBalanceUnits());
   if (fromPool > 0) {
     const res = await (await new TransferTransaction()
-      .addTokenTransfer(feeTokenId!, await accountFor("pool"), -fromPool).addTokenTransfer(feeTokenId!, env.hederaOperatorId(), fromPool)
+      .addTokenTransfer(feeTokenId!, await accountFor("pool"), -fromPool).addTokenTransfer(feeTokenId!, shop, fromPool)
       .setTransactionMemo(`Daak ${c.code} protection pool claim`).freezeWith(hedera()).sign(keyFor("pool"))).execute(hedera());
     await res.getReceipt(hedera());
     out.poolTx = res.transactionId.toString();

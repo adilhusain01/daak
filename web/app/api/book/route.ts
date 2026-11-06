@@ -4,7 +4,8 @@ import { fundPool, legPay } from "@/lib/split";
 import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "@x402/next";
 import { x402Server, bookingPrice, routeKm } from "@/lib/x402";
-import { putConsignment, getBadge, type Leg } from "@/lib/arkiv";
+import { putConsignment, getBadge, consignmentByCode, type Leg } from "@/lib/arkiv";
+import { randomBytes } from "node:crypto";
 import { lockFee, hashscan, accountFor } from "@/lib/payout";
 import { shopAgentData, verifyUaid } from "@/lib/uaid";
 import { shopAgentLabel } from "@/lib/shop";
@@ -33,7 +34,14 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   const people = [...new Set(b.route.flatMap((l) => [l.from, l.to]))];
   const known = await Promise.all(people.map((u) => getBadge(u).catch(() => null)));
   if (known.some((k) => !k)) return NextResponse.json({ error: "Everyone on the route must join Daak first" }, { status: 400 });
-  const code = `KNP-${String(Date.now()).slice(-4)}`;
+  // A short code for the lid: the first stand plus five random characters (no 0/O or 1/I), checked to be unused.
+  const ALPHA = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let code = "";
+  for (let i = 0; i < 5; i++) {
+    const tryCode = `KNP-${Array.from(randomBytes(5), (x) => ALPHA[x % ALPHA.length]).join("")}`;
+    if (!(await consignmentByCode(tryCode).catch(() => null))) { code = tryCode; break; }
+  }
+  if (!code) return NextResponse.json({ error: "Could not make a unique code; try again" }, { status: 503 });
   // Each driver's share of pay at handover is fixed now, from their public record on the log.
   const log = await readLog().catch(() => []);
   for (const l of b.route) {
@@ -47,15 +55,19 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
   // HCS-14: the paying agent's identity, recomputed from the shop on the route and its agent account.
   const claimed = req.headers.get("x-agent-uaid");
   let agentUaid: string | null = null;
+  // Escrow is funded from here on, so nothing below may fail the request: x402 settles the shop's payment only
+  // on a success, and a failure now would leave money locked for a booking nobody paid for.
   if (claimed) {
-    const shop = b.route[0]?.from ?? "";
-    const account = await accountFor(shopAgentLabel(shop));
-    agentUaid = verifyUaid(claimed, shopAgentData(badgeHash(shop), account), account) ? claimed : null;
+    try {
+      const shop = b.route[0]?.from ?? "";
+      const account = await accountFor(shopAgentLabel(shop));
+      agentUaid = verifyUaid(claimed, shopAgentData(badgeHash(shop), account), account) ? claimed : null;
+    } catch (e) { console.error("uaid", e); }
   }
   const hcs = await logHandoff({
     t: "daak.booked", code, legs: b.route.length, weight: weight.id, feeRupees: b.feeRupees, bookingFeeRupees: bookingFee(b.feeRupees),
     split: shares.map((s) => ({ hop: s.hop, pct: s.pct })), poolRupees: pool?.rupees ?? 0, agent: agentUaid,
-  });
+  }).catch((e) => { console.error("hcs", e); return null; });
   return NextResponse.json({
     code,
     feeRupees: b.feeRupees,

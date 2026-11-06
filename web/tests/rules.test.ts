@@ -202,3 +202,14 @@ test("a parcel between stops is placed along the road by the bus's time, clamped
   assert.deepEqual(parcelPosition(legs, new Set(), 2000), { at: [80, 26], kind: "waiting", hop: 1 });   // not picked up
   assert.deepEqual(parcelPosition(legs, new Set([1, 2]), 2000), { at: [82, 26], kind: "arrived", hop: 2 });
 });
+
+test("the stand check holds a handoff far from the stand, caps the claimed GPS accuracy, and can be turned off", async () => {
+  const { placeCheck } = await import("../lib/rules.ts");
+  const stand = { lat: 26.8327, lng: 80.9202 }; // Charbagh, Lucknow
+  assert.equal(placeCheck({ lat: 26.8329, lng: 80.9204, acc: 10 }, stand, 500).ok, true);   // about 30 m away
+  assert.equal(placeCheck({ lat: 19.0596, lng: 72.8295, acc: 10 }, stand, 500).ok, false);  // Mumbai
+  assert.equal(placeCheck({ lat: 26.8427, lng: 80.9202, acc: 5000 }, stand, 500).ok, false); // 1.1 km, a huge claimed accuracy is capped at 200 m
+  assert.equal(placeCheck(null, stand, 500).ok, false);                                       // no fix while the check is on
+  assert.equal(placeCheck({ lat: 19.0596, lng: 72.8295, acc: 10 }, stand, 0).ok, true);    // check off
+  assert.equal(placeCheck(null, null, 500).ok, true);                                         // stand has no coordinates
+});

@@ -12,14 +12,9 @@ import { sealRef, uploadPhoto } from "@/lib/swarm";
 import { logDecision } from "@/lib/zgstore";
 import { getBadge } from "@/lib/arkiv";
 import { handoffMessage, verifyHandoff } from "@/lib/signing";
+import { placeCheck } from "@/lib/rules";
+import { readLog } from "@/lib/history";
 
-/** Metres between two points on the earth. */
-function metres(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
-  const R = 6371000, toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
 
 const short = (uid: string) => createHash("sha256").update(uid).digest("hex").slice(0, 12);
 
@@ -44,19 +39,20 @@ export async function POST(req: Request) {
   const photo = Buffer.from(await photoFile.arrayBuffer());
   const photoSha256 = createHash("sha256").update(photo).digest("hex");
 
-  // The handoff must be signed by the phone of whoever recorded it (giver or taker), if they registered one.
+  // If the giver or the taker has a registered phone, the handoff must be signed by one of those phones. Only a
+  // handoff between two people who have never registered a phone (scripts, the very first sign-in) goes unsigned.
   const signer = String(form.get("signer") ?? "");
   const sig = String(form.get("sig") ?? "");
   let signed: "valid" | "unsigned" = "unsigned";
-  if (signer && (signer === from || signer === to)) {
-    const who = await getBadge(signer).catch(() => null);
-    if (who?.devicePub) {
-      if (!sig || !verifyHandoff(who.devicePub, handoffMessage({ parcel, from, to, at, photoSha256 }), sig)) {
-        return NextResponse.json({ verdict: "held", message: "Signature check failed. This handoff did not come from the registered phone." }, { status: 401 });
-      }
-      signed = "valid";
+  const [giver, taker] = await Promise.all([getBadge(from).catch(() => null), getBadge(to).catch(() => null)]);
+  if (giver?.devicePub || taker?.devicePub) {
+    const who = signer === from ? giver : signer === to ? taker : null;
+    if (!who?.devicePub || !sig || !verifyHandoff(who.devicePub, handoffMessage({ parcel, from, to, at, photoSha256 }), sig)) {
+      return NextResponse.json({ verdict: "held", message: "Signature check failed. This handoff did not come from the giver's or the taker's registered phone." }, { status: 401 });
     }
+    signed = "valid";
   }
+  if (Math.abs(at - Date.now()) > 48 * 3600_000) return NextResponse.json({ verdict: "held", message: "The handoff time is not plausible." }, { status: 400 });
 
   // A booking written seconds ago can take a few seconds to show in Arkiv queries.
   let c = await consignmentByParcel(parcel);
@@ -69,15 +65,27 @@ export async function POST(req: Request) {
   }
   const consignment = c;
   const past = await handoffsFor(consignment.code);
-  const done = new Set(past.filter((h) => h.verdict !== "held").map((h) => h.hop));
+  // The same photo again: an outbox retry after a timeout, or a photo reused for another stop. Answer with the
+  // first record and never record (or pay) twice. The public log is checked too, as Arkiv shows new rows late.
+  const seenArkiv = past.find((h) => h.photoSha256 === photoSha256);
+  const seenLog = seenArkiv ? null : (await readLog().catch(() => [])).find((m) => m.t === "daak.handoff" && m.code === consignment.code && (m as { photo?: string }).photo === photoSha256);
+  if (seenArkiv || seenLog) {
+    const v = seenArkiv?.verdict ?? seenLog?.verdict ?? "unchecked";
+    return NextResponse.json({ verdict: v, message: "Yeh photo pehle hi darj hai. This photo was already recorded for this parcel; take a new photo for a new stop.", code: consignment.code, hop: seenArkiv?.hop ?? seenLog?.hop, duplicate: true });
+  }
+  // A stop counts by its latest attempt: a mistaken tap that was held and then redone does not block the parcel.
+  const latestByHop = new Map([...past].sort((a, b) => a.at - b.at).map((h) => [h.hop, h.verdict]));
+  const done = new Set([...latestByHop].filter(([, v]) => v !== "held").map(([hop]) => hop));
   const leg = consignment.route.find((l) => !done.has(l.hop));
   if (!leg) return NextResponse.json({ verdict: "held", message: "Is parcel ki delivery poori ho chuki hai. Already delivered.", code: consignment.code });
 
   const errors: string[] = [];
   const rightPeople = leg.from === from && leg.to === to;
-  // If the booking named the stand's coordinates, a handoff far from it is held.
-  const away = spot && leg.lat != null && leg.lng != null ? metres(spot, { lat: leg.lat, lng: leg.lng }) - spot.acc : 0;
-  const rightPlace = away <= 500;
+  // The stand check: within STAND_RADIUS_M (500 m by default) of the stop's stand, GPS accuracy capped at 200 m.
+  const place = placeCheck(spot, leg.lat != null && leg.lng != null ? { lat: leg.lat, lng: leg.lng } : null, Number(process.env.STAND_RADIUS_M ?? 500));
+  const rightPlace = place.ok;
+  const away = place.metres ?? 0;
+  const placeReason = place.metres == null ? `No GPS fix, so the handoff could not be placed at ${leg.place}.` : `Handoff happened ${Math.round(away)} m from ${leg.place}.`;
   let verdict: "green" | "held" | "unchecked" = "unchecked";
   let reason = "Tapped, not checked by AI. Payment waits for a review.";
   let check: Check | null = null;
@@ -89,7 +97,7 @@ export async function POST(req: Request) {
     reason = !rightPeople
       ? "These badges are not the drivers booked for this hop."
       : !rightPlace
-        ? `Handoff happened ${Math.round(away)} m from ${leg.place}.`
+        ? placeReason
         : check.match
           ? check.condition === "intact" ? "Code matches and the parcel looks intact." : `Parcel looks ${check.condition}: ${check.reason}`
           : `Code on the parcel reads "${check.codeRead}", expected ${consignment.code}.`;
@@ -98,7 +106,7 @@ export async function POST(req: Request) {
     // Safe-stop. Wrong badges or the wrong place hold the payment whatever any model says.
     if (!rightPeople || !rightPlace) {
       verdict = "held";
-      reason = !rightPeople ? "These badges are not the drivers booked for this hop." : `Handoff happened ${Math.round(away)} m from ${leg.place}.`;
+      reason = !rightPeople ? "These badges are not the drivers booked for this hop." : placeReason;
     } else if (backupReady()) {
       // The labelled backup model looks at the photo: a problem holds the payment now; a pass still waits for 0G.
       try {
@@ -128,7 +136,7 @@ export async function POST(req: Request) {
   }
 
   const lastLeg = leg.hop === Math.max(...consignment.route.map((l) => l.hop));
-  const allGreen = lastLeg && verdict === "green" && past.every((h) => h.verdict === "green");
+  const allGreen = lastLeg && verdict === "green" && consignment.route.filter((l) => l.hop !== leg.hop).every((l) => latestByHop.get(l.hop) === "green");
   const split = isSplit(consignment);
   const willPay = allGreen && (split || Boolean(consignment.schedule));
   // Split payout: a confirmed handover pays that driver's advance at once; delivery starts the holdback timer.

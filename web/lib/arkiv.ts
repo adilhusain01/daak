@@ -120,6 +120,14 @@ export async function patchRoute(code: string, route: Leg[]) {
   return keyOf(await arkivWrite().patchEntity(Consignments, String(e.$key) as `0x${string}`, { set: { route: enc(JSON.stringify(route)) } }));
 }
 
+/** A driver's ID added after joining (only while none is on file, or after a rejection). */
+export async function setKyc(uid: string, kyc: string) {
+  const b = await getBadge(uid);
+  if (!b) throw new Error("Unknown badge");
+  const { txHash } = await arkivWrite().patchEntity(Badges, b.key as `0x${string}`, { set: { kyc: enc(kyc), kycStatus: "pending" } });
+  return { entityKey: b.key, txHash: String(txHash) };
+}
+
 /** The operator's decision on a driver's ID. */
 export async function setKycStatus(uid: string, kycStatus: "verified" | "rejected") {
   const b = await getBadge(uid);

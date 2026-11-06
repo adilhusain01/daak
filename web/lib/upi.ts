@@ -52,9 +52,9 @@ export async function cashOut(code: string, badge: string, name: string, units: 
       const fa = await fundAccount(badge, name, vpa);
       const p = await rzp("/payouts", {
         account_number: process.env.RAZORPAYX_ACCOUNT_NUMBER, fund_account_id: fa, amount: units, currency: "INR",
-        mode: "UPI", purpose: "payout", queue_if_low_balance: true, reference_id: `${code}-${driverId}`.slice(0, 40),
+        mode: "UPI", purpose: "payout", queue_if_low_balance: true, reference_id: redeemTx.replace(/[^0-9A-Za-z]/g, "").slice(-40),
         narration: `Daak ${code}`.slice(0, 30),
-      }, `${code}-${driverId}`);
+      }, redeemTx);
       upi = { status: p.status, id: p.id, utr: p.utr ?? null };
     } catch (e) {
       upi = { status: "failed", error: (e as Error).message.slice(0, 160) };

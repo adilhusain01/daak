@@ -63,3 +63,19 @@ export function standingDue(o: { days: string; lastRun: string }, now = new Date
   const weekday = (new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7; // Monday = 0
   return o.days[weekday] === "1" && o.lastRun !== today;
 }
+
+/** The most GPS accuracy a phone may claim; a bigger claim would let any handoff pass the stand check. */
+export const MAX_ACCURACY_M = 200;
+
+/**
+ * Is the handoff at the stand? Within `radiusM` of the stand, allowing the phone's accuracy up to 200 m.
+ * radiusM 0 turns the check off (a demo away from the real stands); a stand without coordinates is not checked.
+ */
+export function placeCheck(spot: { lat: number; lng: number; acc: number } | null, stand: { lat: number; lng: number } | null, radiusM: number) {
+  if (!radiusM || !stand) return { ok: true, metres: 0 };
+  if (!spot) return { ok: false, metres: null as number | null };
+  const R = 6371000, rad = (d: number) => (d * Math.PI) / 180;
+  const h = Math.sin(rad(stand.lat - spot.lat) / 2) ** 2 + Math.cos(rad(spot.lat)) * Math.cos(rad(stand.lat)) * Math.sin(rad(stand.lng - spot.lng) / 2) ** 2;
+  const metres = 2 * R * Math.asin(Math.sqrt(h));
+  return { ok: metres - Math.min(Math.max(spot.acc, 0), MAX_ACCURACY_M) <= radiusM, metres: Math.round(metres) };
+}

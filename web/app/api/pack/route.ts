@@ -1,7 +1,5 @@
 import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { agentBook } from "@/lib/agent";
 import { recentConsignments, type Leg } from "@/lib/arkiv";
 import { buildRoute } from "@/lib/booking";
@@ -30,10 +28,7 @@ export async function POST(req: Request) {
     if ("error" in built) return NextResponse.json({ error: built.error }, { status: 400 });
     ({ route, label } = built);
   } else {
-    // The fixed demo route, kept for the scripts and for shops booking before receivers have joined.
-    const demo = JSON.parse(readFileSync(path.join(process.cwd(), "data", "demo-route.json"), "utf8"));
-    route = demo.route;
-    label = demo.label;
+    return NextResponse.json({ error: "Choose the receiver and a driver for each stretch" }, { status: 400 });
   }
   try {
     const booked = await agentBook(origin, { parcel: body.parcel, label, route, weight: body.weight }, body.sender);

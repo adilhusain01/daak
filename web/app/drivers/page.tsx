@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/site-nav";
 
 type Driver = {
-  id: string; name: string; vehicle: string; proven: number; held: number; km: number; earnedRupees: number;
-  bachatRupees: number; cleanRate: number; advance: { eligibleRupees: number; reason: string };
+  id: string; name: string; vehicle: string; proven: number; held: number; km: number;
+  cleanRate: number; advanceReady: boolean;
   idChecked: boolean; tier: { name: string; advancePct: number };
 };
 
@@ -61,7 +61,7 @@ export default function Drivers() {
                 <span><b className="text-base">{d.proven}</b> proven</span>
                 <span><b className="text-base">{d.km}</b> km</span>
                 <span className={d.held ? "text-held" : "text-ok"}><b className="text-base">{Math.round(d.cleanRate * 100)}%</b> clean</span>
-                <span><b className="text-base">₹{d.earnedRupees.toFixed(2)}</b> earned</span>
+                <span><b className="text-base">{d.tier.advancePct}%</b> at handover</span>
               </div>
               <Button className="rounded-lg bg-ink text-paper shadow-sm active:translate-y-px" onClick={() => setOpen(open === d.id ? null : d.id)}>
                 {open === d.id ? "Hide record" : "See record"}
@@ -69,10 +69,9 @@ export default function Drivers() {
             </div>
             {open === d.id && (
               <div className="mt-3 flex flex-col gap-1 border-t border-rule pt-3 text-sm">
-                <span>Bachat saved: ₹{d.bachatRupees.toFixed(2)}</span>
-                <span className={d.advance.eligibleRupees ? "text-ok" : "text-muted-ink"}>
-                  Fuel advance: {d.advance.eligibleRupees ? `₹${d.advance.eligibleRupees} available` : d.advance.reason}
-                </span>
+                <span>Tier: {d.tier.name} ({d.tier.advancePct}% of each stretch paid at the handover)</span>
+                <span className={d.advanceReady ? "text-ok" : "text-muted-ink"}>Fuel advance: {d.advanceReady ? "unlocked by the record" : "not yet"}</span>
+                <span className="text-muted-ink">What a driver earns and saves is shown only to them, in the app.</span>
                 <span className="text-muted-ink">Held handoffs: {d.held}. Driver id on the public log: {d.id}</span>
               </div>
             )}

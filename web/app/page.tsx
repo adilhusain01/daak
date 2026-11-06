@@ -107,7 +107,7 @@ export default function Landing() {
             ))}
           </ol>
           <p className="mt-5 border-t border-rule pt-4 text-sm text-muted-ink">
-            Daak meter: ₹5 + ₹0.50 a km, all of it to the drivers. ₹184.50 for the whole route up to 5 kg, plus Daak&apos;s 12% booking fee, ₹22.14.
+            Daak meter: ₹5 + ₹0.50 a km, to the drivers, less Daak&apos;s 2% on each payout. ₹184.50 for the whole route up to 5 kg, plus Daak&apos;s 12% booking fee, ₹22.14.
             Heavier parcels: ×1.5 up to 15 kg, ×2 up to 30 kg, ×3 up to 50 kg.
           </p>
         </section>
@@ -117,7 +117,7 @@ export default function Landing() {
         {[
           [s?.handoffs ?? "–", "handoffs recorded"],
           [s ? `${s.km} km` : "–", "carried and proven"],
-          [s ? `₹${Math.round(s.paidOut)}` : "–", "paid to drivers"],
+          [s ? `₹${Math.round(s.paidOut)}` : "–", "redeemed for drivers"],
           [s?.people ?? "–", "people joined"],
         ].map(([n, label]) => (
           <div key={String(label)} className="rounded-xl bg-rule/40 px-5 py-4">

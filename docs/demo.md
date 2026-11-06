@@ -28,7 +28,7 @@ Slides, at most four bullets each: problem, how it works (one diagram), business
 
 - **Why a blockchain?** Three parties who do not trust each other's software (shop, two drivers, often two bus operators) need one record nobody owns and a payout nobody can hold back. The record and the payout rules are public; anyone can recompute a driver's history.
 - **What if 0G is down?** Safe-stop: recorded, money held, rechecked automatically from the encrypted photo. We never invent a verdict.
-- **Can a driver fake a handoff?** Both badges must be tapped, the phone signs with a key in its secure hardware, GPS must be within 500 m of the stand, and the photo must show the code.
+- **Can a driver fake a handoff?** Both badges must be tapped, the phone signs with a key in its secure hardware, GPS must be within 500 m of the stand (off for the Mumbai demo, `STAND_RADIUS_M=0`, since the stands are in UP), and the photo must show the code.
 - **Who holds the money? Is that legal?** Today the shop prepays rupee credits; in production collections and escrow sit with a licensed payment aggregator's nodal account, Bachat with a partner bank, advances with an NBFC. Daak is the software and the record.
 - **Do bus operators allow this?** Parcels already ride these buses. The pitch to UPSRTC is a share of a new, recorded revenue line at their parcel desks instead of cash that never reaches them.
 - **Margin?** About Rs 6.50 contribution per parcel after UPI and chain costs; it is a volume business, which is why daily standing orders come first.

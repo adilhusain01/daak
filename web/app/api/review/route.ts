@@ -17,10 +17,11 @@ export async function POST(req: Request) {
   const c = await consignmentByCode(code);
   if (!c) return NextResponse.json({ error: "Unknown consignment" }, { status: 404 });
   const hs = await handoffsFor(code);
-  const hops = new Set(hs.map((h) => h.hop));
+  const latest = new Map([...hs].sort((a, b) => a.at - b.at).map((h) => [h.hop, h.verdict]));
+  const hops = new Set(latest.keys());
   if (isSplit(c)) {
     // Split payout: approving pays the advance of every handed-over leg; once all hops are in, the holdbacks start their timer.
-    if (hs.some((h) => h.verdict === "held")) return NextResponse.json({ error: "A hop is held; it needs a dispute, not an approval" }, { status: 409 });
+    if ([...latest.values()].includes("held")) return NextResponse.json({ error: "A hop is held; it needs a dispute, not an approval" }, { status: 409 });
     const hcs = await logHandoff({ t: "daak.reviewed", code, reviewer: reviewer ?? "operator", hops: [...hops] });
     const delivered = c.route.every((l) => hops.has(l.hop));
     if (delivered) {

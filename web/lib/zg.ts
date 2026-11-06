@@ -43,11 +43,23 @@ export function parseAnswer(content: string) {
 /** The driver never waits on 0G for more than this; past it, the handoff takes the safe-stop path. */
 export const ZG_BUDGET_MS = Number(process.env.ZG_BUDGET_MS ?? 12000);
 
-export async function checkParcel(photo: Buffer, expectedCode: string, hopLabel: string, budgetMs = ZG_BUDGET_MS): Promise<Check> {
-  return await Promise.race([
-    checkParcelInner(photo, expectedCode, hopLabel),
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`0G did not answer within ${budgetMs / 1000} s`)), budgetMs)),
-  ]);
+/** After 0G fails, handoffs skip it for a while (the driver should not wait 12 s each time); rechecks always try. */
+let zgDownUntil = 0;
+export const ZG_RETRY_MS = Number(process.env.ZG_RETRY_MS ?? 10 * 60 * 1000);
+
+export async function checkParcel(photo: Buffer, expectedCode: string, hopLabel: string, budgetMs = ZG_BUDGET_MS, alwaysTry = false): Promise<Check> {
+  if (!alwaysTry && Date.now() < zgDownUntil) throw new Error("0G was unavailable a few minutes ago; skipped for now, recheck later");
+  try {
+    const r = await Promise.race([
+      checkParcelInner(photo, expectedCode, hopLabel),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`0G did not answer within ${budgetMs / 1000} s`)), budgetMs)),
+    ]);
+    zgDownUntil = 0;
+    return r;
+  } catch (e) {
+    zgDownUntil = Date.now() + ZG_RETRY_MS;
+    throw e;
+  }
 }
 
 /**

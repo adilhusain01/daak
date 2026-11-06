@@ -4,6 +4,9 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 
 ## Blockers: each one can cost a prize on its own
 
+- [ ] Set `STAND_RADIUS_M=0` in Vercel for the Mumbai demo (the stand check is now real, and the stands are in UP), and redeploy.
+- [ ] One clean rehearsal from the phone with a new photo per stop that runs each path once, so the public log shows them: green or backup-checked handoffs with signatures, an approval, a 0G recheck, a pay-anyway, a refund to the shop, a KYC check, a UPI UTR. Then set `DATA_SINCE`.
+
 - [x] Repo public with an MIT licence.
 - [ ] 0G credits from the 0G booth when it opens, then: the first real sealed check, the decision log on 0G Storage, "Recheck with 0G" on held handoffs, and the agent that pays for its own compute from a capped slice of each fee (Agents That Pay for Themselves). Wallet `0x575F8D53D5bE1d16d4c1eDb8D01C4B68A0D48901`.
 - [ ] Demo video: 2:30 to 2:55 (ETHGlobal 2 to 4 minutes, 0G under 3), at least 720p, not recorded on a phone, a real voice (no AI voice, no music over captions in place of speaking), intro under 20 seconds, at most 4 bullets a slide, a settled payment on HashScan, the Swarm moment with its timestamp noted in `arkiv/swarm.md`.
@@ -45,6 +48,15 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] NFC stickers (Amazon, Friday 8 am to 12 pm). Each new sticker joins from the app as a person: a shop, a second driver, the receiving shop.
 - [ ] Run and film a real three-hop delivery with the stickers.
 
+## From the audit, not done
+
+- [ ] 0G "Agents That Pay for Themselves" needs code: a capped slice of each fee deposited to the compute ledger (once credits exist).
+- [ ] Read the holdback schedule's inner transaction result, not only "executed".
+- [ ] Cache the HCS log by sequence (every page reads the whole topic).
+- [ ] Speak the held reason in Hindi, not only "payment held".
+- [ ] Job answers, day off and daily-order pauses accept any badge with the app key; sign them like handoffs.
+- [ ] Operator cookie is a fixed hash; rate-limit the passcode.
+
 ## Story and submission
 
 - [ ] Slides (4, at most four bullets each) and rehearsal with stickers and two phones. Script, video shot list and answers to judges' and VCs' questions are drafted in `docs/demo.md`.
@@ -52,6 +64,8 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [ ] Final README pass: 0G proof or the outage write-up, the business numbers.
 
 ## Done
+
+- [x] Audit fixes (Fable audit, 6 Nov): signatures required when a party has a registered phone; the 500 m stand check is real (stands' coordinates on every leg, accuracy capped at 200 m); the same photo never records or pays twice; random checked booking codes; refunds go to the shop's agent account and a delivery settles once; re-joining a badge refused, ID added from the Me tab signed by the phone; driver earnings need the app key, the public drivers page shows record and tier, public tracking carries no GPS; latest attempt per stop counts; 0G outages remembered for 10 minutes; booking never fails after escrow is funded; cash-out references unique; claims name the responsible stop and declared value; honest landing copy (2% fee, "redeemed").
 
 - [x] Parcel route map on every tracking page: road route, done and upcoming stretches, the parcel's position (estimated from the bus time between stops), with a test.
 

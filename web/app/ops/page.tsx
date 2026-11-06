@@ -65,14 +65,18 @@ export default function Dashboard() {
     onError: (e) => toast.error((e as Error).message),
   });
   const [confirming, setConfirming] = useState<string | null>(null);
+  // A claim names the stop that was responsible and the parcel's declared value, so the pool can top up the refund.
+  const [claim, setClaim] = useState<Record<string, { hop: string; value: string }>>({});
   const resolve = useMutation({
     mutationFn: async ({ code, action }: { code: string; action: "pay" | "refund" }) => {
-      const r = await fetch("/api/resolve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, action, reviewer: "operator" }) });
+      const c = claim[code];
+      const extra = action === "refund" && c ? { hop: c.hop ? Number(c.hop) : undefined, valueRupees: c.value ? Number(c.value) : undefined } : {};
+      const r = await fetch("/api/resolve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, action, reviewer: "operator", ...extra }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error ?? "Could not resolve");
       return j;
     },
-    onSuccess: (_j, v) => { setConfirming(null); toast.success(v.action === "pay" ? `${v.code}: drivers paid` : `${v.code}: payout cancelled, fee back for the shop's refund`); qc.invalidateQueries({ queryKey: ["consignments"] }); },
+    onSuccess: (_j, v) => { setConfirming(null); toast.success(v.action === "pay" ? `${v.code}: drivers paid` : `${v.code}: refunded to the shop's balance`); qc.invalidateQueries({ queryKey: ["consignments"] }); },
     onError: (e) => toast.error((e as Error).message),
   });
   const approve = useMutation({
@@ -230,7 +234,16 @@ export default function Dashboard() {
                       <Button className="rounded-lg bg-ink text-paper shadow-sm active:translate-y-px" onClick={() => setConfirming(`${r.code}:pay`)}>Pay the drivers anyway</Button>
                     )}
                     {confirming === `${r.code}:refund` ? (
-                      <Button className="rounded-lg bg-held text-paper shadow-sm active:translate-y-px" disabled={resolve.isPending} onClick={() => resolve.mutate({ code: r.code, action: "refund" })}>Confirm: refund the shop</Button>
+                      (
+                      <span className="flex flex-wrap items-center gap-2">
+                        <select aria-label="Responsible stop" className="rounded-lg border border-rule bg-paper px-2 py-2 text-sm" value={claim[r.code]?.hop ?? ""} onChange={(e) => setClaim((x) => ({ ...x, [r.code]: { hop: e.target.value, value: x[r.code]?.value ?? "" } }))}>
+                          <option value="">Responsible stop: automatic</option>
+                          {r.route.filter((l) => (l.km ?? 0) > 0).map((l) => <option key={l.hop} value={l.hop}>Stop {l.hop}: {l.place.split(",")[0]}</option>)}
+                        </select>
+                        <input aria-label="Declared value in rupees" inputMode="decimal" placeholder="Declared value ₹" className="w-36 rounded-lg border border-rule bg-paper px-3 py-2 text-sm" value={claim[r.code]?.value ?? ""} onChange={(e) => setClaim((x) => ({ ...x, [r.code]: { hop: x[r.code]?.hop ?? "", value: e.target.value } }))} />
+                        <Button className="rounded-lg bg-held text-paper shadow-sm active:translate-y-px" disabled={resolve.isPending} onClick={() => resolve.mutate({ code: r.code, action: "refund" })}>Confirm: refund the shop</Button>
+                      </span>
+                    )
                     ) : (
                       <Button variant="outline" className="rounded-lg border-held text-held shadow-sm active:translate-y-px" onClick={() => setConfirming(`${r.code}:refund`)}>Refund the shop</Button>
                     )}
@@ -243,7 +256,16 @@ export default function Dashboard() {
                 )}
                 {claimOpen && (
                   confirming === `${r.code}:claim` ? (
-                    <Button className="rounded-lg bg-held text-paper shadow-sm active:translate-y-px" disabled={resolve.isPending} onClick={() => resolve.mutate({ code: r.code, action: "refund" })}>Confirm: last stop is liable, refund the shop</Button>
+                    (
+                      <span className="flex flex-wrap items-center gap-2">
+                        <select aria-label="Responsible stop" className="rounded-lg border border-rule bg-paper px-2 py-2 text-sm" value={claim[r.code]?.hop ?? ""} onChange={(e) => setClaim((x) => ({ ...x, [r.code]: { hop: e.target.value, value: x[r.code]?.value ?? "" } }))}>
+                          <option value="">Responsible stop: automatic</option>
+                          {r.route.filter((l) => (l.km ?? 0) > 0).map((l) => <option key={l.hop} value={l.hop}>Stop {l.hop}: {l.place.split(",")[0]}</option>)}
+                        </select>
+                        <input aria-label="Declared value in rupees" inputMode="decimal" placeholder="Declared value ₹" className="w-36 rounded-lg border border-rule bg-paper px-3 py-2 text-sm" value={claim[r.code]?.value ?? ""} onChange={(e) => setClaim((x) => ({ ...x, [r.code]: { hop: x[r.code]?.hop ?? "", value: e.target.value } }))} />
+                        <Button className="rounded-lg bg-held text-paper shadow-sm active:translate-y-px" disabled={resolve.isPending} onClick={() => resolve.mutate({ code: r.code, action: "refund" })}>Confirm: refund the shop</Button>
+                      </span>
+                    )
                   ) : (
                     <Button variant="outline" className="rounded-lg border-held text-held shadow-sm active:translate-y-px" onClick={() => setConfirming(`${r.code}:claim`)}>Shop reports damage</Button>
                   )

@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const leg = c.route.find((l) => l.hop === h.hop)!;
     try {
       const photo = Buffer.from(await downloadPhoto(openRef(h.photo)));
-      const check = await checkParcel(photo, code, `hop ${h.hop} at ${leg.place}`, 40000);
+      const check = await checkParcel(photo, code, `hop ${h.hop} at ${leg.place}`, 40000, true);
       const verdict = check.match && check.condition === "intact" ? "green" : "held";
       const reason = verdict === "green" ? "Rechecked by 0G after the outage: code matches, parcel intact." : `Rechecked by 0G: ${check.reason}`;
       const log = await submitLog({ t: "daak.recheck", code, hop: h.hop, verdict, zg: check.requestId ?? null, photo: h.photoSha256, was: h.key });
