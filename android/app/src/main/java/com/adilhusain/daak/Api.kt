@@ -9,7 +9,7 @@ import java.net.URL
 import java.util.UUID
 
 /** The server's answer to one handoff. verdict is "green", "held" or "unchecked". */
-data class Verdict(val verdict: String, val message: String, val code: String?, val hop: Int?)
+data class Verdict(val verdict: String, val message: String, val code: String?, val hop: Int?, val reasonHi: String? = null)
 
 data class Handoff(val parcel: String, val from: String, val to: String, val photo: File, val at: Long = System.currentTimeMillis(), val spot: Spot? = null, val signer: String? = null, val sig: String? = null, val otherCode: String? = null)
 
@@ -206,7 +206,9 @@ object Api {
 
     /** A driver answers a job offer; the answer goes on the public log. */
     fun job(code: String, uid: String, accept: Boolean) {
-        val (c, j) = post("/api/job", JSONObject().put("code", code).put("uid", uid).put("decision", if (accept) "accept" else "decline"))
+        val decision = if (accept) "accept" else "decline"
+        val at = System.currentTimeMillis()
+        val (c, j) = post("/api/job", JSONObject().put("code", code).put("uid", uid).put("decision", decision).put("at", at).put("sig", DeviceKey.sign("daak.job|$code|$uid|$decision|$at")))
         if (c !in 200..299) error(j.optString("error", "server $c"))
     }
 
@@ -225,7 +227,8 @@ object Api {
 
     /** Not driving today (or driving again); returns how many stretches were handed to other drivers. */
     fun setAway(uid: String, away: Boolean): Int {
-        val (c, j) = post("/api/driver/${enc(uid)}/away", JSONObject().put("away", away), 90000)
+        val at = System.currentTimeMillis()
+        val (c, j) = post("/api/driver/${enc(uid)}/away", JSONObject().put("away", away).put("at", at).put("sig", DeviceKey.sign("daak.away|$uid|$away|$at")), 90000)
         if (c !in 200..299) error(j.optString("error", "server $c"))
         return j.optJSONArray("handedOn")?.length() ?: 0
     }
@@ -405,13 +408,15 @@ object Api {
         conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
         conn.outputStream.use { it.write(body) }
         val text = (if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream).bufferedReader().readText()
-        if (conn.responseCode !in 200..299) error("server ${conn.responseCode}: $text")
-        val j = JSONObject(text)
+        // A refusal (an expired code, the wrong person) is an answer, not a lost connection: show it, do not queue it.
+        val j = runCatching { JSONObject(text) }.getOrNull()
+        if (conn.responseCode !in 200..299 && (conn.responseCode >= 500 || j?.has("verdict") != true)) error("server ${conn.responseCode}: $text")
         return Verdict(
-            j.optString("verdict", "unchecked"),
+            j!!.optString("verdict", "unchecked"),
             j.optString("message", ""),
             j.optString("code").ifEmpty { null },
             if (j.has("hop")) j.getInt("hop") else null,
+            j.optString("reasonHi").ifEmpty { null }.takeUnless { j.isNull("reasonHi") },
         )
     }
 }

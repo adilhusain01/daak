@@ -12,7 +12,7 @@ import { sealRef, uploadPhoto } from "@/lib/swarm";
 import { logDecision } from "@/lib/zgstore";
 import { getBadge } from "@/lib/arkiv";
 import { checkReceiveProof, handoffMessage, verifyHandoff } from "@/lib/signing";
-import { placeCheck } from "@/lib/rules";
+import { heldReasonHi, placeCheck } from "@/lib/rules";
 import { readLog } from "@/lib/history";
 
 
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   if (giver?.devicePub || taker?.devicePub) {
     const who = signer === from ? giver : signer === to ? taker : null;
     if (!who?.devicePub || !sig || !verifyHandoff(who.devicePub, handoffMessage({ parcel, from, to, at, photoSha256 }), sig)) {
-      return NextResponse.json({ verdict: "held", message: "Signature check failed. This handoff did not come from the giver's or the taker's registered phone." }, { status: 401 });
+      return NextResponse.json({ verdict: "held", message: "Signature check failed. This handoff did not come from the giver's or the taker's registered phone.", reasonHi: heldReasonHi(String("Signature check failed. This handoff did not come from the giver's or the taker's registered phone.")) }, { status: 401 });
     }
     signed = "valid";
   }
@@ -61,12 +61,12 @@ export async function POST(req: Request) {
     const used = new Set((await readLog().catch(() => [])).map((m) => (m as { confirm?: { nonce?: string } }).confirm?.nonce).filter((n): n is string => Boolean(n)));
     // Fresh relative to the handoff's own signed time, so a handoff queued offline still counts when it arrives.
     const proof = checkReceiveProof(otherCode, { to: other.uid, devicePub: other.badge?.devicePub, now: at, used });
-    if (!proof.ok) return NextResponse.json({ verdict: "held", message: proof.why }, { status: 401 });
+    if (!proof.ok) return NextResponse.json({ verdict: "held", message: proof.why, reasonHi: heldReasonHi(String(proof.why)) }, { status: 401 });
     // Their signature goes on the public log too, so anyone can check both people signed.
     const parts = otherCode.split("|");
     confirm = { by: "code", who: short(other.uid), nonce: proof.nonce, issuedAt: Number(parts.at(-3)), sig: parts.at(-1)! };
   }
-  if (Math.abs(at - Date.now()) > 48 * 3600_000) return NextResponse.json({ verdict: "held", message: "The handoff time is not plausible." }, { status: 400 });
+  if (Math.abs(at - Date.now()) > 48 * 3600_000) return NextResponse.json({ verdict: "held", message: "The handoff time is not plausible.", reasonHi: heldReasonHi(String("The handoff time is not plausible.")) }, { status: 400 });
 
   // A booking written seconds ago can take a few seconds to show in Arkiv queries.
   let c = await consignmentByParcel(parcel);
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     c = await consignmentByParcel(parcel);
   }
   if (!c) {
-    return NextResponse.json({ verdict: "held", message: "Yeh parcel register nahi hai. This parcel is not registered." }, { status: 404 });
+    return NextResponse.json({ verdict: "held", message: "Yeh parcel register nahi hai. This parcel is not registered.", reasonHi: heldReasonHi(String("Yeh parcel register nahi hai. This parcel is not registered.")) }, { status: 404 });
   }
   const consignment = c;
   const past = await handoffsFor(consignment.code);
@@ -196,7 +196,7 @@ export async function POST(req: Request) {
     : backup ? `Backup jaanch theek. Payment 0G jaanch tak ruka hai.`
     : "AI jaanch nahi ho payi. Handoff save hai, payment jaanch tak ruka hai.";
   return NextResponse.json({
-    verdict, message, code: consignment.code, hop: leg.hop, reason, signed,
+    verdict, message, code: consignment.code, hop: leg.hop, reason, reasonHi: verdict === "held" ? heldReasonHi(reason) : null, signed,
     proofs: {
       zg: check && { requestId: check.requestId, verified: check.verified, model: check.model },
       backup: backup && { provider: backup.provider, model: backup.model, sealed: false },

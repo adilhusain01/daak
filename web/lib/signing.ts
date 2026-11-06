@@ -42,3 +42,16 @@ export function checkReceiveProof(code: string, o: { to: string; devicePub?: str
 
 /** What a voucher's phone signs after scanning a newcomer's code: "I, voucher, know the person who showed this code." */
 export const vouchMessage = (voucher: string, code: string) => `daak.vouch|${voucher}|${code}`;
+
+/** How long a signed action from the app counts as fresh. */
+export const ACTION_MAX_AGE_MS = 10 * 60_000;
+
+/**
+ * Job answers, a day off, daily orders: if the person has a registered phone, the action must be signed by it and
+ * recent. Someone with no registered phone yet (their first sign-in registers it) can still act.
+ */
+export function checkSignedAction(o: { devicePub?: string; message: string; at: number; sig?: string; now: number }) {
+  if (!o.devicePub) return true;
+  if (!o.sig || !Number.isFinite(o.at) || Math.abs(o.now - o.at) > ACTION_MAX_AGE_MS) return false;
+  return verifyHandoff(o.devicePub, o.message, o.sig);
+}

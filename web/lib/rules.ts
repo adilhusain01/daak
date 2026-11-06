@@ -154,3 +154,33 @@ export function computeEarmark(o: { bookingFeeRupees: number; inrPer0g: number; 
   if (zg < 0.001) return { paise: 0, zg: 0 };
   return { paise: zg === want ? paiseWanted : Math.round(zg * o.inrPer0g * 100), zg };
 }
+
+/**
+ * The reason a handoff was held, in Hindi, for the voice at the stand and the Hindi screen. It follows the English
+ * reason the server wrote; anything unforeseen falls back to "payment held, Daak will check".
+ */
+export function heldReasonHi(en: string): string {
+  let m: RegExpMatchArray | null;
+  if (/badges are not the drivers booked/i.test(en)) return "ये बैज इस पड़ाव के बुक किए गए ड्राइवरों के नहीं हैं। भुगतान रुका है।";
+  if (/No GPS fix/i.test(en)) return "फ़ोन की जगह नहीं मिली, इसलिए हैंडऑफ़ बस अड्डे पर दर्ज नहीं हुआ। भुगतान रुका है।";
+  if ((m = en.match(/happened (\d+) m from/i))) return `हैंडऑफ़ बस अड्डे से ${m[1]} मीटर दूर हुआ। भुगतान रुका है।`;
+  if ((m = en.match(/reads "([^"]*)", expected ([A-Z0-9-]+)/i))) return `पार्सल पर कोड ${m[1] || "पढ़ा नहीं गया"} है, ${m[2]} होना चाहिए। भुगतान रुका है।`;
+  if (/looks damaged/i.test(en)) return "पार्सल फटा हुआ दिखता है। भुगतान रुका है।";
+  if (/looks opened/i.test(en)) return "पार्सल खुला हुआ दिखता है। भुगतान रुका है।";
+  if (/code has expired/i.test(en)) return "कोड पुराना हो गया। उनकी स्क्रीन से नया कोड स्कैन कीजिए।";
+  if (/already used/i.test(en)) return "यह कोड पहले इस्तेमाल हो चुका है। नया कोड स्कैन कीजिए।";
+  if (/belongs to someone else/i.test(en)) return "यह कोड इस हैंडऑफ़ वाले व्यक्ति का नहीं है।";
+  if (/Signature check failed|not signed by/i.test(en)) return "यह हैंडऑफ़ पंजीकृत फ़ोन से नहीं आया। भुगतान रुका है।";
+  return "भुगतान रुका है। Daak इसकी जाँच करेगा।";
+}
+
+/** The operator passcode: at most 5 wrong tries in 15 minutes. */
+export function loginAllowed(failures: number[], now: number) {
+  return failures.filter((t) => now - t < 15 * 60_000).length < 5;
+}
+
+/** Adds newly read log messages to the cached ones, by sequence number, without repeats. */
+export function mergeBySeq<T extends { seq: number }>(cached: T[], fresh: T[]): T[] {
+  const last = cached.at(-1)?.seq ?? 0;
+  return [...cached, ...fresh.filter((m) => m.seq > last)];
+}

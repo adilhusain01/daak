@@ -5,6 +5,7 @@ import { logHandoff } from "@/lib/hedera";
 import { badgeHash, readLog } from "@/lib/history";
 import { reassign } from "@/lib/reassign";
 import { istDate } from "@/lib/rules";
+import { checkSignedAction } from "@/lib/signing";
 
 /**
  * A driver is not driving today (or is again). Marking a day off hands every stretch of theirs that leaves today
@@ -13,9 +14,13 @@ import { istDate } from "@/lib/rules";
 export async function POST(req: Request, ctx: { params: Promise<{ uid: string }> }) {
   if (!isApp(req)) return denied("app");
   const uid = decodeURIComponent((await ctx.params).uid);
-  const { away } = (await req.json()) as { away: boolean };
+  const { away, at, sig } = (await req.json()) as { away: boolean; at?: number; sig?: string };
   const b = await getBadge(uid);
   if (!b || b.role !== "driver") return NextResponse.json({ error: "Only drivers" }, { status: 400 });
+  // A day off hands the driver's stretches to others, so only their own registered phone can mark it.
+  if (!checkSignedAction({ devicePub: b.devicePub, message: `daak.away|${uid}|${away}|${at}`, at: Number(at), sig, now: Date.now() })) {
+    return NextResponse.json({ error: "This did not come from your registered phone." }, { status: 401 });
+  }
   const today = istDate();
   const days = new Set(b.away ?? []);
   if (away) days.add(today); else days.delete(today);

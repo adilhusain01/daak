@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { chain } from "./hedera";
+import { mergeBySeq } from "./rules";
 import { accountFor } from "./payout";
 import { consignmentByCode } from "./arkiv";
 import { advanceFor, tierFor } from "./rules";
@@ -13,21 +14,35 @@ export const badgeHash = (uid: string) => createHash("sha256").update(uid).diges
 export type Msg = { t: string; code?: string; hop?: number; from?: string; to?: string; verdict?: string; at?: number; driver?: string; rupees?: number; saved?: number; km?: number };
 
 export type LogMsg = Msg & { ts: number; pot?: string; status?: string; upi?: string | null; utr?: string | null; potRupees?: number };
+/**
+ * The public HCS log, cached in memory by sequence number: each read fetches only messages newer than the last one
+ * seen (the whole topic only on a cold start), and reads within 3 seconds of each other share one fetch.
+ */
+let cache: { topic: string; msgs: (LogMsg & { seq: number })[]; at: number } | null = null;
+let inflight: Promise<LogMsg[]> | null = null;
+
 export async function readLog(): Promise<LogMsg[]> {
-  const topic = chain().topicId;
-  const out: LogMsg[] = [];
-  let next: string | null = `/api/v1/topics/${topic}/messages?limit=100&order=asc`;
-  while (next) {
-    const r: Response = await fetch(`https://testnet.mirrornode.hedera.com${next}`, { cache: "no-store" });
-    const j = await r.json();
-    for (const m of j.messages ?? []) {
-      try {
-        out.push({ ...JSON.parse(Buffer.from(m.message, "base64").toString("utf8")), ts: Math.round(Number(m.consensus_timestamp) * 1000) });
-      } catch { /* not ours */ }
+  const topic = chain().topicId!;
+  if (cache && cache.topic === topic && Date.now() - cache.at < 3000) return cache.msgs;
+  inflight ??= (async () => {
+    const have = cache?.topic === topic ? cache.msgs : [];
+    const fresh: (LogMsg & { seq: number })[] = [];
+    const after = have.at(-1)?.seq ?? 0;
+    let next: string | null = `/api/v1/topics/${topic}/messages?limit=100&order=asc${after ? `&sequencenumber=gt:${after}` : ""}`;
+    while (next) {
+      const r: Response = await fetch(`https://testnet.mirrornode.hedera.com${next}`, { cache: "no-store" });
+      const j = await r.json();
+      for (const m of j.messages ?? []) {
+        try {
+          fresh.push({ ...JSON.parse(Buffer.from(m.message, "base64").toString("utf8")), ts: Math.round(Number(m.consensus_timestamp) * 1000), seq: Number(m.sequence_number) });
+        } catch { /* not ours */ }
+      }
+      next = j.links?.next ?? null;
     }
-    next = j.links?.next ?? null;
-  }
-  return out;
+    cache = { topic, msgs: mergeBySeq(have, fresh), at: Date.now() };
+    return cache.msgs;
+  })().finally(() => { inflight = null; });
+  return inflight;
 }
 
 export type WorkHistory = {
