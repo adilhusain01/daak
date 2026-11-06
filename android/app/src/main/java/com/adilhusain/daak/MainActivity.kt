@@ -80,6 +80,8 @@ class MainActivity : ComponentActivity() {
     private var awayBusy by mutableStateOf(false)
     private var timesEdit by mutableStateOf<Map<String, String>?>(null)
     private var timesBusy by mutableStateOf(false)
+    /** Stretch names for display ("Kanpur to Lucknow"), from the published network. */
+    private var legNames by mutableStateOf<Map<String, String>>(emptyMap())
 
     /** Digits typed into a time field become "HH:MM". */
     private fun timeInput(v: String): String {
@@ -203,7 +205,10 @@ class MainActivity : ComponentActivity() {
 
     private fun refreshHome() {
         val p = me ?: return
-        if (p.role == "driver") loadWork()
+        if (p.role == "driver") {
+            loadWork()
+            if (legNames.isEmpty()) thread { val n = runCatching { Api.network() }.getOrNull(); if (n != null) runOnUiThread { legNames = n.legs.associate { it.id to it.label } } }
+        }
         if (p.role == "sender") {
             thread { val d = runCatching { Api.daily(p.uid) }.getOrNull(); runOnUiThread { daily = d } }
             loadBalance()
@@ -733,7 +738,7 @@ class MainActivity : ComponentActivity() {
                 Heading("बस का समय", "Your bus times")
                 Body("When your bus leaves on each stretch, Monday to Saturday. Shops see your ETA and only connecting buses are booked.", Tokens.muted, 14)
                 if (w.legs.isEmpty()) Body("No stretches yet.", Tokens.muted, 15)
-                w.legs.forEach { leg -> Field(leg.replace("-", " to "), edit[leg] ?: "", { v -> timesEdit = edit + (leg to timeInput(v)) }, "06:30", number = true) }
+                w.legs.forEach { leg -> Field(legNames[leg] ?: leg.replace("-", " to "), edit[leg] ?: "", { v -> timesEdit = edit + (leg to timeInput(v)) }, "06:30", number = true) }
             }
             if (timesEdit != null) Action(if (timesBusy) "सेव हो रहा है…" else "समय सेव करें", if (timesBusy) "Saving…" else "Save bus times", enabled = !timesBusy) { saveTimes(edit) }
         }
