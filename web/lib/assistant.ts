@@ -87,7 +87,7 @@ export async function ask(question: string) {
   });
   const toolsUsed = [...new Set(r.steps.flatMap((s) => s.content.flatMap((p) => (p.type === "tool-call" || p.type === "tool-result" ? [p.toolName] : []))))];
   // The buttons also come from the real state of every delivery the answer mentions, not only from the model.
-  for (const code of new Set(r.text.match(/KNP-\d{4}/g) ?? [])) {
+  for (const code of new Set(r.text.match(/\bKNP-[0-9A-Z]{4,5}\b/g) ?? [])) {
     const hs = await handoffsFor(code).catch(() => []);
     const latest = new Map([...hs].sort((a, b) => a.at - b.at).map((h) => [h.hop, h.verdict]));
     const verdicts = [...latest.values()];
