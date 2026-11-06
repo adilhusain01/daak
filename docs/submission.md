@@ -23,9 +23,10 @@ Live on testnet: https://daak-ethglobal.vercel.app (every delivery read-only at 
 - Android app in Kotlin and Jetpack Compose: NFC reader mode, the system camera, GPS, Hindi or English with Hindi text-to-speech, an offline outbox, a P-256 key in the Android Keystore that signs every handoff. People sign in with Google (Credential Manager, token verified on the server) or a badge; at a handoff the other person shows a QR their phone signs, so both phones sign, with a badge tap as the one-phone fallback; vouching by scanning a newcomer's code.
 - Next.js 16 on Vercel for the API and the web pages; no database: Arkiv is the store.
 - Hedera with the JavaScript SDK and no Solidity: x402 bookings settled in dINR (our HTS rupee-credit token with a 2% fractional custom fee) through the official facilitator, per-shop agent accounts with spend controls and catalogue discovery, escrow, advances, holdbacks as long-term scheduled transactions (waitForExpiry) that execute themselves, refunds by deleting the schedule, an HCS topic as the public log, the mirror node for balances and work records.
-- 0G compute for a sealed (TeeML) vision check through the 0G Router in private, TEE-only mode, with a 20 second budget and a safe-stop, and 0G Storage for the decision log.
+- 0G compute for a sealed (TeeML) vision check in private, TEE-only mode, with a 20 second budget and a safe-stop, and 0G Storage for the decision log; Daak's own 0G Direct compute account, topped up by every booking, pays for the checks.
 - Arkiv for people, bookings, handoffs, daily orders and preferences, with expiry; Swarm for the lid and ID photos, encrypted, with the reference sealed before it reaches Arkiv.
 - Data for the network map: India Post's pincode directory (GODL-India), OpenStreetMap bus stations (ODbL), OSRM road routes.
+- The landing page's one-minute hero film is rendered in code by raea (React on Bevy) as cut paper, with its captions laid over it from the same timeline.
 - Hacky bits: the meter charges road km taken from OSRM; the holdback release needs no server at all, because the schedule waits for its own expiry.
 
 ## Partner prizes
