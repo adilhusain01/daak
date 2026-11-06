@@ -50,6 +50,14 @@ Hedera services used, all from the JavaScript SDK with no Solidity: HTS (the dIN
 - **Disputes.** A held delivery is resolved by the operator: pay the drivers anyway, or refund the shop. A refund names the liable leg (the held handover, or the last stop when the shop reports damage after delivery): that driver's unpaid pay goes back to the shop, drivers who handed over cleanly get their holdbacks at once, legs never carried are returned, and the pool tops up the rest. Both go on the public log.
 - **Pay.** Drivers' dINR is redeemed and paid by UPI. Until a licensed payout partner is connected, the operator pays from the dashboard's UPI QR and records the bank reference (UTR) on the Hedera log next to the redemption.
 
+## Who holds the keys
+
+- **People sign in by tapping their badge**, an NFC card. No passwords or seed phrases: a driver at a bus stand taps and is in.
+- **Each phone holds its own signing key** in the Android Keystore (secure hardware). The first phone a person uses registers its public key on their Arkiv record; every handoff from it is signed, and the server rejects a handoff for that person signed by any other key. A stolen badge on another phone cannot record handoffs in their name. Moving to a new phone goes through the operator.
+- **Daak holds the Hedera keys** of shop agents, drivers, escrow and the pool, derived from one server secret (`keyFor` in `web/lib/payout.ts`). This is custodial, like PhonePe or Paytm holding a wallet, and it is deliberate: drivers and shops never see a wallet, a seed phrase or a token. Every movement of money is still public on Hedera, so the custody is auditable.
+- **In production** collections and escrow sit with a licensed payment aggregator, Bachat with a partner bank and advances with an NBFC; Daak stays the software and the public record.
+- **The operator** (dashboard, ID checks, top-ups, disputes) signs in with a passcode; every decision they make goes on the HCS log with who made it.
+
 ## Security
 
 - The operator dashboard (`/ops`) and every endpoint that moves money or reveals a photo or a person's details need the operator passcode (an httpOnly cookie). The phone app's endpoints need the app key built into the APK. The tracking page, the drivers page and the live counts are public.
@@ -112,6 +120,14 @@ cd ../android
 ```
 
 `.env.local` needs: `HEDERA_OPERATOR_ID`, `HEDERA_OPERATOR_KEY` (ECDSA), `ARKIV_PRIVATE_KEY`, `ARKIV_ACCESS_KEY`, `ZG_PRIVATE_KEY` (with mainnet 0G for the vision check), `DAAK_MASTER_SECRET`, `DAAK_APP_KEY`, `OPERATOR_PASSCODE`, and optionally `X402_ASSET`/`X402_AMOUNT` (USDC settlement), `BOOKINGS_PER_HOUR`, `DATA_SINCE`, `BOOKING_FEE_PERCENT`, `BOOKING_FEE_MIN_RUPEES`, `HOLDBACK_HOURS`, `POOL_POINTS`, `POOL_CAP_RUPEES`, `CRON_SECRET`, `DAAK_UPI_ID` (where shops pay their top-ups) and the RazorpayX keys. `X402_ASSET` defaults to dINR (each shop's agent pays the exact booking); set it to `0.0.0` (HBAR) or `0.0.429274` (USDC) for a flat price paid by one shared agent. The Android build reads the app key from `android/local.properties` as `daakAppKey=`.
+
+## Roadmap
+
+- **Phone number login and OTP at joining**, so a mobile number is verified, not just collected (needs an SMS sender registered on India's DLT).
+- **Agent identity on Hedera (HCS-14)**, so each shop's agent has a public identity other agents and services can check before trading with it.
+- **Opt-in self-custody**: a driver can move Bachat savings to a wallet only they control (Privy), without changing the tap-to-work flow.
+- **Timetables and ETAs**: bus departures per stretch, so the route plan only chains buses that connect (arrive at Lucknow before the Gorakhpur bus leaves), the shop sees an ETA, and the receiving shop gets an SMS when the parcel is one stop away and when it arrives. Edge cases to cover: a bus not running that day, a driver who declines or does not turn up (offer the stretch to the next-ranked driver), a missed connection (hold at the stand, re-plan on the next bus), and holidays.
+- **Stablecoin Studio**: issue dINR through Hedera's Stablecoin Studio for KYC, freeze and role controls and proof of reserve.
 
 ## Licence
 

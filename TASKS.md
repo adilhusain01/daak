@@ -26,15 +26,13 @@ Submission closes Saturday 7 November, 09:00 IST. Judging 09:30 to 12:30. Requir
 - [x] Each shop has its own agent account with prepaid dINR, topped up by UPI (operator enters the UTR on the dashboard; the app opens the UPI app); spend controls per shop.
 - [ ] Set `DAAK_UPI_ID` in Vercel (the UPI ID shops pay top-ups to) and make sure `X402_ASSET` is not set (default is dINR).
 - [ ] Optional: dINR rebuilt on Stablecoin Studio (KYC, freeze, roles) for the Tokenize track.
-- [ ] Optional: agent identity on HCS-14 or ERC-8004.
+- [x] Agent identity (HCS-14), phone number login, self-custody, timetables, ETAs and SMS: moved to the README roadmap as milestones.
 
 ## Product, from the people using it
 
 - [x] Public read-only view of deliveries at `/live` (no photos, KYC, UPI or bank details), so partner judges see it without a passcode.
 - [x] Drivers accept or decline a job from the app; the answer goes on the HCS log and shows on `/live` and the dashboard. Reassigning a declined stretch is still the operator (refund or rebook).
 - [ ] Verify Ramesh's and Suresh's IDs before the demo (they show "ID not checked").
-- [ ] Optional: SMS or WhatsApp to the receiving shop when the parcel nears and arrives.
-- [ ] Optional: ETA from the bus departure time.
 
 ## The team
 
