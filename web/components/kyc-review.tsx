@@ -42,7 +42,7 @@ export function KycReview() {
     onSuccess: (j, uid) => setReadings((x) => ({ ...x, [uid]: j })),
     onError: (e) => toast.error((e as Error).message),
   });
-  const pending = data?.drivers.filter((d) => d.status === "pending") ?? [];
+  const pending = data?.drivers?.filter((d) => d.status === "pending") ?? [];
   if (!pending.length) return null;
   return (
     <section className="rounded-xl border border-rule bg-card-paper p-4 sm:p-5">

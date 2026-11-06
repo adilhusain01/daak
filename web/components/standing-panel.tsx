@@ -33,7 +33,7 @@ export function StandingPanel() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["standing"] }),
     onError: (e) => toast.error((e as Error).message),
   });
-  const orders = data?.orders ?? [];
+  const orders = Array.isArray(data?.orders) ? data.orders : [];
   if (!orders.length) return null;
   return (
     <section className="rounded-xl border border-rule bg-card-paper p-4 sm:p-5">

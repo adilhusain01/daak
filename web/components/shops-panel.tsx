@@ -24,7 +24,7 @@ export function ShopsPanel() {
     onSuccess: (j, uid) => { toast.success(`Credited ₹${j.rupees} to the shop's balance, UTR on the public log`); setForm((f) => ({ ...f, [uid]: { rupees: "", utr: "" } })); qc.invalidateQueries({ queryKey: ["shops"] }); },
     onError: (e) => toast.error((e as Error).message),
   });
-  const shops = data?.shops ?? [];
+  const shops = Array.isArray(data?.shops) ? data.shops : [];
   if (!shops.length) return null;
   const set = (uid: string, k: "rupees" | "utr", v: string) => setForm((f) => ({ ...f, [uid]: { ...(f[uid] ?? { rupees: "", utr: "" }), [k]: v } }));
   const field = "min-w-0 rounded-lg border border-rule bg-paper px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ink";

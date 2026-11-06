@@ -1,9 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { OP_COOKIE, verifyOperatorToken } from "@/lib/auth";
 
-/** Sends anyone without the operator cookie to the sign-in page. The API routes check the cookie properly. */
+/** Sends anyone without a valid operator session (missing, altered, expired, or from before the passcode changed) to the sign-in page. */
 export function proxy(req: NextRequest) {
   if (req.nextUrl.pathname.startsWith("/ops/login")) return NextResponse.next();
-  if (!req.cookies.get("daak_op")?.value) return NextResponse.redirect(new URL("/ops/login", req.url));
+  const c = req.cookies.get(OP_COOKIE)?.value;
+  if (!c || !verifyOperatorToken(c)) {
+    const res = NextResponse.redirect(new URL("/ops/login", req.url));
+    res.cookies.delete(OP_COOKIE);
+    return res;
+  }
   return NextResponse.next();
 }
 
