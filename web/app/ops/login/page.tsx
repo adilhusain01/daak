@@ -14,9 +14,11 @@ export default function Login() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError(null);
-    const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ passcode: code }) });
+    const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ passcode: code.trim() }) });
     setBusy(false);
-    if (r.ok) router.replace("/ops"); else setError("That passcode is not right.");
+    // Say what the server said: a wrong passcode and a 15-minute lockout after 5 tries read differently.
+    if (r.ok) router.replace("/ops");
+    else setError(r.status === 429 ? "Too many wrong tries. Wait 15 minutes, then try again." : "That passcode is not right.");
   }
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-4">
