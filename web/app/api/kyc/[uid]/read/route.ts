@@ -7,6 +7,7 @@ import { askBackup } from "@/lib/backup";
 import { compareId, type IdReading } from "@/lib/rules";
 import { submitLog } from "@/lib/hedera";
 import { badgeHash } from "@/lib/history";
+import { logDecision } from "@/lib/zgstore";
 
 const PROMPT =
   `This is a photo of an Indian government ID: a driving licence, a voter ID, or an Aadhaar card whose first 8 digits ` +
@@ -42,6 +43,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ uid: string }>
     vehicleClasses: String(j.vehicle_classes ?? ""), masked: j.masked === true, edited: j.edited === true,
   };
   const checks = compareId(read, { idType: claimed.idType, name: b.name, last4: claimed.last4 });
-  await submitLog({ t: "daak.kyc.read", id: badgeHash(uid), sealed, zg: r.requestId ?? null, model: sealed ? null : r.model, checks }).catch(() => null);
+  // The decision, without the name or the number, goes to 0G Storage and its root hash onto the public log.
+  const stored = await logDecision({ t: "daak.kyc.read", id: badgeHash(uid), sealed, zg: r.requestId ?? null, checks, at: Date.now() }).catch(() => null);
+  await submitLog({ t: "daak.kyc.read", id: badgeHash(uid), sealed, zg: r.requestId ?? null, model: sealed ? null : r.model, checks, zgLog: stored?.rootHash ?? null }).catch(() => null);
   return NextResponse.json({ read, notes: String(j.notes ?? ""), checks, requestId: r.requestId, model: r.model, sealed });
 }

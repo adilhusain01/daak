@@ -62,31 +62,6 @@ export async function checkParcel(photo: Buffer, expectedCode: string, hopLabel:
   }
 }
 
-/**
- * Providers on 0G come and go. Use the configured one if it still exists; otherwise find any live
- * sealed (TeeML) provider whose catalogue has a model that takes images.
- */
-let picked: { provider: string; model: string; at: number } | null = null;
-async function pickVisionProvider(b: Awaited<ReturnType<typeof createZGComputeNetworkBroker>>) {
-  if (picked && Date.now() - picked.at < 10 * 60 * 1000) return picked;
-  const services = await b.inference.listService();
-  const tee = services.filter((s: { verifiability?: string }) => s.verifiability === "TeeML");
-  const preferred = tee.find((s: { provider: string }) => s.provider.toLowerCase() === env.zgProvider().toLowerCase());
-  for (const s of [preferred, ...tee].filter(Boolean) as { provider: string; model: string }[]) {
-    try {
-      const cat = await b.inference.getProviderModels(s.provider);
-      const models = (cat.models ?? []) as { id: string; architecture?: { input_modalities?: string[] } }[];
-      const vision = models.find((m) => m.id === env.zgModel() && m.architecture?.input_modalities?.includes("image"))
-        ?? models.find((m) => m.architecture?.input_modalities?.includes("image"));
-      if (vision) {
-        picked = { provider: s.provider, model: vision.id, at: Date.now() };
-        return picked;
-      }
-    } catch { /* provider not answering; try the next */ }
-  }
-  throw new Error("No sealed (TeeML) vision provider is live on 0G right now");
-}
-
 /** The Router is 0G's API-key gateway (pc.0g.ai); with a key set, checks go through it to a sealed provider. */
 export const ROUTER = process.env.ZG_ROUTER_URL ?? "https://router-api.0g.ai/v1";
 const routerModel = () => process.env.ZG_ROUTER_MODEL ?? "0gm-1.0-35b-a3b";
@@ -104,8 +79,51 @@ async function sealedRouterProvider() {
   return p.address;
 }
 
-/** Any question about a photo, answered by the sealed vision model through the Router. Returns the text and receipt. */
-export async function askSealed(photo: Buffer, prompt: string, budgetMs = 40_000): Promise<{ content: string; requestId?: string; model: string }> {
+/** The sealed provider Daak pays from its own compute account (0G Direct), and its model. */
+const DIRECT_PROVIDER = process.env.ZG_DIRECT_PROVIDER ?? "0xf4FB8d2bD856e672b5f9848b0eD235A20079B250";
+const DIRECT_MODEL = process.env.ZG_DIRECT_MODEL ?? "0GM-1.0-35B-A3B";
+export const DIRECT_BUDGET_MS = Number(process.env.ZG_DIRECT_BUDGET_MS ?? 12000);
+
+/**
+ * The same sealed question, paid by Daak's own 0G compute account (Direct) instead of the Router credit: the agent
+ * pays for its own checks, and the provider's TEE signature on the answer is verified.
+ */
+async function askDirect(photo: Buffer, prompt: string, budgetMs: number) {
+  const b = await broker();
+  const { endpoint, model } = await b.inference.getServiceMetadata(DIRECT_PROVIDER, DIRECT_MODEL);
+  const headers = await b.inference.getRequestHeaders(DIRECT_PROVIDER);
+  const res = await fetch(`${endpoint}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    signal: AbortSignal.timeout(budgetMs),
+    body: JSON.stringify({
+      model, temperature: 0, max_tokens: 400, chat_template_kwargs: { enable_thinking: false },
+      messages: [{ role: "user", content: [
+        { type: "text", text: prompt },
+        { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photo.toString("base64")}` } },
+      ] }],
+    }),
+  });
+  if (!res.ok) throw new Error(`0G Direct ${res.status}: ${(await res.text()).slice(0, 160)}`);
+  const data = await res.json();
+  const requestId: string | undefined = res.headers.get("ZG-Res-Key") ?? data.id;
+  const verified = await b.inference.processResponse(DIRECT_PROVIDER, requestId, JSON.stringify(data.usage ?? {})).catch(() => null);
+  return { content: String(data.choices?.[0]?.message?.content ?? ""), requestId, verified: verified ?? null, model: `${model}, paid by Daak's own 0G compute account, provider ${DIRECT_PROVIDER}` };
+}
+
+/**
+ * Any question about a photo, answered by the sealed vision model: first from Daak's own compute account (Direct),
+ * then through the Router credit if that fails. Returns the text, the receipt and whether the TEE signature checked.
+ */
+export async function askSealed(photo: Buffer, prompt: string, budgetMs = 40_000): Promise<{ content: string; requestId?: string; model: string; verified?: boolean | null }> {
+  if (process.env.ZG_PRIVATE_KEY && process.env.ZG_DIRECT !== "0") {
+    try { return await askDirect(photo, prompt, Math.min(budgetMs, DIRECT_BUDGET_MS)); }
+    catch (e) { console.error("0G direct", (e as Error).message.slice(0, 160)); }
+  }
+  return askRouter(photo, prompt, budgetMs);
+}
+
+async function askRouter(photo: Buffer, prompt: string, budgetMs: number): Promise<{ content: string; requestId?: string; model: string; verified?: boolean | null }> {
   if (!process.env.ZG_ROUTER_KEY) throw new Error("0G Router key is not set");
   const provider = await sealedRouterProvider();
   const res = await fetch(`${ROUTER}/chat/completions`, {
@@ -129,49 +147,7 @@ export async function askSealed(photo: Buffer, prompt: string, budgetMs = 40_000
   return { content: data.choices?.[0]?.message?.content ?? "", requestId: data.id ?? res.headers.get("x-request-id") ?? undefined, model: `${data.model ?? routerModel()} via 0G Router, provider ${provider}` };
 }
 
-async function routerCheck(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Check> {
-  const r = await askSealed(photo, parcelPrompt(expectedCode, hopLabel));
-  return { ...parseAnswer(r.content), requestId: r.requestId, verified: null, model: r.model };
-}
-
 async function checkParcelInner(photo: Buffer, expectedCode: string, hopLabel: string): Promise<Check> {
-  if (process.env.ZG_ROUTER_KEY) return routerCheck(photo, expectedCode, hopLabel);
-  const b = await broker();
-  const { provider, model: wanted } = await pickVisionProvider(b);
-  const { endpoint, model } = await b.inference.getServiceMetadata(provider, wanted);
-  const headers = await b.inference.getRequestHeaders(provider);
-  const prompt = parcelPrompt(expectedCode, hopLabel);
-  const res = await fetch(`${endpoint}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
-    signal: AbortSignal.timeout(40_000),
-    body: JSON.stringify({
-      model,
-      temperature: 0,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${photo.toString("base64")}` } },
-          ],
-        },
-      ],
-    }),
-  });
-  if (!res.ok) throw new Error(`0G ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const data = await res.json();
-  const requestId: string | undefined = res.headers.get("ZG-Res-Key") ?? data.id;
-  const content: string = data.choices?.[0]?.message?.content ?? "";
-  const verified = await b.inference.processResponse(provider, requestId, JSON.stringify(data.usage ?? {})).catch(() => null);
-  const json = JSON.parse(content.slice(content.indexOf("{"), content.lastIndexOf("}") + 1));
-  return {
-    match: Boolean(json.match),
-    codeRead: String(json.code_read ?? ""),
-    condition: ["intact", "damaged", "opened"].includes(json.condition) ? json.condition : "unclear",
-    reason: String(json.reason ?? ""),
-    requestId,
-    verified,
-    model,
-  };
+  const r = await askSealed(photo, parcelPrompt(expectedCode, hopLabel));
+  return { ...parseAnswer(r.content), requestId: r.requestId, verified: r.verified ?? null, model: r.model };
 }

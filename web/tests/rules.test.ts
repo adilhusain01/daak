@@ -258,3 +258,18 @@ test("if someone you vouched for is found responsible for a damaged parcel, you 
   assert.equal(vouchStanding(log, "v1", T + 80 * day).ok, true);
   assert.equal(vouchStanding(log, "someone-else", T).ok, true);
 });
+
+// The agent pays for its own sealed checks: after bookings it tops up its 0G compute account, within a daily cap.
+import { topUpPlan } from "../lib/rules.ts";
+
+test("the compute account is topped up only when it runs low, and never past the daily cap", () => {
+  const base = { available: 2, providerLocked: 1, wallet: 6, toppedToday: 0 };
+  assert.deepEqual(topUpPlan(base), { deposit: 0, toProvider: 0 });
+  assert.deepEqual(topUpPlan({ ...base, available: 0.5 }), { deposit: 0.25, toProvider: 0 });
+  assert.deepEqual(topUpPlan({ ...base, available: 0.5, toppedToday: 1 }), { deposit: 0, toProvider: 0 });
+});
+
+test("the provider's share is refilled from the account, and the wallet always keeps gas", () => {
+  assert.deepEqual(topUpPlan({ available: 2, providerLocked: 0.3, wallet: 6, toppedToday: 0 }), { deposit: 0, toProvider: 1 });
+  assert.deepEqual(topUpPlan({ available: 0.5, providerLocked: 1, wallet: 0.2, toppedToday: 0 }), { deposit: 0, toProvider: 0 });
+});

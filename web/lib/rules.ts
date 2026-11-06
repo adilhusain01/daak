@@ -121,3 +121,19 @@ export function vouchStanding(log: { t: string; ts: number; [k: string]: unknown
   if (recent >= VOUCHES_PER_30_DAYS) return { ok: false, why: `You have vouched for ${VOUCHES_PER_30_DAYS} people in the last 30 days. Wait before vouching again.` };
   return { ok: true, left: VOUCHES_PER_30_DAYS - recent };
 }
+
+/** The agent's own 0G compute account, in 0G: top up below LOW, a TOPUP at a time, at most DAY_CAP a day. */
+export const COMPUTE = { LOW: 1, TOPUP: 0.25, DAY_CAP: 1, PROVIDER_LOW: 0.5, PROVIDER_FILL: 1, WALLET_KEEP: 0.5 };
+
+/**
+ * What the agent moves after a booking so it can keep paying for its own sealed checks: a small deposit into its
+ * compute account when that runs low (never past the daily cap, never leaving the wallet without gas), and a refill
+ * of the provider's share from the account when that runs low.
+ */
+export function topUpPlan(s: { available: number; providerLocked: number; wallet: number; toppedToday: number }) {
+  const room = Math.max(0, COMPUTE.DAY_CAP - s.toppedToday);
+  const canSpend = Math.max(0, s.wallet - COMPUTE.WALLET_KEEP);
+  const deposit = s.available < COMPUTE.LOW ? Math.min(COMPUTE.TOPUP, room, canSpend) : 0;
+  const toProvider = s.providerLocked < COMPUTE.PROVIDER_LOW && s.available + deposit >= COMPUTE.PROVIDER_FILL ? COMPUTE.PROVIDER_FILL : 0;
+  return { deposit: deposit >= 0.01 ? deposit : 0, toProvider };
+}

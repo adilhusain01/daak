@@ -1,7 +1,8 @@
 import { band, bookingFee, meterFee } from "@/lib/network";
 import { readLog, workHistory } from "@/lib/history";
 import { fundPool, legPay } from "@/lib/split";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
+import { fundCompute } from "@/lib/compute";
 import { withX402 } from "@x402/next";
 import { x402Server, bookingPrice, routeKm } from "@/lib/x402";
 import { putConsignment, getBadge, consignmentByCode, type Leg } from "@/lib/arkiv";
@@ -68,6 +69,8 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
     t: "daak.booked", code, legs: b.route.length, weight: weight.id, feeRupees: b.feeRupees, bookingFeeRupees: bookingFee(b.feeRupees),
     split: shares.map((s) => ({ hop: s.hop, pct: s.pct })), poolRupees: pool?.rupees ?? 0, agent: agentUaid,
   }).catch((e) => { console.error("hcs", e); return null; });
+  // The agent keeps its own sealed checks paid for: a booking tops up its 0G compute account when it runs low.
+  after(() => fundCompute(code).catch((e) => console.error("compute", (e as Error).message)));
   return NextResponse.json({
     code,
     feeRupees: b.feeRupees,
