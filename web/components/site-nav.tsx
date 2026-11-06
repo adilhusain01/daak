@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 import { DaakMark } from "@/components/daak-mark";
 
 /** Everywhere on the site: live deliveries, the network map, drivers, and the operator's dashboard. The current one sits in, the other can be pressed. */
-export function SiteNav({ className = "mb-8" }: { className?: string }) {
+export function SiteNav({ className = "mb-8", dark = false }: { className?: string; dark?: boolean }) {
   const path = usePathname();
   const item = (href: string, label: string) => {
     const on = path.startsWith(href);
     return (
       <Link
         href={href}
-        className={`rounded-lg px-2.5 py-1.5 text-sm sm:px-3 font-medium transition-transform active:scale-[0.97] ${on ? "bg-rule/70 text-ink" : "bg-card-paper text-ink shadow-sm"}`}
+        className={`rounded-lg px-2.5 py-1.5 text-sm sm:px-3 font-medium transition-transform active:scale-[0.97] ${dark ? (on ? "bg-paper/20 text-paper" : "bg-paper/10 text-paper hover:bg-paper/15") : on ? "bg-rule/70 text-ink" : "bg-card-paper text-ink shadow-sm"}`}
       >
         {label}
       </Link>
@@ -24,7 +24,7 @@ export function SiteNav({ className = "mb-8" }: { className?: string }) {
         <DaakMark className="size-9 transition-transform duration-200 ease-out group-hover:-rotate-6 group-active:scale-95" />
         <span className="flex flex-col leading-none">
           <span className="text-2xl font-semibold tracking-tight">Daak</span>
-          <span className="mt-0.5 text-xs text-muted-ink">डाक · every handoff on record</span>
+          <span className={`mt-0.5 text-xs ${dark ? "text-paper/60" : "text-muted-ink"}`}>डाक · every handoff on record</span>
         </span>
       </Link>
       <div className="flex flex-wrap gap-1.5 sm:gap-2">{item("/live", "Live")}{item("/network", "Network")}{item("/drivers", "Drivers")}{item("/ops", "Operator")}</div>
