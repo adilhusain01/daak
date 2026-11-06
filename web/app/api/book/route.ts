@@ -1,4 +1,4 @@
-import { band, bookingFee, meterFee } from "@/lib/network";
+import { bookingFee, meterFee, weightSpec } from "@/lib/network";
 import { readLog, workHistory } from "@/lib/history";
 import { fundPool, legPay } from "@/lib/split";
 import { after, NextRequest, NextResponse } from "next/server";
@@ -27,10 +27,10 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
     return NextResponse.json({ error: "Need parcel and route" }, { status: 400 });
   }
   let weight;
-  try { weight = band(b.weight ?? "s"); } catch { return NextResponse.json({ error: "Unknown weight band" }, { status: 400 }); }
+  try { weight = weightSpec(b.weight ?? "s"); } catch { return NextResponse.json({ error: "Unknown weight" }, { status: 400 }); }
   let km;
   try { km = routeKm(b.route); } catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 400 }); }
-  b.feeRupees = meterFee(km, weight.id);
+  b.feeRupees = meterFee(km, b.weight ?? "s");
   // Only people who have joined Daak can be on a route: no accounts are created for made-up badges.
   const people = [...new Set(b.route.flatMap((l) => [l.from, l.to]))];
   const known = await Promise.all(people.map((u) => getBadge(u).catch(() => null)));
@@ -49,7 +49,7 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
     if ((l.km ?? 0) > 0) l.advancePct = (await workHistory(l.from, log).catch(() => null))?.tier.advancePct ?? 50;
   }
   // The record goes first: if it fails, no money has moved yet.
-  const arkiv = await putConsignment({ code, parcel: b.parcel, label: b.label ?? "", route: b.route, feeRupees: b.feeRupees, weight: weight.id });
+  const arkiv = await putConsignment({ code, parcel: b.parcel, label: b.label ?? "", route: b.route, feeRupees: b.feeRupees, weight: b.weight ?? "s" });
   const money = await lockFee(code, b.feeRupees, b.route.filter((l) => (l.km ?? 0) > 0).map((l) => ({ badge: l.from, km: l.km! })));
   const pool = await fundPool(code, b.feeRupees).catch((e) => { console.error("pool", e); return null; });
   const shares = legPay({ code, feeRupees: b.feeRupees, route: b.route });
@@ -66,7 +66,7 @@ async function handler(req: NextRequest): Promise<NextResponse<unknown>> {
     } catch (e) { console.error("uaid", e); }
   }
   const hcs = await logHandoff({
-    t: "daak.booked", code, legs: b.route.length, weight: weight.id, feeRupees: b.feeRupees, bookingFeeRupees: bookingFee(b.feeRupees),
+    t: "daak.booked", code, legs: b.route.length, weight: b.weight ?? "s", feeRupees: b.feeRupees, bookingFeeRupees: bookingFee(b.feeRupees),
     split: shares.map((s) => ({ hop: s.hop, pct: s.pct })), poolRupees: pool?.rupees ?? 0, agent: agentUaid,
   }).catch((e) => { console.error("hcs", e); return null; });
   // Each booking pays its share of the agent's sealed checks: a slice of its fee on Hedera, the same value in 0G on 0G.

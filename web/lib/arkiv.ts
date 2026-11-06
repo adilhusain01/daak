@@ -36,7 +36,7 @@ export const Consignments = defineSchema("daak.consignment", {
   createdAt: u64().indexed(),
   schedule: str().optional(), // Hedera scheduled payout, signed at delivery
   feePaise: i32().optional(), // the meter fee in paise: Rs 5 + Rs 0.50 a km is often a half rupee
-  weight: str().optional(), // weight band id: s, m, l or xl
+  weight: str().optional(), // a band id (s, m, l, xl) or a measured parcel: "kg:<charged kg>|<L>x<W>x<H>"
 });
 
 export const Handoffs = defineSchema("daak.handoff", {

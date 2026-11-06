@@ -18,7 +18,7 @@ export async function GET() {
       km,
       feeRupees: Math.round((meterFee(km) + bookingFee(meterFee(km))) * 100) / 100,
       bands: WEIGHT_BANDS.map((b) => ({ id: b.id, label: b.label, factor: b.factor, feeRupees: Math.round((meterFee(km, b.id) + bookingFee(meterFee(km, b.id))) * 100) / 100 })),
-      meter: `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km, times the weight band, plus ${BOOKING_FEE.percent}% booking`,
+      meter: `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km, times 1 + 0.1 for each charged kg over 5, plus ${BOOKING_FEE.percent}% booking`,
     }],
   });
 }

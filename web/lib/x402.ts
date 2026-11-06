@@ -3,7 +3,7 @@ import type { HTTPRequestContext } from "@x402/core/http";
 import { x402ResourceServer } from "@x402/next";
 import { ExactHederaScheme } from "@x402/hedera/exact/server";
 import { chain } from "./hedera";
-import { band, bookingFee, meterFee, network } from "./network";
+import { bookingFee, meterFee, network } from "./network";
 import type { Leg } from "./arkiv";
 
 /** x402 on Hedera testnet through the official facilitator, which pays the network fee. */
@@ -32,7 +32,7 @@ export function routeKm(route: Leg[]) {
 
 /** The whole booking in rupees: the drivers' meter for the distance and weight, plus Daak's booking fee. */
 export function bookingTotal(route: Leg[], weight = "s") {
-  const meter = meterFee(routeKm(route), band(weight).id);
+  const meter = meterFee(routeKm(route), weight); // a band id or a measured parcel ("kg:24|60x50x40")
   return { meter, bookingFee: bookingFee(meter), total: Math.round((meter + bookingFee(meter)) * 100) / 100 };
 }
 

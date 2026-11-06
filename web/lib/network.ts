@@ -59,7 +59,7 @@ export const band = (id: string = "s") => {
  */
 export const MEASURE = { volumeDivisor: 5000, maxSideCm: 120 } as const;
 export type Measured = { kg: number; lengthCm: number; widthCm: number; heightCm: number };
-export function measure(m: Measured): { volumeKg: number; chargeableKg: number; band: (typeof WEIGHT_BANDS)[number] } | { error: string } {
+export function measure(m: Measured): { volumeKg: number; chargeableKg: number; band: (typeof WEIGHT_BANDS)[number]; spec: string } | { error: string } {
   const sides = [m.lengthCm, m.widthCm, m.heightCm];
   if (![m.kg, ...sides].every((x) => Number.isFinite(x) && x > 0)) return { error: "Enter the weight and all three sides" };
   if (Math.max(...sides) > MEASURE.maxSideCm) return { error: `Longer than ${MEASURE.maxSideCm} cm does not fit a bus parcel rack` };
@@ -67,8 +67,30 @@ export function measure(m: Measured): { volumeKg: number; chargeableKg: number; 
   const chargeableKg = Math.max(m.kg, volumeKg);
   const b = bandFor(chargeableKg);
   if (!b) return { error: `Charged as ${chargeableKg} kg: over 50 kg is not a bus parcel` };
-  return { volumeKg, chargeableKg, band: b };
+  return { volumeKg, chargeableKg, band: b, spec: `kg:${Math.round(chargeableKg * 10) / 10}|${[m.lengthCm, m.widthCm, m.heightCm].map((x) => Math.round(x)).join("x")}` };
 }
 
-export const meterFee = (km: number, bandId: string = "s") =>
-  Math.round((METER.baseRupees + METER.perKmRupees * km) * band(bandId).factor * 100) / 100;
+/**
+ * Every charged kilogram over 5 adds a tenth of the meter (Adil, 2026-11-06: the drivers' pay should follow the
+ * parcel, not only the km). Up to 5 kg is x1, 12 kg x1.7, 25 kg x3, 50 kg x5.5. Published with the meter.
+ */
+export const PER_KG = { freeKg: 5, perKg: 0.1, maxKg: 50 } as const;
+export const kgFactor = (kg: number) => Math.round((1 + PER_KG.perKg * Math.max(0, kg - PER_KG.freeKg)) * 100) / 100;
+
+/**
+ * What the weight field of a booking holds: an old band id (s, m, l, xl), or a measured parcel as
+ * "kg:<charged kg>|<L>x<W>x<H>" (the sides optional). Anything else is refused, never priced as the lightest.
+ */
+export function weightSpec(w: string = "s"): { factor: number; label: string; kg?: number } {
+  if (w.startsWith("kg:")) {
+    const [kgPart, dims] = w.slice(3).split("|");
+    const kg = Number(kgPart);
+    if (!Number.isFinite(kg) || kg <= 0 || kg > PER_KG.maxKg) throw new Error(`Charged weight ${kgPart} kg is not a bus parcel`);
+    return { factor: kgFactor(kg), kg, label: `${kg} kg charged${dims ? ` (${dims.replaceAll("x", " x ")} cm)` : ""}` };
+  }
+  const b = band(w);
+  return { factor: b.factor, label: b.label };
+}
+
+export const meterFee = (km: number, weight: string = "s") =>
+  Math.round((METER.baseRupees + METER.perKmRupees * km) * weightSpec(weight).factor * 100) / 100;

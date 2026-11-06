@@ -58,14 +58,17 @@ data class Plan(
     val from: String, val to: String, val km: Int, val fee: Double, val meter: String, val stretches: List<Stretch>, val bands: List<Band> = emptyList(), val etaAt: Long? = null,
     /** The server's measuring rule, so the price shows as the shop types: volume weight is L x W x H / divisor. */
     val volumeDivisor: Double = 5000.0, val maxSideCm: Double = 120.0,
+    /** The per-kg rule (every charged kg over 5 adds a tenth of the meter) and the light parcel's meter and booking fee rule. Null from an older server. */
+    val perKg: PerKg? = null, val baseMeter: Double = 0.0, val bookingPercent: Double = 12.0, val bookingMin: Double = 5.0,
 )
+data class PerKg(val freeKg: Double, val perKg: Double, val maxKg: Double)
 /** A weight band, the heaviest it takes, and what the whole booking costs in it. */
 data class Band(val id: String, val label: String, val fee: Double, val maxKg: Double = 50.0)
 
 /** What the shop measured: the weight on the scale and the three sides. */
 data class Measured(val kg: Double, val lengthCm: Double, val widthCm: Double, val heightCm: Double)
-/** The parcel as Daak will charge it: the larger of its weight and its volume weight, and the band that takes it. */
-data class Charged(val volumeKg: Double, val chargeableKg: Double, val band: Band)
+/** The parcel as Daak will charge it: the larger of its weight and its volume weight, the meter's multiple, and the whole fee. */
+data class Charged(val volumeKg: Double, val chargeableKg: Double, val band: Band, val factor: Double, val fee: Double)
 
 /** The same rule as the server's measure() in lib/network.ts; the server measures again when it books. */
 fun charge(plan: Plan, m: Measured): Result<Charged> {
@@ -76,7 +79,13 @@ fun charge(plan: Plan, m: Measured): Result<Charged> {
     val chargeable = maxOf(m.kg, volumeKg)
     val band = plan.bands.sortedBy { it.maxKg }.firstOrNull { chargeable <= it.maxKg }
         ?: return Result.failure(Exception("50 kg से ज़्यादा बस पार्सल नहीं है। Charged as $chargeable kg: over 50 kg is not a bus parcel."))
-    return Result.success(Charged(volumeKg, chargeable, band))
+    val r = plan.perKg ?: return Result.success(Charged(volumeKg, chargeable, band, 1.0, band.fee))
+    // Every charged kg over 5 adds a tenth of the meter: the same sums, and the same rounding, as the server's meterFee.
+    val kg = Math.round(chargeable * 10) / 10.0
+    val factor = Math.round((1 + r.perKg * maxOf(0.0, kg - r.freeKg)) * 100) / 100.0
+    val meter = Math.round(plan.baseMeter * factor * 100) / 100.0
+    val fee = Math.round((meter + maxOf(plan.bookingMin, Math.round(meter * plan.bookingPercent) / 100.0)) * 100) / 100.0
+    return Result.success(Charged(volumeKg, kg, band, factor, fee))
 }
 data class Todo(val code: String, val text: String, val action: String)
 data class ParcelInfo(val registered: Boolean, val code: String?, val label: String?, val delivered: Boolean, val next: Next?)
@@ -329,7 +338,9 @@ object Api {
             } },
             j.optJSONArray("bands")?.let { b -> List(b.length()) { b.getJSONObject(it).let { o -> Band(o.getString("id"), o.getString("label"), o.getDouble("feeRupees"), o.optDouble("maxKg", 50.0)) } } } ?: emptyList(),
             if (j.isNull("etaAt")) null else j.optLong("etaAt"),
-            j.optJSONObject("measure")?.optDouble("volumeDivisor", 5000.0) ?: 5000.0, j.optJSONObject("measure")?.optDouble("maxSideCm", 120.0) ?: 120.0)
+            j.optJSONObject("measure")?.optDouble("volumeDivisor", 5000.0) ?: 5000.0, j.optJSONObject("measure")?.optDouble("maxSideCm", 120.0) ?: 120.0,
+            j.optJSONObject("perKg")?.let { PerKg(it.getDouble("freeKg"), it.getDouble("perKg"), it.getDouble("maxKg")) },
+            j.optDouble("meterRupees", 0.0), j.optJSONObject("bookingFee")?.optDouble("percent", 12.0) ?: 12.0, j.optJSONObject("bookingFee")?.optDouble("minRupees", 5.0) ?: 5.0)
     }
 
     fun todo(uid: String): List<Todo> {

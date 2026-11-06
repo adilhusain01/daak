@@ -1,7 +1,7 @@
 import { denied, isApp, isOperator } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { getBadge, badgesByRole } from "@/lib/arkiv";
-import { pathBetween, stopName, meterFee, METER, BOOKING_FEE, bookingFee, WEIGHT_BANDS, MEASURE } from "@/lib/network";
+import { pathBetween, stopName, meterFee, METER, BOOKING_FEE, bookingFee, WEIGHT_BANDS, MEASURE, PER_KG } from "@/lib/network";
 import { readLog, workHistory } from "@/lib/history";
 import { candidate } from "@/lib/booking";
 import { planStretches } from "@/lib/timetable";
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   const bands = WEIGHT_BANDS.map((b) => ({ id: b.id, label: b.label, maxKg: b.maxKg, meterRupees: meterFee(km, b.id), feeRupees: total(meterFee(km, b.id)) }));
   return NextResponse.json({
     from: stopName(s.stop), to: `${r.name}, ${stopName(r.stop)}`, receiverName: r.name, km, etaAt,
-    feeRupees: total(meterFee(km)), meterRupees: meterFee(km), bookingFeeRupees: bookingFee(meterFee(km)), bands, measure: MEASURE,
-    meter: `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km, times the weight band, plus ${BOOKING_FEE.percent}% booking`, stretches,
+    feeRupees: total(meterFee(km)), meterRupees: meterFee(km), bookingFeeRupees: bookingFee(meterFee(km)), bands, measure: MEASURE, perKg: PER_KG, bookingFee: BOOKING_FEE,
+    meter: `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km, times 1 + 0.1 for each charged kg over 5, plus ${BOOKING_FEE.percent}% booking`, stretches,
   });
 }

@@ -1,7 +1,7 @@
 import { allConsignments, allVerdicts, handoffsFor, type ConsignmentRow } from "./arkiv";
 import { readLog, type LogMsg } from "./history";
 import { accountFor } from "./payout";
-import { band } from "./network";
+import { weightSpec } from "./network";
 import { holdbackStatus, isSplit } from "./split";
 import { isPlaceholder } from "./standing";
 
@@ -41,7 +41,7 @@ export function summarise(c: ConsignmentRow, verdicts: Verdict[], log: LogMsg[],
   const needsYou = !done && (values.includes("held") || (isSplit(c) ? values.includes("unchecked") : status.key === "review"));
   return {
     code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, km: c.route.reduce((s, l) => s + (l.km ?? 0), 0),
-    weight: band(c.weight ?? "s").label, stops: c.route.length, handed: latest.size, status, needsYou,
+    weight: weightSpec(c.weight ?? "s").label, stops: c.route.length, handed: latest.size, status, needsYou,
   };
 }
 
@@ -99,7 +99,7 @@ export async function operatorDetail(c: ConsignmentRow, log?: LogMsg[]) {
     };
   });
   const km = c.route.reduce((s, l) => s + (l.km ?? 0), 0);
-  const meter = `Rs 5 + Rs 0.50 a km, ${band(c.weight ?? "s").label}`;
+  const meter = `Rs 5 + Rs 0.50 a km, ${weightSpec(c.weight ?? "s").label} (x${weightSpec(c.weight ?? "s").factor})`;
   // Badges never leave the server; the photo only as "there is one".
   const handoffs = (await handoffsFor(c.code)).map(({ photo, fromBadge: _f, toBadge: _t, ...h }) => ({ ...h, hasPhoto: Boolean(photo) }));
   if (isSplit(c)) {
@@ -121,7 +121,7 @@ export async function publicDetail(c: ConsignmentRow, log?: LogMsg[]) {
   });
   const { status } = summarise(c, handoffs.map((h) => ({ code: c.code, hop: h.hop, verdict: h.verdict, at: h.at })), log);
   return {
-    code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, weight: band(c.weight ?? "s").label, status,
+    code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, weight: weightSpec(c.weight ?? "s").label, status,
     km: c.route.reduce((s, l) => s + (l.km ?? 0), 0), route: c.route.map((l) => ({ hop: l.hop, place: l.place, km: l.km ?? 0, departsAt: l.departsAt ?? null, etaAt: l.etaAt ?? null })),
     handoffs, money, holdback: isSplit(c) ? await holdbackStatus(c.code, log) : null,
   };

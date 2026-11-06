@@ -140,6 +140,35 @@ test("a parcel too heavy, too big, too long or without real measurements is refu
   assert.ok("error" in measure({ kg: Number.NaN, lengthCm: 30, widthCm: 20, heightCm: 15 }));
 });
 
+test("every charged kg over 5 adds a tenth of the meter, so the drivers' pay follows the parcel", async () => {
+  const { meterFee } = await import("../lib/network.ts");
+  // Kanpur to Gorakhpur, 359 km: the meter is Rs 184.50 up to 5 kg.
+  assert.equal(meterFee(359, "kg:3"), 184.5);
+  assert.equal(meterFee(359, "kg:5"), 184.5);
+  assert.equal(meterFee(359, "kg:12"), 313.65); // x1.7
+  assert.equal(meterFee(359, "kg:25"), 553.5); // x3
+  assert.equal(meterFee(359, "kg:50"), 1014.75); // x5.5, the heaviest a bus parcel can be
+  assert.throws(() => meterFee(359, "kg:51"));
+  assert.throws(() => meterFee(359, "kg:0"));
+});
+
+test("a measured parcel books on its charged weight, and each driver's share of that meter is by km", async () => {
+  const { measure, meterFee } = await import("../lib/network.ts");
+  const { splitByKm } = await import("../lib/rules.ts");
+  // 4 kg of cloth in a 60 x 50 x 40 cm bundle is charged as 24 kg (its volume weight).
+  const m = measure({ kg: 4, lengthCm: 60, widthCm: 50, heightCm: 40 });
+  assert.ok(!("error" in m));
+  if ("error" in m) return;
+  assert.equal(m.spec, "kg:24|60x50x40");
+  const meter = meterFee(359, m.spec);
+  assert.equal(meter, 535.05); // x2.9
+  // Ramesh drives 87 of the 359 km, Suresh 272: their shares add up to the whole meter, and both are paid more
+  // than for a light parcel (Rs 44.71 and Rs 139.79).
+  const [ramesh, suresh] = splitByKm(Math.round(meter * 100), [{ badge: "ramesh", km: 87 }, { badge: "suresh", km: 272 }]);
+  assert.equal(ramesh.units + suresh.units, Math.round(meter * 100));
+  assert.ok(ramesh.units > 4471 && suresh.units > 13979);
+});
+
 test("an unknown weight band is refused, never priced as the lightest", async () => {
   const { meterFee } = await import("../lib/network.ts");
   assert.throws(() => meterFee(100, "huge"));

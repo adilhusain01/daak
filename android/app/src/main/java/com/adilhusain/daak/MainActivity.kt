@@ -1137,7 +1137,7 @@ class MainActivity : ComponentActivity() {
             }
             // The shop measures; the price follows as it types, on the larger of the weight and the volume weight.
             val charged = s.measured()?.let { charge(plan, it) }
-            val fee = charged?.getOrNull()?.band?.fee ?: plan.fee
+            val fee = charged?.getOrNull()?.fee ?: plan.fee
             if (plan.bands.isNotEmpty()) {
                 Heading("वज़न और नाप", "Weight and size")
                 Field(pick("वज़न (kg)", "Weight (kg)"), s.kg, { if (!s.paying) screen = s.copy(kg = it.filter { c -> c.isDigit() || c == '.' }) }, "3.5", number = true)
@@ -1151,7 +1151,7 @@ class MainActivity : ComponentActivity() {
                 charged?.onSuccess { c ->
                     Sheet {
                         Line(pick("इतने का किराया", "Charged as"), "${"%.1f".format(c.chargeableKg)} kg", Tokens.ink, big = true)
-                        Body(pick("नाप से वज़न ${"%.1f".format(c.volumeKg)} kg (L × W × H ÷ ${plan.volumeDivisor.toInt()})। ${c.band.label}", "Volume weight ${"%.1f".format(c.volumeKg)} kg (L × W × H ÷ ${plan.volumeDivisor.toInt()}). Band: ${c.band.label}"), Tokens.muted, 14)
+                        Body(pick("नाप से वज़न ${"%.1f".format(c.volumeKg)} kg (L × W × H ÷ ${plan.volumeDivisor.toInt()})। मीटर ×${c.factor}, ड्राइवरों का किराया भी उतना।", "Volume weight ${"%.1f".format(c.volumeKg)} kg (L × W × H ÷ ${plan.volumeDivisor.toInt()}). Meter ×${c.factor}: the drivers' pay too."), Tokens.muted, 14)
                     }
                 }?.onFailure { e -> if (s.kg.isNotBlank() && s.lengthCm.isNotBlank() && s.widthCm.isNotBlank() && s.heightCm.isNotBlank()) Body(e.message ?: "", Tokens.red, 15) }
             }

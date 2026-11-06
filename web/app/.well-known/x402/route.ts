@@ -25,7 +25,7 @@ export async function GET(req: Request) {
       assetName: settlesInRupees() ? "dINR (Daak Rupee, 2 decimals)" : undefined,
       payTo: process.env.HEDERA_OPERATOR_ID ?? "",
       pricing: settlesInRupees()
-        ? `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km, times the weight band (${WEIGHT_BANDS.map((b) => `${b.label} x${b.factor}`).join(", ")}), plus a ${BOOKING_FEE.percent}% booking fee (at least Rs ${BOOKING_FEE.minRupees}). The 402 quotes the exact amount.`
+        ? `Rs ${METER.baseRupees} + Rs ${METER.perKmRupees} a km, times 1 + 0.1 for each charged kg over 5 (the larger of the weight and L x W x H / 5,000, up to 50 kg; older bookings by band: ${WEIGHT_BANDS.map((b) => `${b.label} x${b.factor}`).join(", ")}), plus a ${BOOKING_FEE.percent}% booking fee (at least Rs ${BOOKING_FEE.minRupees}). The 402 quotes the exact amount.`
         : "Flat price per booking; the 402 quotes it.",
       input: {
         parcel: "the parcel's NFC serial",

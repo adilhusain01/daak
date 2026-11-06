@@ -4,6 +4,7 @@ import { recentConsignments, handoffsFor, getBadge } from "@/lib/arkiv";
 import { badgeHash, readLog } from "@/lib/history";
 import { legPay } from "@/lib/split";
 import { clock } from "@/lib/timetable";
+import { weightSpec } from "@/lib/network";
 
 const OFFER_MS = 24 * 3600_000;
 
@@ -29,7 +30,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ uid: string }>
       const start = c.route.find((l) => l.to === uid)?.place ?? prev?.place ?? "the pickup";
       offers.push({
         code: c.code, label: c.label, place: mine.place, action: "offer", hop: mine.hop,
-        text: `${start.split(",")[0]} to ${mine.place.split(",")[0]}, ${mine.km} km, ₹${((pay?.units ?? 0) / 100).toFixed(2)} (${pay?.pct ?? 50}% at handover)${mine.departsAt ? `, bus ${clock(mine.departsAt)}` : ""}`,
+        text: `${start.split(",")[0]} to ${mine.place.split(",")[0]}, ${mine.km} km, ₹${((pay?.units ?? 0) / 100).toFixed(2)} (${pay?.pct ?? 50}% at handover), ${weightSpec(c.weight ?? "s").label}${mine.departsAt ? `, bus ${clock(mine.departsAt)}` : ""}`,
       });
     }
     const leg = c.route.find((l) => !done.has(l.hop));

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { agentBook } from "@/lib/agent";
 import { recentConsignments, type Leg } from "@/lib/arkiv";
 import { buildRoute } from "@/lib/booking";
-import { band, measure } from "@/lib/network";
+import { measure, weightSpec } from "@/lib/network";
 
 /**
  * The shop books a parcel: from its own bus stand to the receiver's, with one chosen driver per stretch.
@@ -22,9 +22,9 @@ export async function POST(req: Request) {
   if (body.kg != null || body.lengthCm != null) {
     const m = measure({ kg: Number(body.kg), lengthCm: Number(body.lengthCm), widthCm: Number(body.widthCm), heightCm: Number(body.heightCm) });
     if ("error" in m) return NextResponse.json({ error: m.error }, { status: 400 });
-    body.weight = m.band.id;
+    body.weight = m.spec; // priced on every charged kg, so each driver's pay follows the parcel
   }
-  try { band(body.weight ?? "s"); } catch { return NextResponse.json({ error: "Choose a weight band" }, { status: 400 }); }
+  try { weightSpec(body.weight ?? "s"); } catch { return NextResponse.json({ error: "Enter the parcel's weight and size" }, { status: 400 }); }
   // A cap so a leaked app key cannot make Daak's agent spend without limit.
   const cap = Number(process.env.BOOKINGS_PER_HOUR ?? 12);
   const lastHour = (await recentConsignments()).filter((c) => c.createdAt > Date.now() - 3600_000).length;
