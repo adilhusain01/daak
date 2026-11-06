@@ -50,7 +50,7 @@ The corridor: Kanpur to Lucknow to Gorakhpur for the story; the first live pilot
 | **Sender pays** | **₹89.60** | |
 | **Daak revenue** | **₹11.20** (about 12.5% of GMV) | |
 | Chain cost (Hedera, Arkiv, Swarm) | under ₹1 | assumption; Hedera fees are fractions of a cent per transaction |
-| 0G checks | **₹0.19** set aside | 2% of the booking fee, moved on chain into Daak's 0G compute account; measured: about US$0.0001 (about ₹0.01) a sealed check, three checks a parcel |
+| 0G checks | **₹0.19** set aside | 2% of the booking fee, moved on chain into Daak's 0G compute account; a sealed check costs about US$0.0001 (about ₹0.01) at the Router's published price, three checks a parcel |
 | UPI payout and SMS | about ₹3 | assumption; depends on the payout partner |
 | **Contribution per parcel** | **about ₹7** | |
 
