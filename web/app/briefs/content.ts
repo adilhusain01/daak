@@ -18,7 +18,7 @@ export const BRIEFS: Brief[] = [
     id: "hedera", partner: "Hedera", logo: "/logos/hedera.svg", logoText: "Hedera",
     title: "Every booking is an x402 payment, and the pay rules run on Hedera with no Solidity",
     talk: [
-      "A shop's agent books a delivery by calling our API. It gets a 402 with the exact price, pays in our rupee token through the official facilitator, and retries. Nobody approves it.",
+      "A shop's agent books a delivery by calling Daak's API. It gets a 402 with the exact price, pays in Daak's rupee token through the official facilitator, and retries. Nobody approves it.",
       "The money sits in escrow. Each driver's advance is a token transfer the moment the next person confirms the handover, and the rest is one long-term scheduled transaction that executes itself after delivery unless the shop files a claim.",
       "Every booking, handoff, check and payout is a message on one HCS topic, and the drivers' work records are recomputed from it.",
     ],
@@ -57,7 +57,7 @@ export const BRIEFS: Brief[] = [
     questions: [
       "Is a custom HTS token like dINR a good fit for x402 on mainnet, or do you expect USDC on Hedera?",
       "How long can a waitForExpiry schedule wait on mainnet, and what does it cost to hold many open at once?",
-      "Would you score HCS-14 alone as agent identity, or should we also register an ERC-8004 identity?",
+      "Would you score HCS-14 alone as agent identity, or should Daak also register an ERC-8004 identity?",
       "Is there a pattern you like for A2A negotiation where the price is a fixed public meter?",
     ],
   },
@@ -94,7 +94,7 @@ export const BRIEFS: Brief[] = [
       "Direct needs 3 0G to open an account and 1 0G per provider, which is a lot to lock up for one agent.",
     ],
     questions: [
-      "Is a second sealed vision provider coming, or can we fail over to a sealed text model with a vision preprocessing step?",
+      "Is a second sealed vision provider coming, or can Daak fail over to a sealed text model with a vision preprocessing step?",
       "For an agent paying for itself, do you prefer Router credit or Direct, and can a server deposit into a Router account?",
       "How should a verifier check the TEE attestation end to end, beyond the provider's signature on each answer?",
       "Is one 0G Storage record per decision the right grain for an episode log, or would you batch a day?",
@@ -130,8 +130,8 @@ export const BRIEFS: Brief[] = [
       "Testnet (Rabdi); costs on mainnet are not measured yet.",
     ],
     questions: [
-      "Can an entity's expiry be extended in place when a claim is filed, or should we write a new one?",
-      "What is the expected index lag after a write? We retry for up to 10 s.",
+      "Can an entity's expiry be extended in place when a claim is filed, or should Daak write a new one?",
+      "What is the expected index lag after a write? Daak retries for up to 10 s.",
       "Would you model the shop and the bus operator as their own writers, and how would owners share one entity type?",
       "Any plan for ordering by an unindexed column to error instead of returning an empty page?",
     ],
@@ -160,7 +160,7 @@ export const BRIEFS: Brief[] = [
       { what: "Example", how: "KNP-6025 hop 1: Arkiv entity 0x1d158aeb…31f1, its photo column a sealed reference of 208 base64 characters", proof: { label: "arkiv/swarm.md", href: "https://github.com/adilhusain01/daak/blob/main/arkiv/swarm.md" } },
     ],
     limits: [
-      "Uploads go through the public gateway, which stamps them with its own postage batch; Daak has not bought a batch (that needs xBZZ on Gnosis), so we cannot quote a batch id or promise how long photos stay.",
+      "Uploads go through the public gateway, which stamps them with its own postage batch; Daak has not bought a batch (that needs xBZZ on Gnosis), so I cannot quote a batch id or promise how long photos stay.",
       "Sharing is all or nothing: whoever holds a reference can open the photo, so Daak keeps the keys on its server.",
     ],
     questions: [
