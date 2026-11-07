@@ -1,7 +1,7 @@
 /**
  * The mentor briefs: one per partner track, plus the run-sheet for setting up a live demo. Every id and number is from
  * the README's "Live on testnet" table, docs/submission.md or the code itself; status lines say what is live and what
- * is not. Rendered at /briefs/<id> and exported to docs/briefs/<id>.pdf.
+ * is not. Rendered at /briefs/<id>; PDFs printed from it stay local (gitignored).
  */
 export type Row = { what: string; how: string; where?: string; proof?: { label: string; href?: string } };
 export type Ask = { ask: string; how: string; status: "live" | "partial" | "gap" };

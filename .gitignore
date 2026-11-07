@@ -32,3 +32,6 @@ video/hero/daak-hero.mp4
 video/hero/frames/
 video/hero/sheet.jpg
 video/hero/styles.gen.ts
+
+# Partner brief PDFs: printed from /briefs/<id> for sharing by hand, kept local
+docs/briefs/*.pdf
