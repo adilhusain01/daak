@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { SiteNav, ProofButton, Page } from "@/components/site-nav";
 import { RouteSteps, PayBar, type StopState } from "@/components/route-steps";
+import { RouteMap, type RouteMapData } from "@/components/route-map";
 import { arkivEntity, clock, hashscanTopic, isLate, when } from "@/lib/ui";
 import { Loader } from "@/components/loader";
 
@@ -13,7 +14,7 @@ type H = { key: string; hop: number; verdict: string; place: string; at: number;
 type M = { hop: number; km: number; pct: number | null; advanceRupees: number; heldRupees: number | null; tx: string | null; answer: string | null };
 type D = {
   code: string; label: string; createdAt: number; feeRupees: number; paidRupees: number; weight: string; km: number;
-  route: { hop: number; place: string; km: number; departsAt: number | null; etaAt: number | null }[]; handoffs: H[]; money: M[];
+  route: { hop: number; place: string; km: number; departsAt: number | null; etaAt: number | null }[]; handoffs: H[]; money: M[]; map: RouteMapData | null;
   holdback: { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean } | null;
 };
 
@@ -68,6 +69,7 @@ function LiveParcel() {
             const note = h ? when(h.at) : isLate(l.etaAt, false) ? `Running late, expected ${clock(l.etaAt!)}` : l.etaAt ? `Expected ${clock(l.etaAt)}` : undefined;
             return { hop: l.hop, place: l.place, km: l.km, state, note };
           })} />
+          {d.map && <RouteMap key={d.map.legs.map((l) => (l.done ? 1 : 0)).join("")} data={d.map} />}
 
           <section aria-label="Each stop" className="grid grid-cols-1 gap-x-10 border-t border-rule md:grid-cols-2 xl:grid-cols-3">
             {d.route.map((l) => {

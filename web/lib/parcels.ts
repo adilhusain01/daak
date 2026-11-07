@@ -2,6 +2,7 @@ import { allConsignments, allVerdicts, handoffsFor, type ConsignmentRow } from "
 import { readLog, type LogMsg } from "./history";
 import { accountFor } from "./payout";
 import { weightSpec, paidFor } from "./network";
+import { routeOnMap } from "./path";
 import { holdbackStatus, isSplit } from "./split";
 import { isPlaceholder } from "./standing";
 
@@ -83,6 +84,10 @@ async function paidAt(schedule?: string) {
 }
 
 /** Everything the operator sees for one parcel: stops, photos, money per driver, holdbacks. */
+/** The route along the road and where the parcel is, as the customer tracking page draws it. */
+const mapOf = (c: ConsignmentRow, handoffs: { hop: number; verdict: string }[]) =>
+  routeOnMap(c.route, new Set(handoffs.filter((h) => h.verdict !== "held").map((h) => h.hop)));
+
 export async function operatorDetail(c: ConsignmentRow, log?: LogMsg[]) {
   log ??= await readLog();
   const drivers = await Promise.all(c.route.map(async (l) => ({ hop: l.hop, badge: l.from, account: await accountFor(l.from) })));
@@ -105,9 +110,9 @@ export async function operatorDetail(c: ConsignmentRow, log?: LogMsg[]) {
   if (isSplit(c)) {
     const holdback = await holdbackStatus(c.code, log);
     const scheduledAt = log.find((m) => m.t === "daak.holdback" && m.code === c.code)?.ts ?? null;
-    return { ...c, paidRupees: paidFor(c.feeRupees), km, meter, handoffs, money, holdback, paidAt: holdback && !holdback.deleted ? scheduledAt : null };
+    return { ...c, paidRupees: paidFor(c.feeRupees), km, meter, handoffs, money, holdback, map: mapOf(c, handoffs), paidAt: holdback && !holdback.deleted ? scheduledAt : null };
   }
-  return { ...c, paidRupees: paidFor(c.feeRupees), km, meter, handoffs, money, holdback: null, paidAt: await paidAt(c.schedule) };
+  return { ...c, paidRupees: paidFor(c.feeRupees), km, meter, handoffs, money, holdback: null, map: mapOf(c, handoffs), paidAt: await paidAt(c.schedule) };
 }
 
 /** The public view of one parcel: no photos, badges, phone, UPI or bank details. */
@@ -123,6 +128,6 @@ export async function publicDetail(c: ConsignmentRow, log?: LogMsg[]) {
   return {
     code: c.code, label: c.label, createdAt: c.createdAt, feeRupees: c.feeRupees, paidRupees: paidFor(c.feeRupees), weight: weightSpec(c.weight ?? "s").label, status,
     km: c.route.reduce((s, l) => s + (l.km ?? 0), 0), route: c.route.map((l) => ({ hop: l.hop, place: l.place, km: l.km ?? 0, departsAt: l.departsAt ?? null, etaAt: l.etaAt ?? null })),
-    handoffs, money, holdback: isSplit(c) ? await holdbackStatus(c.code, log) : null,
+    handoffs, money, holdback: isSplit(c) ? await holdbackStatus(c.code, log) : null, map: mapOf(c, handoffs),
   };
 }

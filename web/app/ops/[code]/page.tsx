@@ -11,13 +11,14 @@ import { AssistantChat } from "@/components/assistant-panel";
 import { Suspense, useState } from "react";
 import { arkivEntity, clock, hashscanTopic, isLate, when, type HandoffView, type LegView } from "@/lib/ui";
 import { RouteSteps, PayBar, type StopState } from "@/components/route-steps";
+import { RouteMap, type RouteMapData } from "@/components/route-map";
 import { Busy, Loader } from "@/components/loader";
 import { recheckable } from "@/lib/rules";
 
 type Money = { hop: number; account: string; upiRupees: number; upiStatus: string | null; utr: string | null; bachatRupees: number; advanceRupees: number; advancePct: number | null; heldRupees: number | null; answer: string | null };
 type Holdback = { schedule: string; releasesAt: number | null; rupees: number; executedAt: number | null; deleted: boolean };
 type Row = {
-  code: string; label: string; feeRupees: number; paidRupees: number; createdAt: number; schedule?: string; paidAt: number | null; km: number; meter: string; money: Money[]; holdback: Holdback | null;
+  code: string; label: string; feeRupees: number; paidRupees: number; createdAt: number; schedule?: string; paidAt: number | null; km: number; meter: string; money: Money[]; holdback: Holdback | null; map: RouteMapData | null;
   route: (LegView & { from: string; to: string; advancePct?: number; departsAt?: number; etaAt?: number })[]; handoffs: HandoffView[];
 };
 type Data = { chain: { topicId?: string; feeTokenId?: string; escrowId?: string }; parcel: Row };
@@ -129,6 +130,7 @@ function ParcelPage() {
                   return { hop: l.hop, place: l.place, km: l.km, state, note };
                 })} />
               </div>
+              {r.map && <div className="mt-10"><RouteMap key={r.map.legs.map((l) => (l.done ? 1 : 0)).join("")} data={r.map} /></div>}
 
               <div className="mt-10 grid grid-cols-1 gap-x-10 border-t border-rule md:grid-cols-2 xl:grid-cols-3">
                 {r.route.map((l) => {
