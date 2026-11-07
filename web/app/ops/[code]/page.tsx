@@ -187,7 +187,7 @@ function ParcelPage() {
                         <svg viewBox="0 0 12 12" aria-hidden="true" className="size-3 transition-transform duration-150 ease-out group-open:rotate-90 motion-reduce:transition-none"><path d="M4 2.5 7.5 6 4 9.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                         Pay the drivers by UPI
                       </summary>
-                      <UpiPay code={r.code} />
+                      <UpiPay code={r.code} paid={r.money.map((m) => m.upiRupees.toFixed(2)).join(",")} />
                     </details>
                   )}
                 </div>

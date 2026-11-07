@@ -16,9 +16,10 @@ function Qr({ text }: { text: string }) {
 }
 
 /** Pay each driver of a delivered parcel by UPI, then record the bank's reference on the public log. */
-export function UpiPay({ code }: { code: string }) {
+export function UpiPay({ code, paid }: { code: string; paid: string }) {
   const qc = useQueryClient();
-  const { data } = useQuery<{ drivers: Target[] }>({ queryKey: ["upi", code], queryFn: () => fetch(`/api/upi?code=${code}`).then((r) => r.json()), refetchInterval: false });
+  // `paid` is the page's own cash-out totals: when a new cash-out lands on the log, the amounts to pay are read again.
+  const { data } = useQuery<{ drivers: Target[] }>({ queryKey: ["upi", code, paid], placeholderData: (prev) => prev, queryFn: () => fetch(`/api/upi?code=${code}`).then((r) => r.json()), refetchInterval: false });
   const [utr, setUtr] = useState<Record<string, string>>({});
   const save = useMutation({
     mutationFn: async (d: Target) => {
