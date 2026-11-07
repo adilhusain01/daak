@@ -1219,7 +1219,11 @@ class MainActivity : ComponentActivity() {
         when {
             v.verdict == "green" && v.message == RECHECKED -> Verdict(Tokens.green, "जाँच के बाद सौंपा गया", "Handed over", "Rechecked by 0G: right parcel, right stop, still sealed. The payment is released.${s.place?.let { " $it." } ?: ""}")
             s.offline -> Verdict(Tokens.amber, "फ़ोन में सेव", "Saved on the phone", "No signal. It sends by itself when the signal is back; the payment waits until it is checked.")
-            v.verdict == "green" -> Verdict(Tokens.green, "सौंप दिया", "Handed over", "Checked: right parcel, right stop, still sealed.${s.place?.let { " $it." } ?: ""}${if (v.message.contains("% payment abhi")) " Your pay for this stretch is on its way now; the rest comes when the parcel is delivered." else ""}")
+            v.verdict == "green" -> Verdict(Tokens.green, "सौंप दिया", "Handed over", "Checked: right parcel, right stop, still sealed.${s.place?.let { " $it." } ?: ""}${when {
+                v.message.contains("% payment abhi") -> " Your pay for this stretch is on its way now; the rest comes when the parcel is delivered."
+                v.message.startsWith("Delivery poori") -> " Delivered. Your pay for this stretch is on its way now; the held part releases itself on Hedera if the shop reports no damage."
+                else -> ""
+            }}")
             v.verdict == "held" -> Verdict(Tokens.red, "भुगतान रोका गया", "Payment held", if (Lang.hindi && v.reasonHi != null) v.reasonHi else v.message.substringAfter(". ").ifBlank { v.message })
             else -> Verdict(Tokens.amber, "दर्ज हुआ, जाँच बाकी", "Recorded, waiting for the check", "The AI check could not run just now. The handoff is recorded and the payment waits; it is checked again automatically.")
         }
